@@ -1,8 +1,8 @@
 #! /bin/csh -f
 
  # setting up python
- #If necessary, set up a virtual environment with Python and the relevant packages available. 
-source /home/cercache/tools/environments/scientific_toolbox_cloudphys_precise/bin/activate.csh
+ #If necessary, set up a Python environment and the relevant packages available. 
+#source <your setup file>.csh
 
 #set location of configutration file
 set CONFIG_SOURCE=/.../...

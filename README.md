@@ -12,5 +12,6 @@ A journal paper describing the toolbox has been published here: http://journals.
 
 Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exeter.ac.uk
 
-The FluxEngine software was developed by, and made available by:
-The European Space Agency OceanFlux Greenhouse Gases Evolution project team (09 March 2016)
+The FluxEngine software was developed by The European Space Agency OceanFlux Greenhouse Gases Evolution project team 
+
+Jamie Shutler (09 March 2016)

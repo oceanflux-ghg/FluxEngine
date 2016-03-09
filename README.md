@@ -1,11 +1,16 @@
 FluxEngine
 ==========
 
-open source atmosphere-ocean gas flux data processing tools.
+v1.0
 
-We are now in the process of packaging up the tools. 
-We will then make the FluxEngine source code available.
+The FluxEngine open source atmosphere-ocean gas flux data processing tools.
+The license for this software toolbox can be found within this github repository.
 
-A journal paper describing the toolbox has now been accepted for publication and an early version of the manuscript is avaialable here: http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1
+Please reference the publication linked below when using this toolbox and presenting its output in any publications.
 
-The FluxEngine and OceanFlux Greenhouse Gases project team (24 February 2016)
+A journal paper describing the toolbox has been published here: http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1
+
+Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exeter.ac.uk
+
+The FluxEngine software was developed by, and made available by:
+The European Space Agency OceanFlux Greenhouse Gases Evolution project team (09 March 2016)

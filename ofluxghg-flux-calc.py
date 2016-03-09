@@ -3,13 +3,20 @@
 # ofluxghg-flux-calc.py
 # utility to load various input netcdf datasets and determine
 # air-sea flux of CO2 based on parameterisations in the ESA STSE OceanFlux Greenhouse Gases Technical Specification (TS)
-# Publication: 
+
+# Description and verification: 
 # Shutler, Jamie D., Land, Peter E., Piolle, Jean-Francois.,
 # Woolf, David K., Goddijn-Murphy, Lonneke., Paul, Frederic., Girard-Ardhuin,
 # Fanny., Chapron, Bertrand., Donlon, Craig J., (2016) FluxEngine: A flexible
 # processing system for calculating atmosphere-ocean carbon dioxide gas fluxes
 # and climatologies, Journal of Atmospheric and Oceanic Technology, doi:
 # 10.1175/JTECH-D-14-00204.1
+
+# Description of flux calculation methods:
+# Woolf, D. K., Land, P. E., Shutler, J. D., Goddijn-Murphy, L. M. & Donlon, 
+# C. J. (2016), On the calculation of air-sea fluxes of CO2 in the presence 
+# of temperature and salinity gradients, Journal of Geophysical Research: 
+# Oceans, 121, DOI: 10.1002/2015JC011427
 
 # History
 # date, decsription, author, email, institution
@@ -18,7 +25,7 @@
 # v3 03/12/2012  additional functionality for uncertainty analyses, improved error handling, jams@pml.ac.uk, Plymouth Marine Laboratory.
 # v4 06/08/2013 approaching final form and almost compliant with TS, jams@pml.ac.uk, Plymouth Marine Laboratory
 # v5 06/08/2014 version used for final runs and FluxEngine publication
-# v6 08/04/2016 verification runs repeated. takahashi_driver verification outputs added, iga202@exac.uk, Uni of Exeter
+# v6 08/04/2016 verification runs repeated. Takahashi_driver verification outputs added, iga202@exac.uk, Uni of Exeter
 
 
 # Note:
@@ -1113,7 +1120,7 @@ def solubility(sstK, sal, DeltaT_fdata, nx, ny, flux_model):
          #print "1sstskinK_fdata: (%d,%d) %d %f log:%f\n" %(nx, ny,i,sstK_fdata[i]/100.0,log(sstK_fdata[i]/100.0))
 	 sol[i] = -60.2409 + ( 93.4517*(100.0 / sstK[i]) ) + (23.3585 * (log(sstK[i]/100.0))) + (sal[i] * (0.023517 + ( (-0.023656)*(sstK[i]/100.0)) + (0.0047036*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) )
          sol[i] = exp(sol[i])
-             # flux_model is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2012
+             # flux_model is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
          if flux_model != 2:
             DeltaT_fdata[i] = 0.0
          sol[i] = sol[i] * (1 - (0.015*DeltaT_fdata[i]))
@@ -2253,9 +2260,9 @@ if TAKAHASHI_DRIVER != True:
 DeltaT_fdata = array([missing_value] * nx*ny)
 
 if flux_model == 1:
-   print "%s Using the RAPID model (from Woolf et al., 2012)" % (function)
+   print "%s Using the RAPID model (from Woolf et al., 2016)" % (function)
 elif flux_model == 2:
-   print "%s Using the EQUILIBRIUM model (from Woolf et al., 2012)" % (function)
+   print "%s Using the EQUILIBRIUM model (from Woolf et al., 2016)" % (function)
    for i in arange(nx * ny):
       if ( (sstfndC_fdata[i] != missing_value) & (sstskinC_fdata[i] != missing_value) ):
          DeltaT_fdata[i] = sstfndC_fdata[i] - sstskinC_fdata[i]

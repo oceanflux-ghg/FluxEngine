@@ -879,7 +879,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       # } else {
       #    $pressure_file = $file_glob[0]; 
       # }
-            my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";
+      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";
       @file_glob = glob("$pressure_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($pressure_file), exiting.";

@@ -818,23 +818,24 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $windu10_file = $file_glob[0];
       }
       
-      #IGA Temporaary fix
-      # my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-ICE-???-1M-*-*.nc";
-      # @file_glob = glob("$ice_file");
-      # if (scalar(@file_glob) != 1){
-      #    die "($prog, $func) More than one file or no file found in glob ($ice_file), exiting.";
-      # } else {
-      #    $ice_file = $file_glob[0];
-      # }
-      my $ice_file = $ICE."/2010/2010".sprintf("%02d", $i)."01_OCF-ICE-???-1M-*-*.nc";
+      
+      my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-ICE-???-1M-*-*.nc";
       @file_glob = glob("$ice_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($ice_file), exiting.";
       } else {
          $ice_file = $file_glob[0];
       }
+      #IGA Temporaary fix
+      # my $ice_file = $ICE."/2010/2010".sprintf("%02d", $i)."01_OCF-ICE-???-1M-*-*.nc";
+      # @file_glob = glob("$ice_file");
+      # if (scalar(@file_glob) != 1){
+      #    die "($prog, $func) More than one file or no file found in glob ($ice_file), exiting.";
+      # } else {
+      #    $ice_file = $file_glob[0];
+      # }
       
-      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SST-???-1M-*-*.nc";
+      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-SST-???-1M-*-*.nc";
       @file_glob = glob("$sstskin_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($sstskin_file), exiting.";
@@ -882,13 +883,26 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $sig_wv_ht_file = $file_glob[0];
       }
              
-      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-PRE-???-1M-*-*.nc";
+      # my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-PRE-???-1M-*-*.nc";
+      # @file_glob = glob("$pressure_file");
+      # if (scalar(@file_glob) != 1){
+      #    my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";#NCEP data has a 01 after the month 
+      #    @file_glob = glob("$pressure_file");
+      #    if (scalar(@file_glob) != 1){
+      #       die "($prog, $func) More than one file or no file found in glob ($pressure_file), exiting.";
+      #    } else {
+      #       $pressure_file = $file_glob[0];
+      #    } 
+      # } else {
+      #    $pressure_file = $file_glob[0]; 
+      # }
+            my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";
       @file_glob = glob("$pressure_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($pressure_file), exiting.";
       } else {
-         $pressure_file = $file_glob[0]; 
-      }
+         $pressure_file = $file_glob[0];
+      } 
       
        # salinity options
        # either Takahashi climatology salinity or SMOS
@@ -911,7 +925,11 @@ for (my $y=$year_start; $y<=$year_end; $y++){
             die "($prog, $func) More than one file or no file found in glob ($salinity_file), exiting.";
          } else {
             $salinity_file = $file_glob[0];
-         }      
+         }
+      } elsif ($SALINITY_DATA_SELECTION eq "pf"){
+            $salinity_data_selection = 1;
+            $salinity_file = $SALINITY."/".$year."/"."SeaCarb_FE".sprintf("%02d", $i).".nc";
+            @file_glob = glob("$salinity_file");
       } else {
          die "($prog, $func) salinity_data_selection unrecognised ($SALINITY_DATA_SELECTION), invalid configuration file so exiting.";
       }
@@ -972,11 +990,17 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          }
       } elsif ($pco2_data_selection == 3){
           # In-situ data
-          # note SOCAT data are currently in a user space, so the next line is commented out
-         #$PCO2 = $home_dir."/".$PCO2;
          $pco2_file = $PCO2;
-         @file_glob = glob("$pco2_file");
-         if (scalar(@file_glob) != 1){
+         @file_glob = glob("$pco2_file*");
+         if (scalar(@file_glob) > 1){#IGA added to allow a basic month iteration for in-situ data--------------------starts
+            $pco2_file = $PCO2.sprintf("%02d", $i);
+            @file_glob = glob("$pco2_file*");
+            if (scalar(@file_glob) != 1){
+               die "($prog, $func) More than one file or no file found in glob ($pco2_file), exiting.";
+            } else {
+               $pco2_file = $file_glob[0];
+            }
+         } elsif (scalar(@file_glob) < 1){#IGA added to allow a basic month iteration for in-situ data-----------------ends
             die "($prog, $func) More than one file or no file found in glob ($pco2_file), exiting.";
          } else {
             $pco2_file = $file_glob[0];

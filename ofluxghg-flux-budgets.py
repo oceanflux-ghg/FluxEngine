@@ -428,13 +428,8 @@ for yearNo in xrange(nYears):
       checkShape((fluxdataset, variable))
       ice = variable[0, :, :]
       if icePercent:
-         ice /= 100. # NB -999 now becomes -99.9, shouldn't matter 
-      ##IGA Altered as ice data was not masked array - exception added to give a mask (set to zeros)########
-      try:
-          iceMask = ice.mask[y0:y1, x0:x1]
-      except: 
-          iceMask = np.zeros(ice.shape)
-      ##IGA Altered as ice data was not masked array - exception added to give a mask (set to zeros)#####END
+         ice /= 100. # NB -999 now becomes -99.9, shouldn't matter though
+      iceMask = ice.mask[y0:y1, x0:x1]
       ice = ice[y0:y1, x0:x1]
       if referencing:
          try:

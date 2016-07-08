@@ -25,11 +25,11 @@ np.seterr(all = 'raise', invalid = 'ignore')
 NaN = float('nan')
 
  # default directories
-defaultDir = '/users/rsg/peland/scratch-network/OceanFlux_example-climatology'
-defaultRef = '/users/rsg/peland/scratch-network/OceanFlux_example-climatology-ref'
-defaultOutRoot = '/users/rsg/peland/scratch-network/OceanFlux_output'
-defaultMaskfile = '/users/rsg/jams/World_Seas-final-complete.nc'
-defaultLandfile = '/users/rsg/peland/idl/OC-flux/onedeg_land.nc'
+defaultDir = '/.../OceanFlux_example-climatology'
+defaultRef = '/.../OceanFlux_example-climatology-ref'
+defaultOutRoot = '/OceanFlux_output'
+defaultMaskfile = '/.../World_Seas-final-complete.nc'
+defaultLandfile = '/.../onedeg_land.nc'
 defaultFluxName = 'OF'
 defaultKwName = 'OK3'
 defaultCiName = 'OIC1'

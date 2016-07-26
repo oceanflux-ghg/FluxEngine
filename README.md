@@ -14,7 +14,8 @@ v2.0 (July 2016)
 ----
 These updates have been verified against Takahashi (2009) using the verification options within the code. All results were identical to those derived from v1.0.
 The updates included contribute to further publications in preparation and further details will be posted here following publication.
-The updates include improved: 
+The updates include improved:
+
     •   handling for irregular grids,
     •   handling for different gases including O2, N2O and CH4, 
     •   handling for in-situ data.

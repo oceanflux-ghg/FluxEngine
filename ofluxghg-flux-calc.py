@@ -1589,7 +1589,7 @@ with Dataset(sstskin_infile,'r') as data:
       print "\n%s data variable 'lat' or 'lon' missing from sstskin-netcdf input (%s)" % (function, sstskin_infile)
       sys.exit(1)
    if len(latitude_data.shape)<2:#IGA If long and lat are vectors
-      if len(latitude_data.shape)<2 and latitude_data[0]<0:#IGA - it is a vector that is in opposite orientation to 'taka'
+      if latitude_data[0]<0:#IGA - it is a vector that is in opposite orientation to 'taka'
          latitude_data = flipud(latitude_data) # IFREMER latitude data goes from +ve to -ve, hence flip
 
       latitude_grid = meshgrid(ones((len(longitude_data))),latitude_data)[1]#IGA - gridding vectored geo data so that they can be treated the sam way as non-regular grids
@@ -1617,7 +1617,6 @@ with Dataset(salinity_infile,'r') as data:
 #         sal_data = flipud(sal_data)
          sal_ny, sal_nx = sal_data.shape 
       elif salinity_data_selection == 0:
-         print '\nSalinity shape >>>',sal.shape,'\n'
          sal_n, sal_ny, sal_nx = sal.shape      
          sal_data = sal[0,:,:]
       else:
@@ -2023,11 +2022,6 @@ else:
 nx = sstskinK_nx
 ny = sstskinK_ny
 
-if rain_ny != ny:#IGA
-    print 'Rain data incorrect shape - assuming it is not used and replacing with zeros'
-    rain_data = zeros((nx, ny))
-    rain_nx, rain_ny = rain_data.shape
-    
  # checking dimensions of all datasets are identical
 check_dimensions(windu10_nx, windu10_ny, "windu10", nx, ny)
 check_dimensions(pco2_nx, pco2_ny, "pco2", nx, ny)

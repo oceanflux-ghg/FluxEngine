@@ -453,7 +453,8 @@ $SSTFND = $home_dir."/".$SSTFND;
 $SIGMA0 = $home_dir."/".$SIGMA0;
 $SIG_WV_HT = $home_dir."/".$SIG_WV_HT;
 $PRESSURE = $home_dir."/".$PRESSURE;
-$ICE = $home_dir."/".$ICE;
+#$ICE = $home_dir."/".$ICE;
+
 
 
 #########################################
@@ -810,7 +811,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       }
       
       
-      my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-ICE-???-1M-*-*.nc";
+      my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."_???-ICE-???-1M-*-*.nc";#IGA changed to accomodate CERSAT (which is stored on Pathfinders data repository and therefore OCF is changed to POA)
       @file_glob = glob("$ice_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($ice_file), exiting.";
@@ -818,7 +819,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $ice_file = $file_glob[0];
       }
       
-      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-SST-???-1M-*-*.nc";
+      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SST-???-1M-*-*.nc";
       @file_glob = glob("$sstskin_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($sstskin_file), exiting.";
@@ -879,7 +880,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       # } else {
       #    $pressure_file = $file_glob[0]; 
       # }
-      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";
+      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-PRE-???-1M-*-*.nc";
       @file_glob = glob("$pressure_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($pressure_file), exiting.";

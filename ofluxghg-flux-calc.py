@@ -32,7 +32,9 @@ DEBUG = False
 DEBUG_PRODUCTS = False
 TAKAHASHI_DRIVER = False # enables Takahashi data to drive code - used for verifying calculations
 VERIFICATION_RUNS = False # forces flux calculations to use Takahashi SST_t as the SST dataset for the pco2 data
-GAS = 'N2O'#IGA when using other gases, this can be used to turn off corrections and changes - vCO2 air is assumed to be the atmospheric concentrations and is not adjusted. No icrements are added as they are with CO2. - Short term solution - long term solution requires complete treatement of other gases
+GAS = 'CO2'#IGA when using other gases, this can be used to turn off corrections and changes - vCO2 air is assumed to be the atmospheric concentrations and is not adjusted. No icrements are added as they are with CO2. - Short term solution - long term solution requires complete treatement of other gases
+ATMGAS = 'V'#IGA - added for datasets that provide pco2 in air rather than vco2 in air. If vco2, change to ATMGAS = 'V'
+print 'Calculations proceeding for ',GAS,' gas and using values in air as ',ATMGAS.lower(),GAS
 
  # missing value set for intermediate data sets and output dataset
 missing_value = -999.0
@@ -177,7 +179,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
    return kd_fdata, kb_fdata
 
  # writing the final netcdf output
-def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata, windu10_fdata, windu10_stddev_fdata, windu10_count_fdata, sig_wv_ht_fdata, sig_wv_ht_stddev_fdata, sig_wv_ht_count_fdata, sstskinC_fdata, sstskinK_stddev_fdata, sstskinK_count_fdata, sstfndC_fdata, sstfndK_stddev_fdata, sstfndK_count_fdata, pco2_air_cor_fdata, pco2_sw_cor_fdata, vco2_air_fdata, pco2_sw_fdata, sal_fdata, pres_fdata, conca_fdata, concw_fdata, rain_fdata, scskin_fdata, krain_fdata, whitecap_fdata, dpco2_cor_fdata, dpconc_cor_fdata,  solskin_fdata, solfnd_fdata, solskinDistilWater_fdata, dpCO2_diff_fdata, pCO2a_diff_fdata, pH2O_fdata, pH20_takahashi_fdata, humidity_fdata, pH20_diff_fdata, ice_fdata, lowwind_fdata, diurnalw_fdata, bioclass_fdata, bio_fdata, atlantic_ocean_fdata, pacific_ocean_fdata, southern_ocean_fdata, indian_ocean_fdata, longhurst_fdata, susp_particles_fdata, sstgrad_fdata_avg, failed_quality_fdata, k_standard_name, k_long_name, kb_standard_name, kb_long_name, kd_standard_name, kd_long_name):
+def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata, windu10_fdata, windu10_stddev_fdata, windu10_count_fdata, sig_wv_ht_fdata, sig_wv_ht_stddev_fdata, sig_wv_ht_count_fdata, sstskinC_fdata, sstskinK_stddev_fdata, sstskinK_count_fdata, sstfndC_fdata, sstfndK_stddev_fdata, sstfndK_count_fdata, pco2_air_cor_fdata, pco2_sw_cor_fdata, vco2_air_fdata, pco2_sw_fdata, sal_fdata, pres_fdata, conca_fdata, concw_fdata, rain_fdata, scskin_fdata, krain_fdata, whitecap_fdata, dpco2_cor_fdata, dpconc_cor_fdata,  solskin_fdata, solfnd_fdata, solskinDistilWater_fdata, dpCO2_diff_fdata, pCO2a_diff_fdata, pH2O_fdata, pH20_takahashi_fdata, humidity_fdata, pH20_diff_fdata, solskin_takadata, FH06_takadata, ice_fdata, lowwind_fdata, diurnalw_fdata, bioclass_fdata, bio_fdata, atlantic_ocean_fdata, pacific_ocean_fdata, southern_ocean_fdata, indian_ocean_fdata, longhurst_fdata, susp_particles_fdata, sstgrad_fdata_avg, failed_quality_fdata, k_standard_name, k_long_name, kb_standard_name, kb_long_name, kd_standard_name, kd_long_name, pco2_air_fdata):
 
     # open a new netCDF file for writing.
     #    need to set format type, defaults to NetCDF4
@@ -189,9 +191,16 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
     # units.
 
     # create the lat and lon dimensions.
-   ncfile.createDimension('y',ny)
-   ncfile.createDimension('x',nx)
-   ncfile.createDimension('time',1)
+   if len(latitude_data.shape)<2:#IGA - If the initial latitude data was a vector, make latitude and longitude as dimensions
+       ncfile.createDimension('latitude',ny)
+       ncfile.createDimension('longitude',nx)
+       ncfile.createDimension('time',1)
+       dims = tuple(('time','latitude','longitude'))
+   else:
+       ncfile.createDimension('y',ny)
+       ncfile.createDimension('x',nx)
+       ncfile.createDimension('time',1)
+       dims = tuple(('time','y','x'))
 
    secs = ncfile.createVariable('time',dtype('float64').char,('time',))
    secs.units = 'seconds since 1970-01-01 00:00:00'
@@ -204,34 +213,62 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
 
     # Define the coordinate variables. They will hold the coordinate
     # information, that is, the latitudes and longitudes.
-    #IGA - This section assumes that the lat and long are vectors - has been updated for non regular grids.
-   lats = ncfile.createVariable('latitude',dtype('float64').char,('time','y','x'))
-   lons = ncfile.createVariable('longitude',dtype('float64').char,('time','y','x'))
-    # Assign units attributes to coordinate var data. This attaches a
-    # text attribute to each of the coordinate variables, containing the
-    # units.
-   lats.units = 'degrees_north'
-   lats.axis = "Y"
-   lats.long_name = "Latitude North"
-   lats.standard_name = "latitude"
-   lats[:] = latitude_data
-   lats.valid_min = -90.0
-   lats.valid_max = 90.0
+   if len(latitude_data.shape)<2:#IGA - If the initial latitude data was a vector, write data as vectors
 
-   lons.units = 'degrees_east'
-   lons.axis = "X"
-   lons.long_name = "Longitude East"
-   lons.standard_name = "longitude"
-   lons[:] = longitude_data
-   lons.valid_min = -180.0
-   lons.valid_max = 180.0
+       lats2 = ncfile.createVariable('latitude',dtype('float64').char,('latitude'))
+       lons2 = ncfile.createVariable('longitude',dtype('float64').char,('longitude'))
+        # Assign units attributes to coordinate var data. This attaches a
+        # text attribute to each of the coordinate variables, containing the
+        # units.
+       lats2.units = 'degrees_north'
+       lats2.axis = "Y"
+       lats2.long_name = "Latitude North"
+       lats2.standard_name = "latitude"
+
+       lons2.units = 'degrees_east'
+       lons2.axis = "X"
+       lons2.long_name = "Longitude East"
+       lons2.standard_name = "longitude"
+       
+       lats2[:] = latitude_data
+       lons2[:] = longitude_data
+
+       lats2.valid_min = -90.0
+       lats2.valid_max = 90.0
+
+       lons2.valid_min = -180.0
+       lons2.valid_max = 180.0
+   else:#IGA if the input lat/long was a grid, write output only as a grid.
+       lats = ncfile.createVariable('latitude',dtype('float64').char,dims)
+       lons = ncfile.createVariable('longitude',dtype('float64').char,dims)
+        # Assign units attributes to coordinate var data. This attaches a
+        # text attribute to each of the coordinate variables, containing the
+        # units.
+       lats.units = 'degrees_north'
+       lats.axis = "Y"
+       lats.long_name = "Latitude North"
+       lats.standard_name = "latitude"
+
+       lons.units = 'degrees_east'
+       lons.axis = "X"
+       lons.long_name = "Longitude East"
+       lons.standard_name = "longitude"
+       
+       lats[:] = latitude_grid
+       lons[:] = longitude_grid
+
+       lats.valid_min = -90.0
+       lats.valid_max = 90.0
+
+       lons.valid_min = -180.0
+       lons.valid_max = 180.0
 
     #
     # data layers
     #
 
     # fluxes from chosen k parameterisation
-   OF_data = ncfile.createVariable('OF',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OF_data = ncfile.createVariable('OF',dtype('float64').char,dims,fill_value=fill_value)
    OF_data[:] = FH06_fdata
    OF_data.units = 'g C m-2 day-1'
    OF_data.missing_value = missing_value
@@ -242,7 +279,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OF_data.standard_name = "air_to_sea_carbon_dioxide_flux"
    OF_data.long_name = "Air-sea CO2 flux using the %s %s gas transfer velocity (k)" % (k_standard_name, k_long_name)
 
-   OW1_data = ncfile.createVariable('OW1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OW1_data = ncfile.createVariable('OW1',dtype('float64').char,dims,fill_value=fill_value)
    OW1_data[:] = whitecap_fdata
    OW1_data.units = '%'
    OW1_data.missing_value = missing_value
@@ -255,7 +292,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
 
     # FKo07 flux due to wet deposition from rain
    if rain_wet_deposition:
-      OFWR_data = ncfile.createVariable('OFWR',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFWR_data = ncfile.createVariable('OFWR',dtype('float64').char,dims,fill_value=fill_value)
       OFWR_data[:] = FKo07_fdata
       OFWR_data.units = 'g C m-2 day-1'
       OFWR_data.missing_value = missing_value
@@ -268,7 +305,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
 
 
     # create the oceanflux GHG kt dataset
-   OK1_data = ncfile.createVariable('OK1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OK1_data = ncfile.createVariable('OK1',dtype('float64').char,dims,fill_value=fill_value)
    OK1_data[:] = kt_fdata
    OK1_data.units = 'cm h-1'
    OK1_data.missing_value = missing_value
@@ -280,7 +317,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OK1_data.long_name = "OceanFluxGHG total (kd+kb) gas transfer velocity"
 
     # create the chosen k dataset
-   OK3_data = ncfile.createVariable('OK3',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OK3_data = ncfile.createVariable('OK3',dtype('float64').char,dims,fill_value=fill_value)
    OK3_data[:] = k_fdata
    OK3_data.units = 'cm h-1'
    OK3_data.missing_value = missing_value
@@ -292,7 +329,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OK3_data.long_name = "Chosen Gas transfer velocity (%s)" % (k_long_name)
 
     # create the kb dataset
-   OKB1_data = ncfile.createVariable('OKB1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OKB1_data = ncfile.createVariable('OKB1',dtype('float64').char,dims,fill_value=fill_value)
    OKB1_data[:] = kb_fdata
    OKB1_data.units = 'cm h-1'
    OKB1_data.missing_value = missing_value
@@ -304,7 +341,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OKB1_data.long_name = "Bubble mediated gas transfer velocity (%s)" % (kb_long_name)
 
     # create the kd dataset
-   OKD_data = ncfile.createVariable('OKD',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OKD_data = ncfile.createVariable('OKD',dtype('float64').char,dims,fill_value=fill_value)
    OKD_data[:] = kd_fdata
    OKD_data.units = 'cm h-1'
    OKD_data.missing_value = missing_value
@@ -316,7 +353,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OKD_data.long_name = "Direct gas transfer velocity (%s)" % (kd_long_name)
 
     # create the shosen k dataset
-   OKR_data = ncfile.createVariable('OKR',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OKR_data = ncfile.createVariable('OKR',dtype('float64').char,dims,fill_value=fill_value)
    OKR_data[:] = krain_fdata
    OKR_data.units = 'cm h-1'
    OKR_data.missing_value = missing_value
@@ -328,7 +365,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OKR_data.long_name = "Gas transfer velocity due to rain from Ho et al, Tellus, 1997"
 
     # writing out the wind data
-   WS1_mean_data = ncfile.createVariable('WS1_mean',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   WS1_mean_data = ncfile.createVariable('WS1_mean',dtype('float64').char,dims,fill_value=missing_value)
    WS1_mean_data[:] = windu10_fdata
    WS1_mean_data.units = 'm s-1'
    WS1_mean_data.missing_value = missing_value
@@ -339,7 +376,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    WS1_mean_data.standard_name = "wind_speed"
    WS1_mean_data.long_name = "Wind speed at 10m used for determining k"
 
-   WS1_stddev_data = ncfile.createVariable('WS1_stddev',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   WS1_stddev_data = ncfile.createVariable('WS1_stddev',dtype('float64').char,dims,fill_value=missing_value)
    WS1_stddev_data[:] = windu10_stddev_fdata
    WS1_stddev_data.units = 'm s-1'
    WS1_stddev_data.missing_value = missing_value
@@ -350,7 +387,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    WS1_stddev_data.standard_name = "wind_speed_stddev"
    WS1_stddev_data.long_name = "Standard deviation of wind speed at 10m used for calculating the mean wind speed"
 
-   WS1_N_data = ncfile.createVariable('WS1_N',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   WS1_N_data = ncfile.createVariable('WS1_N',dtype('float64').char,dims,fill_value=missing_value)
    WS1_N_data[:] = windu10_count_fdata
    WS1_N_data.units = 'm s-1'
    WS1_N_data.missing_value = missing_value
@@ -362,7 +399,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    WS1_N_data.long_name = "Count of data points of wind speed at 10m used for calculating the mean wind speed"
 
     # writing out the significant wave height data
-   SW1_mean_data = ncfile.createVariable('SW1_mean',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   SW1_mean_data = ncfile.createVariable('SW1_mean',dtype('float64').char,dims,fill_value=missing_value)
    SW1_mean_data[:] = sig_wv_ht_fdata
    SW1_mean_data.units = 'm'
    SW1_mean_data.missing_value = missing_value
@@ -374,7 +411,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    SW1_mean_data.long_name = "Significant wave height data used for determining kb"
 
     # writing out the significant wave height data
-   SW1_stddev_data = ncfile.createVariable('SW1_stddev',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   SW1_stddev_data = ncfile.createVariable('SW1_stddev',dtype('float64').char,dims,fill_value=missing_value)
    SW1_stddev_data[:] = sig_wv_ht_stddev_fdata
    SW1_stddev_data.units = 'm'
    SW1_stddev_data.missing_value = missing_value
@@ -386,7 +423,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    SW1_stddev_data.long_name = "Standard deviation of significant wave height data used to calculate mean significant wave height"
 
     # writing out the significant wave height data
-   SW1_N_data = ncfile.createVariable('SW1_N',dtype('float64').char,('time','y','x'),fill_value=missing_value)
+   SW1_N_data = ncfile.createVariable('SW1_N',dtype('float64').char,dims,fill_value=missing_value)
    SW1_N_data[:] = sig_wv_ht_count_fdata
    SW1_N_data.units = 'm'
    SW1_N_data.missing_value = missing_value
@@ -399,7 +436,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
 
 
    # writing out the sst_skin data
-   ST1_mean_data = ncfile.createVariable('ST1_mean',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   ST1_mean_data = ncfile.createVariable('ST1_mean',dtype('float64').char,dims,fill_value=fill_value)
    ST1_mean_data[:] = sstskinC_fdata
    ST1_mean_data.units = 'degreeC'
    ST1_mean_data.missing_value = missing_value
@@ -410,7 +447,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    ST1_mean_data.standard_name = "sea_surface_skin_temperature"
    ST1_mean_data.long_name = "Sea surface skin temperature used for the flux calculations"
 
-   ST1_stddev_data = ncfile.createVariable('ST1_stddev',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   ST1_stddev_data = ncfile.createVariable('ST1_stddev',dtype('float64').char,dims,fill_value=fill_value)
    ST1_stddev_data[:] = sstskinK_stddev_fdata
    ST1_stddev_data.units = 'degreeC'
    ST1_stddev_data.missing_value = missing_value
@@ -421,7 +458,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    ST1_stddev_data.standard_name = "sea_surface_skin_temperature_stddev"
    ST1_stddev_data.long_name = "Standard deviation of Sea surface skin temperature used to create the mean sea surface skin data"
 
-   ST1_N_data = ncfile.createVariable('ST1_N',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   ST1_N_data = ncfile.createVariable('ST1_N',dtype('float64').char,dims,fill_value=fill_value)
    ST1_N_data[:] = sstskinK_count_fdata
    ST1_N_data.units = 'degreeC'
    ST1_N_data.missing_value = missing_value
@@ -432,7 +469,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    ST1_N_data.standard_name = "sea_surface_skin_temperature_count"
    ST1_N_data.long_name = "Count of data points of Sea surface skin temperature used to create the mean sea surface skin data"
 
-   FT1_mean_data = ncfile.createVariable('FT1_mean',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   FT1_mean_data = ncfile.createVariable('FT1_mean',dtype('float64').char,dims,fill_value=fill_value)
    FT1_mean_data[:] = sstfndC_fdata
    FT1_mean_data.units ='degreeC'
    FT1_mean_data.missing_value = missing_value
@@ -443,7 +480,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    FT1_mean_data.standard_name = "sea_surface_foundation_temperature"
    FT1_mean_data.long_name = "foundation SST used for the flux calculations"
 
-   FT1_stddev_data = ncfile.createVariable('FT1_stddev',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   FT1_stddev_data = ncfile.createVariable('FT1_stddev',dtype('float64').char,dims,fill_value=fill_value)
    FT1_stddev_data[:] = sstfndK_stddev_fdata
    FT1_stddev_data.units ='degreeC'
    FT1_stddev_data.missing_value = missing_value
@@ -454,7 +491,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    FT1_stddev_data.standard_name = "sea_surface_foundation_temperature_stddev"
    FT1_stddev_data.long_name = "standard deviation of data used to calculate the mean foundation SST"
 
-   FT1_N_data = ncfile.createVariable('FT1_N',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   FT1_N_data = ncfile.createVariable('FT1_N',dtype('float64').char,dims,fill_value=fill_value)
    FT1_N_data[:] = sstfndK_count_fdata
    FT1_N_data.units ='degreeC'
    FT1_N_data.missing_value = missing_value
@@ -465,7 +502,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    FT1_N_data.standard_name = "sea_surface_foundation_temperature_stddev"
    FT1_N_data.long_name = "Count of data points used to create the mean foundation sea surface temperature data"
 
-   OAPC1_data = ncfile.createVariable('OAPC1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OAPC1_data = ncfile.createVariable('OAPC1',dtype('float64').char,dims,fill_value=fill_value)
    OAPC1_data[:] = pco2_air_cor_fdata
    OAPC1_data.units ='microatm'
    OAPC1_data.missing_value = missing_value
@@ -476,7 +513,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OAPC1_data.standard_name = "water_surface_partial_pressure_of_carbon_dioxide_in_air"
    OAPC1_data.long_name = "Water surface partial pressure (pCO2) in air from climtology corrected using modelled sea level pressure"
 
-   OBPC_data = ncfile.createVariable('OBPC',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OBPC_data = ncfile.createVariable('OBPC',dtype('float64').char,dims,fill_value=fill_value)
    OBPC_data[:] = pco2_sw_cor_fdata
    OBPC_data.units ='microatm'
    OBPC_data.missing_value = missing_value
@@ -487,7 +524,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OBPC_data.standard_name = "sub_skin_partial_pressure_of_carbon_dioxide_in_sea_water"
    OBPC_data.long_name = "Sub skin partial pressure (pCO2) of carbon dioxide"
 
-   SFUG_data = ncfile.createVariable('SFUG_krig',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   SFUG_data = ncfile.createVariable('SFUG_krig',dtype('float64').char,dims,fill_value=fill_value)
    SFUG_data[:] = pco2_sw_fdata
    SFUG_data.units ='microatm'
    SFUG_data.missing_value = missing_value
@@ -498,7 +535,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    SFUG_data.standard_name = "surface_partial_pressure_of_carbon_dioxide_in_sea_water"
    SFUG_data.long_name = "pCO2 in sea water from climtology"
 
-   SFUG_stddev_data = ncfile.createVariable('SFUG_stddev',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   SFUG_stddev_data = ncfile.createVariable('SFUG_stddev',dtype('float64').char,dims,fill_value=fill_value)
    SFUG_stddev_data[:] = pco2_sw_stddev_fdata
    SFUG_stddev_data.units ='microatm'
    SFUG_stddev_data.missing_value = missing_value
@@ -509,7 +546,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    SFUG_stddev_data.standard_name = "surface_partial_pressure_of_carbon_dioxide_in_sea_water"
    SFUG_stddev_data.long_name = "pCO2 in sea water from climtology"
 
-   OKT1_data = ncfile.createVariable('OKT1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OKT1_data = ncfile.createVariable('OKT1',dtype('float64').char,dims,fill_value=fill_value)
    OKT1_data[:] = sstskinC_fdata
    OKT1_data.units ='degreeC' # count means dimensionless
    OKT1_data.missing_value = missing_value
@@ -520,7 +557,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OKT1_data.standard_name = "sea_surface_temperature_used_for_gas_transfer_velocity_and_schmidt"
    OKT1_data.long_name = "sea surface temperature used to calculate the gas transfer velocity and schmidt number"
 
-   OKS1_data = ncfile.createVariable('OKS1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OKS1_data = ncfile.createVariable('OKS1',dtype('float64').char,dims,fill_value=fill_value)
    OKS1_data[:] = sal_fdata
    OKS1_data.units ='count' # count means dimensionless
    OKS1_data.missing_value = missing_value
@@ -531,7 +568,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OKS1_data.standard_name = "sea_water_salinity"
    OKS1_data.long_name = "salinity in sea water"
 
-   R1_data = ncfile.createVariable('R1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   R1_data = ncfile.createVariable('R1',dtype('float64').char,dims,fill_value=fill_value)
    R1_data[:] = rain_fdata
    R1_data.units ='mm hr-1' 
    R1_data.missing_value = missing_value
@@ -542,7 +579,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    R1_data.standard_name = "rainfall_rate"
    R1_data.long_name = "Precipitation Estimate from EO and/or satellite/gauge combined data set"
 
-   SC_data = ncfile.createVariable('SC',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   SC_data = ncfile.createVariable('SC',dtype('float64').char,dims,fill_value=fill_value)
    SC_data[:] = scskin_fdata
    SC_data.units ='count' # count means dimensionless
    SC_data.missing_value = missing_value
@@ -553,7 +590,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    SC_data.standard_name = "schmidt_number_at_sea_skin"
    SC_data.long_name = "Schmidt number calculated using the sea surface skin temperature"
 
-   OIC1_data = ncfile.createVariable('OIC1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OIC1_data = ncfile.createVariable('OIC1',dtype('float64').char,dims,fill_value=fill_value)
    OIC1_data[:] = conca_fdata
    OIC1_data.units ='g m-3'
    OIC1_data.missing_value = missing_value
@@ -564,7 +601,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OIC1_data.standard_name = "concentration_of_carbon_dioxide_at_the_sea_air_interface"
    OIC1_data.long_name = "Concentration of carbon dioxide at the sea water and air interface in g-C m^-3"
 
-   OSFC_data = ncfile.createVariable('OSFC',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OSFC_data = ncfile.createVariable('OSFC',dtype('float64').char,dims,fill_value=fill_value)
    OSFC_data[:] = concw_fdata
    OSFC_data.units ='g m-3'
    OSFC_data.missing_value = missing_value
@@ -575,20 +612,20 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
    OSFC_data.standard_name = "sub_skin_concentration_of_carbon_dioxide_in_sea_water"
    OSFC_data.long_name = "Sub skin concentration of carbon dioxide in sea water g-C m^-3"
 
-   P1_data = ncfile.createVariable('P1',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   P1_data = ncfile.createVariable('P1',dtype('float64').char,dims,fill_value=fill_value)
    P1_data[:] = ice_fdata
    P1_data.units ='%'
    P1_data.missing_value = missing_value
    P1_data.valid_min = 0.0
-   P1_data.valid_max = 1.0
+   P1_data.valid_max = 100.0
    #P1_data.scale_factor = 1.0
    #P1_data.add_offset = 0.0
    P1_data.standard_name = "sea_ice_area_fraction"
-   P1_data.long_name = "sea ice area fraction from EMETSAT OSI-SAF"
+   P1_data.long_name = "Percentage of sea area covered by ice (fraction if Takahashi driven)"
 
 
    if TAKAHASHI_DRIVER:
-      taka_data = ncfile.createVariable('humidity',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      taka_data = ncfile.createVariable('humidity',dtype('float64').char,dims,fill_value=fill_value)
       taka_data[:] = humidity_fdata
       taka_data.units ='%'
       taka_data.missing_value = missing_value
@@ -597,7 +634,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       taka_data.standard_name = "relative_humidity"
       taka_data.long_name = "relative humidity calculated using ratio of PH2O climatology and PH20 sst/salinity relationship"
 
-      taka_data = ncfile.createVariable('pH2O_diff',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      taka_data = ncfile.createVariable('pH2O_diff',dtype('float64').char,dims,fill_value=fill_value)
       taka_data[:] = pH2O_diff_fdata
       taka_data.units ='%'
       taka_data.missing_value = missing_value
@@ -606,7 +643,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       taka_data.standard_name = "water_vapour_pressure_difference"
       taka_data.long_name = "pH2O_takahashi minus PH2O calculated"
 
-      taka_data = ncfile.createVariable('pH2O_takahashi',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      taka_data = ncfile.createVariable('pH2O_takahashi',dtype('float64').char,dims,fill_value=fill_value)
       taka_data[:] = pH2O_takahashi_fdata
       taka_data.units ='mb'
       taka_data.missing_value = missing_value
@@ -615,7 +652,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       taka_data.standard_name = "water_vapour_pressure"
       taka_data.long_name = "pH2O_takahashi from climatology"
       
-      taka_data = ncfile.createVariable('pCO2a_diff',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      taka_data = ncfile.createVariable('pCO2a_diff',dtype('float64').char,dims,fill_value=fill_value)
       taka_data[:] = pCO2a_diff_fdata
       taka_data.units ='microatm'
       taka_data.missing_value = missing_value
@@ -624,7 +661,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       taka_data.standard_name = "difference_pco2a"
       taka_data.long_name = "pco2a calculated from Wiess and Price 1980 minus Takahashi pCO2a"
       
-      taka_data = ncfile.createVariable('dpCO2_diff',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      taka_data = ncfile.createVariable('dpCO2_diff',dtype('float64').char,dims,fill_value=fill_value)
       taka_data[:] = dpCO2_diff_fdata
       taka_data.units ='microatm'
       taka_data.missing_value = missing_value
@@ -632,10 +669,28 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       taka_data.valid_max = 1500.0
       taka_data.standard_name = "difference_dpco2"
       taka_data.long_name = "dpco2 calculated minus Takahashi dpCO2"
+
+      taka_data = ncfile.createVariable('taka_skin_solubility',dtype('float64').char,('time','latitude','longitude'),fill_value=fill_value)
+      taka_data[:] = solskin_takadata
+      taka_data.units ='mmol kg-1 atm-1'
+      taka_data.missing_value = missing_value
+      taka_data.valid_min = 0
+      taka_data.valid_max = 1
+      taka_data.standard_name = "solubility_of_carbon_dioxide_in_seawater_at_the_sea_air_interface"
+      taka_data.long_name = "solubility as calculated using the sstskin (ST1) data"
+
+      taka_data = ncfile.createVariable('taka_flux',dtype('float64').char,('time','latitude','longitude'),fill_value=fill_value)
+      taka_data[:] = FH06_takadata
+      taka_data.units ='g C m-2 mon-1'
+      taka_data.missing_value = missing_value
+      taka_data.valid_min = 0
+      taka_data.valid_max = 1
+      taka_data.standard_name = "air_to_sea_carbon_dioxide_flux"
+      taka_data.long_name = "Air-sea CO2 flux using the %s %s gas transfer velocity (k)" % (k_standard_name, k_long_name)
       
 
    if DEBUG_PRODUCTS:
-      PH2O_data = ncfile.createVariable('PH2O',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      PH2O_data = ncfile.createVariable('PH2O',dtype('float64').char,dims,fill_value=fill_value)
       PH2O_data[:] = pH2O_fdata
       PH2O_data.units ='mb'
       PH2O_data.missing_value = missing_value
@@ -644,7 +699,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       PH2O_data.standard_name = "water_vapour_pressure"
       PH2O_data.long_name = "water vapour pressure from salinity and SST relationship of Weiss and Price 1980, Marine Chemistry"      
       
-      pres_data = ncfile.createVariable('air_pressure',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      pres_data = ncfile.createVariable('air_pressure',dtype('float64').char,dims,fill_value=fill_value)
       pres_data[:] = pres_fdata
       pres_data.units ='millibar'
       pres_data.missing_value = missing_value
@@ -655,7 +710,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       pres_data.standard_name = "air_pressure"
       pres_data.long_name = "Daily mean sea level air pressure derived from modelled air pressure data"
 
-      vco2_air_data = ncfile.createVariable('VCO2',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      vco2_air_data = ncfile.createVariable('VCO2',dtype('float64').char,dims,fill_value=fill_value)
       vco2_air_data[:] = vco2_air_fdata
       vco2_air_data.units ='micromol mol-1'
       vco2_air_data.missing_value = missing_value
@@ -666,7 +721,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       vco2_air_data.standard_name = "dry_molecular_fraction_of_carbon_dioxide_in_atmosphere"
       vco2_air_data.long_name = "Concentration of CO2 in dry air in 2010 from NOAA ESLR (or dry molecular fraction of carbon dioxide in the atmosphere)"
 
-      dpco2_cor_data = ncfile.createVariable('dpCO2',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      dpco2_cor_data = ncfile.createVariable('dpCO2',dtype('float64').char,dims,fill_value=fill_value)
       dpco2_cor_data[:] = dpco2_cor_fdata
       dpco2_cor_data.units ='microatm'
       dpco2_cor_data.missing_value = missing_value
@@ -677,7 +732,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       dpco2_cor_data.standard_name = "difference_in_water_and_air_partial_pressure_of_carbon_dioxide"
       dpco2_cor_data.long_name = "Delta pCO2"
 
-      dpconc_cor_data = ncfile.createVariable('Dconc',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      dpconc_cor_data = ncfile.createVariable('Dconc',dtype('float64').char,dims,fill_value=fill_value)
       dpconc_cor_data[:] = dpconc_cor_fdata
       dpconc_cor_data.units ='g m-3'
       dpconc_cor_data.missing_value = missing_value
@@ -688,7 +743,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       dpconc_cor_data.standard_name = "difference_in_mass_boundary_layer_and_interface_concentrations_carbon_dioxide"
       dpconc_cor_data.long_name = "difference between the interface and mass boundary layer concentrations"
       
-      solskin_data = ncfile.createVariable('skin_solubility',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      solskin_data = ncfile.createVariable('skin_solubility',dtype('float64').char,dims,fill_value=fill_value)
       solskin_data[:] = solskin_fdata
       solskin_data.units ='mol kg-1 atm-1'
       solskin_data.missing_value = missing_value
@@ -699,7 +754,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       solskin_data.standard_name = "solubility_of_carbon_dioxide_in_seawater_at_the_sea_air_interface"
       solskin_data.long_name = "solubility as calculated using the sstskin (ST1) data"
       
-      solfnd_data = ncfile.createVariable('fnd_solubility',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      solfnd_data = ncfile.createVariable('fnd_solubility',dtype('float64').char,dims,fill_value=fill_value)
       solfnd_data[:] = solfnd_fdata
       solfnd_data.units ='mol kg-1 atm-1'
       solfnd_data.missing_value = missing_value
@@ -710,7 +765,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       solfnd_data.standard_name = "solubility_of_carbon_dioxide_in_seawater_at_depth"
       solfnd_data.long_name = "solubility as calculated using the sstfnd (FT1) data"
 
-      solskinDistil_data = ncfile.createVariable('solskinDistilWater',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      solskinDistil_data = ncfile.createVariable('solskinDistilWater',dtype('float64').char,dims,fill_value=fill_value)
       solskinDistil_data[:] = solskinDistilWater_fdata
       solskinDistil_data.units ='mol kg-1 atm-1'
       solskinDistil_data.missing_value = missing_value
@@ -718,13 +773,21 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       solskinDistil_data.valid_max = 1.0
       solskinDistil_data.standard_name = "solubility_of_carbon_dioxide_in_distilled_water"
       solskinDistil_data.long_name = "solubility as calculated using the sstskin (ST1) data in distilled water"
-
+      
+      pco2_air_d = ncfile.createVariable('pco2_air',dtype('float64').char,dims,fill_value=fill_value)
+      pco2_air_d[:] = pco2_air_fdata
+      pco2_air_d.units ='microatm?'
+      pco2_air_d.missing_value = missing_value
+      pco2_air_d.valid_min = 0.0
+      pco2_air_d.valid_max = 500
+      pco2_air_d.standard_name = "partial pressure of CO2 in air"
+      pco2_air_d.long_name = "partial pressure of CO2 in air"
     #
     # process indicator attribute layers
     #
    if process_layers_off == 0:
        # OFA1 - low wind
-      OFA1_data = ncfile.createVariable('OFA01',dtype('int32').char,('time','y','x'),fill_value=fill_value_int)
+      OFA1_data = ncfile.createVariable('OFA01',dtype('int32').char,dims,fill_value=fill_value_int)
       OFA1_data[:] = lowwind_fdata
       OFA1_data.units ='count'
       OFA1_data.missing_value = missing_value_int
@@ -736,7 +799,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA1_data.long_name = "Regions of low wind determined from the U10 input data"
 
        # OFA3 diurmal warming
-      OFA3_data = ncfile.createVariable('OFA03',dtype('int32').char,('time','y','x'),fill_value=fill_value_int)
+      OFA3_data = ncfile.createVariable('OFA03',dtype('int32').char,dims,fill_value=fill_value_int)
       OFA3_data[:] = diurnalw_fdata
       OFA3_data.units ='count'
       OFA3_data.missing_value = missing_value_int
@@ -748,7 +811,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA3_data.long_name = "Regions of diurnal warming where sstskin > sstfnd (as determined from the sstskin and sstfnd input data)"
 
        # OFA4 high bilogical activity
-      OFA4_data = ncfile.createVariable('OFA04',dtype('int32').char,('time','y','x'),fill_value=fill_value_int)
+      OFA4_data = ncfile.createVariable('OFA04',dtype('int32').char,dims,fill_value=fill_value_int)
       OFA4_data[:] = bioclass_fdata
       OFA4_data.units ='count'
       OFA4_data.missing_value = missing_value_int
@@ -760,7 +823,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA4_data.long_name = "Regions of low, medium and high biological activity"
 
        # OFA5 sst gradient layer
-      OFA5_data = ncfile.createVariable('OFA05',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA5_data = ncfile.createVariable('OFA05',dtype('float64').char,dims,fill_value=fill_value)
       OFA5_data[:] = sstgrad_fdata_avg
       OFA5_data.units ='count'
       OFA5_data.missing_value = missing_value
@@ -772,7 +835,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA5_data.long_name = "climatology of regions of of strong sst gradients as determined from GHRSST OSTIA data"
    
        # OFA7 longhurst masks
-      OFA6_data = ncfile.createVariable('OFA06',dtype('int32').char,('time','y','x'),fill_value=fill_value_int)
+      OFA6_data = ncfile.createVariable('OFA06',dtype('int32').char,dims,fill_value=fill_value_int)
       OFA6_data[:] = longhurst_fdata
       OFA6_data.units ='count'
       OFA6_data.missing_value = missing_value_int
@@ -784,7 +847,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA6_data.long_name = "Longhurst provinces"
 
        # OFA7 oceans masks
-      OFA7_data = ncfile.createVariable('OFA07_atlantic',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA7_data = ncfile.createVariable('OFA07_atlantic',dtype('float64').char,dims,fill_value=fill_value)
       OFA7_data[:] = atlantic_ocean_fdata
       OFA7_data.units ='count'
       OFA7_data.missing_value = missing_value
@@ -796,7 +859,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA7_data.long_name = "Atlantic Ocean mask"
 
        # OFA7 oceans masks
-      OFA7_data = ncfile.createVariable('OFA07_pacific',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA7_data = ncfile.createVariable('OFA07_pacific',dtype('float64').char,dims,fill_value=fill_value)
       OFA7_data[:] = pacific_ocean_fdata
       OFA7_data.units ='count'
       OFA7_data.missing_value = missing_value
@@ -808,7 +871,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA7_data.long_name = "Pacific Ocean mask"
 
        # OFA7 oceans masks
-      OFA7_data = ncfile.createVariable('OFA07_southern',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA7_data = ncfile.createVariable('OFA07_southern',dtype('float64').char,dims,fill_value=fill_value)
       OFA7_data[:] = southern_ocean_fdata
       OFA7_data.units ='count'
       OFA7_data.missing_value = missing_value
@@ -820,7 +883,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA7_data.long_name = "Southern Ocean mask"
 
        # OFA7 oceans masks
-      OFA7_data = ncfile.createVariable('OFA07_indian',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA7_data = ncfile.createVariable('OFA07_indian',dtype('float64').char,dims,fill_value=fill_value)
       OFA7_data[:] = indian_ocean_fdata
       OFA7_data.units ='count'
       OFA7_data.missing_value = missing_value
@@ -832,7 +895,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA7_data.long_name = "Indian Ocean mask"
 
       # OFA10 remote sensing reflectance
-      OFA10_data = ncfile.createVariable('OFA10',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA10_data = ncfile.createVariable('OFA10',dtype('float64').char,dims,fill_value=fill_value)
       OFA10_data[:] = susp_particles_fdata
       OFA10_data.units ='sr-1'
       OFA10_data.missing_value = missing_value
@@ -844,7 +907,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
       OFA10_data.long_name = "Ratio of water leaving radiance to downwelling irradiance"
 
       # OFA12 chlorophyll-a
-      OFA12_data = ncfile.createVariable('OFA12',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+      OFA12_data = ncfile.createVariable('OFA12',dtype('float64').char,dims,fill_value=fill_value)
       OFA12_data[:] = bio_fdata
       OFA12_data.units ='mg m-3'
       OFA12_data.missing_value = missing_value
@@ -856,7 +919,7 @@ def write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata,
 
     # this process indicator layer is always written out as its part of the internal quality checks
    # OFA11 remote sensing reflectance
-   OFA11_data = ncfile.createVariable('OFA11',dtype('float64').char,('time','y','x'),fill_value=fill_value)
+   OFA11_data = ncfile.createVariable('OFA11',dtype('float64').char,dims,fill_value=fill_value)
    OFA11_data[:] = failed_quality_fdata
    OFA11_data.units ='count'
    OFA11_data.missing_value = missing_value
@@ -1068,7 +1131,7 @@ def schmidt(sstC_fdata, nx, ny,gas):
    if 'o2' in gas.lower():
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):
-             sc_fdata[i] = 2073.1 - (135.6 * sstC_fdata[i]) + (5.2122 * (sstC_fdata[i] * sstC_fdata[i])) - (0.10939 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i])) + (0.00093777 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
+             sc_fdata[i] = 1953.4 - (128.0 * sstC_fdata[i]) + (3.9918 * (sstC_fdata[i] * sstC_fdata[i])) - (0.050091 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i])) + (0.00093777 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -1076,7 +1139,7 @@ def schmidt(sstC_fdata, nx, ny,gas):
    if 'n2o' in gas.lower():
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):            
-             sc_fdata[i] = 2301.1 - (151.1 * sstC_fdata[i]) + (4.736 * (sstC_fdata[i] * sstC_fdata[i])) - (0.059431 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-N2O
+             sc_fdata[i] = 2301.1 - (151.1 * sstC_fdata[i]) + (4.7364 * (sstC_fdata[i] * sstC_fdata[i])) - (0.059431 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-N2O
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -1084,7 +1147,7 @@ def schmidt(sstC_fdata, nx, ny,gas):
    if 'ch4' in gas.lower():
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):
-              sc_fdata[i] = 2039.2 - (120.51 * sstC_fdata[i]) + (3.4209 * (sstC_fdata[i] * sstC_fdata[i])) - (0.040437 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-CH4
+              sc_fdata[i] = 2039.2 - (120.31 * sstC_fdata[i]) + (3.4209 * (sstC_fdata[i] * sstC_fdata[i])) - (0.040437 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-CH4
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -1092,7 +1155,7 @@ def schmidt(sstC_fdata, nx, ny,gas):
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):
               # relationship is only valid for temperatures <=30.0 oC
-              sc_fdata[i] = 1920.4 - (125.62 * sstC_fdata[i]) + (3.6276 * (sstC_fdata[i] * sstC_fdata[i])) - (0.043219 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-CO2
+              sc_fdata[i] = 2073.1 - (125.62 * sstC_fdata[i]) + (3.6276 * (sstC_fdata[i] * sstC_fdata[i])) - (0.043219 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-CO2
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -1324,7 +1387,6 @@ except:
    print "\n%s windu10-netcdf inputfile %s does not exist" % (function, windu10_infile)
    sys.exit(1)
 
- # pco2
 try:
    os.stat(pco2_infile)
 except:
@@ -1527,12 +1589,15 @@ with Dataset(sstskin_infile,'r') as data:
       print "\n%s data variable 'lat' or 'lon' missing from sstskin-netcdf input (%s)" % (function, sstskin_infile)
       sys.exit(1)
    if len(latitude_data.shape)<2:#IGA If long and lat are vectors
-      if len(data_lat.shape)<2 and data_lat[0]<0:#IGA - it is a vector that is in opposite orientation to 'taka'
+      if latitude_data[0]<0:#IGA - it is a vector that is in opposite orientation to 'taka'
          latitude_data = flipud(latitude_data) # IFREMER latitude data goes from +ve to -ve, hence flip
 
       latitude_grid = meshgrid(ones((len(longitude_data))),latitude_data)[1]#IGA - gridding vectored geo data so that they can be treated the sam way as non-regular grids
       longitude_grid = meshgrid(longitude_data,ones((len(latitude_data))))[1]#IGA
-         
+   else:
+      latitude_grid = latitude_data#IGA - geo data are already a grid
+      longitude_grid = longitude_data#IGA
+
    try:
       time_data = data.variables['time'][:]
    except:
@@ -1541,7 +1606,6 @@ with Dataset(sstskin_infile,'r') as data:
 
 
  # open salinity dataset
- #IGA process to flip data should be made more generic if other salinity sources may be considered
 with Dataset(salinity_infile,'r') as data:
    try:
       sal = data.variables[salinity_prod]
@@ -1553,7 +1617,6 @@ with Dataset(salinity_infile,'r') as data:
 #         sal_data = flipud(sal_data)
          sal_ny, sal_nx = sal_data.shape 
       elif salinity_data_selection == 0:
-         print '\nSalinity shape >>>',sal.shape,'\n'
          sal_n, sal_ny, sal_nx = sal.shape      
          sal_data = sal[0,:,:]
       else:
@@ -1570,10 +1633,11 @@ with Dataset(pco2_infile,'r') as data:
       vco2_air = data.variables[vco2_prod]
       pco2_n, pco2_ny, pco2_nx = vco2_air.shape
       vco2_air_data = vco2_air[0,:,:]
+
       vco2_air_data,flipped = flip_data(data,vco2_air_data)#If necessary - data will be flipped using flipud
 
    except:
-      try:#IGA added to retrieve vco2 data from salinity infile - purpose unknown do not include immedately
+      try:#IGA added to retrieve vco2 data from salinity infile if it does not exist in suggested location
         with Dataset(salinity_infile,'r') as data2:
             vco2_air = data2.variables[vco2_prod]
             pco2_n, pco2_ny, pco2_nx = vco2_air.shape
@@ -1585,7 +1649,6 @@ with Dataset(pco2_infile,'r') as data:
           print "\n%s data variable %s missing from pco2-netcdf (%s) and salinity-netcdf input (%s)" % (function, vco2_prod, pco2_infile, salinity_infile)
           sys.exit(1)
 
-
    try:
       pco2_sw = data.variables[pco2_prod]
       pco2_sw_data = pco2_sw[0,:,:]
@@ -1593,8 +1656,13 @@ with Dataset(pco2_infile,'r') as data:
       #print "\n\npco2_data_selection %s (%s)\n\n" % (pco2_data_selection, pco2_prod) 
       if pco2_data_selection != 0:
          m = re.match(r"(\w+\d?\_)\w+$", pco2_prod)
-         pco2_sw_stddev_prod = m.group(1) + 'std'
-         pco2_sw_stddev_data = data.variables[pco2_sw_stddev_prod][0,:,:]
+         try: 
+             pco2_sw_stddev_prod = m.group(0) + '_std'
+             pco2_sw_stddev_data = data.variables[pco2_sw_stddev_prod][0,:,:]
+         except(KeyError): 
+             pco2_sw_stddev_prod = m.group(1) + 'std'#IGA changed m.group(1) to m.group(0) as _mean not always present in these in-situ data
+             pco2_sw_stddev_data = data.variables[pco2_sw_stddev_prod][0,:,:]
+
          if flipped:       
             pco2_sw_stddev_data = flipud(pco2_sw_stddev_data)
             pco2_sw_data = flipud(pco2_sw_data)
@@ -1602,7 +1670,7 @@ with Dataset(pco2_infile,'r') as data:
          pco2_air = data.variables['pCO2_air']
          pco2_air_data = pco2_air[0,:,:]
    except:
-      print "\n%s data variable %s or _std variant missing from pco2-netcdf input (%s) (pco2_data_selection %s)" % (function, pco2_prod, pco2_infile, pco2_data_selection)
+      print "\n%s data variable %s or _std variant, %s missing from pco2-netcdf input (%s) (pco2_data_selection %s)" % (function, pco2_prod, pco2_sw_stddev_prod, pco2_infile, pco2_data_selection)
       sys.exit(1)
 
    try:
@@ -1751,14 +1819,15 @@ if use_sstfnd == 1:
           # passing sstfnd_prod from command line
          sstfndK = data.variables[sstfnd_prod]
          sstfndK_n, sstfndK_ny, sstfndK_nx = sstfndK.shape
-         sstfndK_data =  sstfndK[0,:,:]+273.15#IGA - Ostia data are not in Kelvin NOTE THIS IS UNIQUE TO ONE DATASET AND MAY CAUSE PROBLEMS
+         sstfndK_data =  sstfndK[0,:,:]
+         if mean(sstfndK_data)<200:#IGA-added if to check whether data are celsius or Kelvin
+           sstfndK_data =  sstfndK_data+273.15
+
          sstfndK_data,flipped = flip_data(data,sstfndK_data)#If necessary - data will be flipped using flipud
          try:
              sstfndK_fill_value = sstfndK._FillValue 
          except:
-             #sstfndK_fill_value = 9969209968386869000000000000000000000.0#IGA - OK for OSTIA, needs checking for other data sources
              sstfndK_fill_value = sstfndK_data[:].fill_value#IGA_fill_value
-             #sstfndk_fill_value = -999#IGA
 
           # assumes windu10_prod ends in something like '_mean'
           # so need to load '_coun't and '_stddev' fields as well which are assumed to exist
@@ -1908,13 +1977,17 @@ with Dataset(rain_infile,'r') as data:
  # open ice dataset 
 with Dataset(ice_infile,'r') as data:
    try:
-      ice = data.variables[ice_prod]   
-      ice_n, ice_ny, ice_nx = ice.shape
-      ice_data = ice[0,:,:]
+      ice = data.variables[ice_prod]
+      try: 
+        ice_n, ice_ny, ice_nx = ice.shape
+        ice_data = ice[0,:,:]
+      except: #IGA Update - supports CERSAT ice data which does not have a time dimension
+        ice_ny, ice_nx = ice.shape
+        ice_data = ice[:]
       ice_data,flipped = flip_data(data,ice_data)#If necessary - data will be flipped using flipud
       ice_fill_value = ice._FillValue     
    except:
-      print "\n%s data variable '%s' is missing from ice-netcdf input (%s)" % (function, ice_prod)
+      print "\n%s data variable '%s' is missing from ice-netcdf input (%s)" % (function, ice_prod, ice_infile)
       sys.exit(1)
 
 
@@ -1945,21 +2018,16 @@ elif (pco2_data_selection == 3): # signifies that in situ data are being used
 else:
    pco2_increment = 0.0
 
-
-
  # all data dimensions need to be the same
 nx = sstskinK_nx
 ny = sstskinK_ny
-print nx,ny
+
  # checking dimensions of all datasets are identical
 check_dimensions(windu10_nx, windu10_ny, "windu10", nx, ny)
 check_dimensions(pco2_nx, pco2_ny, "pco2", nx, ny)
 check_dimensions(sigma0_nx, sigma0_ny, "sigma0", nx, ny)
 check_dimensions(sig_wv_ht_nx, sig_wv_ht_ny, "sig_wv_ht", nx, ny)
-#check_dimensions(rain_nx, rain_ny, "rain", nx, ny)#IGA altering to allow arctic grid for rain (only allowed if parameter not used)
-if rain_ny != ny:#IGA
-    print 'Rain data incorrect shape - assuming it is not used and replacing with zeros'
-    rain_data = zeros((nx, ny))
+check_dimensions(rain_nx, rain_ny, "rain", nx, ny)
 
 if use_sstfnd == 1:
     check_dimensions(sstfndK_nx, sstfndK_ny, "sstfndK", nx, ny)
@@ -2014,7 +2082,8 @@ if TAKAHASHI_DRIVER == True:
 
 if TAKAHASHI_DRIVER == True:
    pco2_air_fdata = ravel(pco2_air_data)
-
+else: 
+   pco2_air_fdata = array([missing_value] * nx*ny)
 
 sigma0_fdata = ravel(sigma0_data)
 
@@ -2025,9 +2094,6 @@ sig_wv_ht_stddev_fdata = ravel(sig_wv_ht_stddev_data)
 rain_fdata = ravel(rain_data)
 sal_fdata = ravel(sal_data)
 ice_fdata = ravel(ice_data)
-if ice_fdata.shape != sstskinK_fdata.shape:#IGA
-  N_ice_missing = sstskinK_fdata.shape[0]-ice_fdata.shape[0]
-  ice_fdata = pad(ice_fdata,(0,N_ice_missing),'constant',constant_values=(0,0))
 
 vco2_air_fdata = ravel(vco2_air_data)
 pres_fdata = ravel(pres_data)
@@ -2075,6 +2141,7 @@ salskin_fdata = array([missing_value] * nx*ny)
 
   # ensuring salinity data have a missing_value entry.
   # as smos salinity data doesn't have a missing_value or _FillValue entry !?
+
 for i in arange(nx * ny):
    if (sal_fdata[i] >= 0.0) and (sal_fdata[i] <= 50.0):
       sal_fdata[i] = sal_fdata[i]
@@ -2083,9 +2150,6 @@ for i in arange(nx * ny):
    else:
       sal_fdata[i] = missing_value
       salskin_fdata[i] = missing_value
-
-
-
 
  # conversion of missing values to standard value, rather than variations that seem to exist in some of these data
 for i in arange(nx * ny):
@@ -2286,10 +2350,9 @@ if (pco2_data_selection != 0 and VERIFICATION_RUNS != True):
    #print "%s Using the SOCAT data " % (function)
    #if sstpco2_fdata[i] != missing_value:
    for i in arange(nx * ny):
-      if (isnan(sstpco2_fdata[i]) != True and sstpco2_fdata[i] > 0.0 ): # the missing values should really be set to missing_value, but they are NaNs in the SOCAT data (this is incorrect)
-          # SOCAT SSTs are at SSTsub-skin and are in Kelvin, wheras we need them in oC
-         sstpco2_fdata[i] = sstpco2_fdata[i] - 273.15
-         #print "%s Correcting SOCAT CO2SST data to centrigrade (before %lf, after %lf, grid:%d" % (function, sstpco2_fdata[i] + 273.15, sstpco2_fdata[i], i)
+      if (isnan(sstpco2_fdata[i]) != True and sstpco2_fdata[i] > 0.0 ): 
+         if sstpco2_fdata[i] > 260:
+           sstpco2_fdata[i] = sstpco2_fdata[i] - 273.15#IGA - If statement added because in-situ SST data may not be in K!
       
          if sstpco2_fdata[i] > 30.5 or sstpco2_fdata[i] < -1.8:
             sstpco2_fdata[i] != missing_value
@@ -2383,7 +2446,6 @@ else:
    pco2_increment_air = pco2_increment
    print "%s year: %d fCO2/pCO2_increment_air: %lf (uatm)" % (function, year, pco2_increment_air)
 
-
 for i in arange(nx * ny):
    # if pco2_sw_fdata[i] != missing_value:
    #    print 'salskin_fdata[i],sstskinK_fdata[i],pres_fdata[i],vco2_air_fdata[i],sstfndK_fdata[i],sstpco2_fdata[i],pco2_sw_fdata[i],sstskinK_fdata[i]',salskin_fdata[i],sstskinK_fdata[i],pres_fdata[i],vco2_air_fdata[i],sstfndK_fdata[i],sstpco2_fdata[i],pco2_sw_fdata[i],sstskinK_fdata[i]
@@ -2425,7 +2487,7 @@ for i in arange(nx * ny):
        # vco2 in ppm * 1000000 = atm
        # result /1000 to then convert from atm to uatm
        # hence * 0.001 factor
-      if GAS == 'CO2':
+      if GAS == 'CO2' and ATMGAS == 'V':
           pco2_air_cor_fdata[i] = (vco2_air_fdata[i] * 1e-6 * (pres_fdata[i] - pH2O_fdata[i]) / (1e-6 * 1013.25)) + (pco2_increment_air)
       else:
           pco2_air_cor_fdata[i] = vco2_air_fdata[i]
@@ -2445,7 +2507,6 @@ for i in arange(nx * ny):
       
        #>>> V=373.769989/1e6
        #>>> pco2a = 374.220001*1e-6*1013.25
-
 
       if TAKAHASHI_DRIVER:           
          if pco2_air_fdata[i] != missing_value:
@@ -2472,9 +2533,6 @@ for i in arange(nx * ny):
       pH2O_fdata[i] = missing_value
       pco2_air_cor_fdata[i] = missing_value
       pco2_sw_cor_fdata[i] = missing_value
-
-if if GAS == 'CO2': 
-    print 'Input data has not been corrected as it is not CO2'
 
  # gas transfer velocity k parameterisation choice
 k_fdata = array([missing_value] * nx * ny)
@@ -2849,8 +2907,7 @@ for i in arange(nx * ny):
        # using simplified flux calculation with no separation of temperature between airside and waterside CO2
        # assumes that the skin temperature dataset is the only temperature dataset
       if flux_model == 3:         
-         FH06_fdata[i] = (k_fdata[i] * k_factor) * solskin_fdata[i] * (pco2_sw_cor_fdata[i] - pco2_air_cor_fdata[i])
-         
+         FH06_fdata[i] = (k_fdata[i] * k_factor) * conc_factor * solskin_fdata[i] * (pco2_sw_cor_fdata[i] - pco2_air_cor_fdata[i])#IGA added conc_factor
           # using Rik W's equation 6 from his new paper
          #FH06_fdata[i] = (7.7e-4*(12.0108/365.0)) * windu10_moment2_fdata[i] * (pco2_sw_cor_fdata[i] - pco2_air_cor_fdata[i])
       
@@ -2875,7 +2932,19 @@ for i in arange(nx * ny):
       concw_fdata[i] = missing_value
       conca_fdata[i] = missing_value
       FKo07_fdata[i] = missing_value
-
+      
+#Adding verification data outputs at same units as T09
+if TAKAHASHI_DRIVER == True:
+  solskin_takadata = array([missing_value] * nx * ny)
+  FH06_takadata = array([missing_value] * nx * ny)
+  for i in arange(nx * ny):
+   if solskin_fdata[i] != missing_value:
+      solskin_takadata[i] = solskin_fdata[i]*1000 #from 'mol kg-1 atm-1' to 'mmol kg-1 atm-1'
+   if FH06_fdata[i] != missing_value:
+      FH06_takadata[i] = FH06_fdata[i]/30.5 #from flux per day to flux per month
+else:
+  solskin_takadata = array([missing_value] * nx * ny)
+  FH06_takadata = array([missing_value] * nx * ny)
   #
   # quality control of datasets, following TS (OceanFluxGHG_TS_D2-9_v1.8-signed.pdf) table 7
   #
@@ -3109,7 +3178,9 @@ dpconc_cor_fdata.shape = (nx, ny)
 pco2_air_cor_fdata.shape = (nx, ny)
 pco2_sw_cor_fdata.shape = (nx, ny)
 vco2_air_fdata.shape = (nx, ny)
-
+pco2_air_fdata.shape = (nx, ny)
+solskin_takadata.shape = (nx, ny)
+FH06_takadata.shape = (nx, ny)
 pco2_sw_fdata.shape = (nx, ny)
 pco2_sw_stddev_fdata.shape = (nx, ny)
 
@@ -3149,9 +3220,8 @@ failed_quality_fdata.shape = (nx, ny)
 
  # ice data
 ice_fdata.shape = (nx, ny)
-
  # write out the final ouput to netcdf
-write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata, windu10_fdata, windu10_stddev_fdata, windu10_count_fdata, sig_wv_ht_fdata, sig_wv_ht_stddev_fdata, sig_wv_ht_count_fdata, sstskinC_fdata, sstskinK_stddev_fdata, sstskinK_count_fdata, sstfndC_fdata, sstfndK_stddev_fdata, sstfndK_count_fdata, pco2_air_cor_fdata, pco2_sw_cor_fdata, vco2_air_fdata, pco2_sw_fdata, sal_fdata, pres_fdata, conca_fdata, concw_fdata, rain_fdata, scskin_fdata, krain_fdata, whitecap_fdata, dpco2_cor_fdata, dpconc_cor_fdata, solskin_fdata, solfnd_fdata, solskinDistilWater_fdata, dpCO2_diff_fdata, pCO2a_diff_fdata, pH2O_fdata, pH2O_takahashi_fdata, humidity_fdata, pH2O_diff_fdata, ice_fdata, lowwind_fdata, diurnalw_fdata, bioclass_fdata, bio_fdata, atlantic_ocean_fdata, pacific_ocean_fdata, southern_ocean_fdata, indian_ocean_fdata, longhurst_fdata, susp_particles_fdata, sstgrad_fdata_avg, failed_quality_fdata, k_standard_name, k_long_name, kb_standard_name, kb_long_name, kd_standard_name, kd_long_name)
+write_netcdf(FH06_fdata, FKo07_fdata, k_fdata, kt_fdata, kd_fdata, kb_fdata, windu10_fdata, windu10_stddev_fdata, windu10_count_fdata, sig_wv_ht_fdata, sig_wv_ht_stddev_fdata, sig_wv_ht_count_fdata, sstskinC_fdata, sstskinK_stddev_fdata, sstskinK_count_fdata, sstfndC_fdata, sstfndK_stddev_fdata, sstfndK_count_fdata, pco2_air_cor_fdata, pco2_sw_cor_fdata, vco2_air_fdata, pco2_sw_fdata, sal_fdata, pres_fdata, conca_fdata, concw_fdata, rain_fdata, scskin_fdata, krain_fdata, whitecap_fdata, dpco2_cor_fdata, dpconc_cor_fdata, solskin_fdata, solfnd_fdata, solskinDistilWater_fdata, dpCO2_diff_fdata, pCO2a_diff_fdata, pH2O_fdata, pH2O_takahashi_fdata, humidity_fdata, pH2O_diff_fdata, solskin_takadata, FH06_takadata, ice_fdata, lowwind_fdata, diurnalw_fdata, bioclass_fdata, bio_fdata, atlantic_ocean_fdata, pacific_ocean_fdata, southern_ocean_fdata, indian_ocean_fdata, longhurst_fdata, susp_particles_fdata, sstgrad_fdata_avg, failed_quality_fdata, k_standard_name, k_long_name, kb_standard_name, kb_long_name, kd_standard_name, kd_long_name, pco2_air_fdata)
 
 
 print "%s SUCCESS writing file %s" % (function, outfile)

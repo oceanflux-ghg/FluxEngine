@@ -453,7 +453,7 @@ $SSTFND = $home_dir."/".$SSTFND;
 $SIGMA0 = $home_dir."/".$SIGMA0;
 $SIG_WV_HT = $home_dir."/".$SIG_WV_HT;
 $PRESSURE = $home_dir."/".$PRESSURE;
-#$ICE = $home_dir."/".$ICE;
+$ICE = $home_dir."/".$ICE;
 
 
 
@@ -802,7 +802,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
     
        # create input filenames
        # year specific datasets
-      my $windu10_file = $WINDU10."/".$year."/".$year.sprintf("%02d", $i)."_OCF-WSP-???-1M-*-*.nc";
+      my $windu10_file = $WINDU10."/".$year."/".$year.sprintf("%02d", $i)."*OCF-WSP-???-1M-*-*.nc";
       my @file_glob = glob("$windu10_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob - arctic or global - ($windu10_file), exiting.";
@@ -811,7 +811,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       }
       
       
-      my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."_???-ICE-???-1M-*-*.nc";#IGA changed to accomodate CERSAT (which is stored on Pathfinders data repository and therefore OCF is changed to POA)
+      my $ice_file = $ICE."/".$year."/".$year.sprintf("%02d", $i)."*???-ICE-???-1M-*-*.nc";#IGA changed to accomodate CERSAT (which is stored on Pathfinders data repository and therefore OCF is changed to POA)
       @file_glob = glob("$ice_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($ice_file), exiting.";
@@ -819,7 +819,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $ice_file = $file_glob[0];
       }
       
-      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SST-???-1M-*-*.nc";
+      my $sstskin_file = $SSTSKIN."/".$year."/".$year.sprintf("%02d", $i)."*OCF-SST-???-1M-*-*.nc";
       @file_glob = glob("$sstskin_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($sstskin_file), exiting.";
@@ -840,7 +840,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       
       my $sstfnd_file;
       if ($use_sstfnd == 1){
-         $sstfnd_file = $SSTFND."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SST-???-1M-*-*.nc";
+         $sstfnd_file = $SSTFND."/".$year."/".$year.sprintf("%02d", $i)."*OCF-SST-???-1M-*-*.nc";
          @file_glob = glob("$sstfnd_file");
          if (scalar(@file_glob) != 1){
             die "($prog, $func) More than one file or no file found in glob ($sstfnd_file), exiting.";
@@ -851,7 +851,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $sstfnd_file = $sstskin_file;
       }
       
-      my $sigma0_file = $SIGMA0."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SI0-???-1M-*-*.nc";
+      my $sigma0_file = $SIGMA0."/".$year."/".$year.sprintf("%02d", $i)."*OCF-SI0-???-1M-*-*.nc";
       @file_glob = glob("$sigma0_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($sigma0_file), exiting.";
@@ -859,7 +859,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $sigma0_file = $file_glob[0];
       }
       
-      my $sig_wv_ht_file = $SIG_WV_HT."/".$year."/".$year.sprintf("%02d", $i)."_OCF-SSH-???-1M-*-*.nc";
+      my $sig_wv_ht_file = $SIG_WV_HT."/".$year."/".$year.sprintf("%02d", $i)."*OCF-SSH-???-1M-*-*.nc";
       @file_glob = glob("$sig_wv_ht_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($sig_wv_ht_file), exiting.";
@@ -867,7 +867,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          $sig_wv_ht_file = $file_glob[0];
       }
              
-      # my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-PRE-???-1M-*-*.nc";
+      # my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."*OCF-PRE-???-1M-*-*.nc";
       # @file_glob = glob("$pressure_file");
       # if (scalar(@file_glob) != 1){
       #    my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."01_OCF-PRE-???-1M-*-*.nc";#NCEP data has a 01 after the month 
@@ -880,7 +880,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
       # } else {
       #    $pressure_file = $file_glob[0]; 
       # }
-      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."_OCF-PRE-???-1M-*-*.nc";
+      my $pressure_file = $PRESSURE."/".$year."/".$year.sprintf("%02d", $i)."*OCF-PRE-???-1M-*-*.nc";
       @file_glob = glob("$pressure_file");
       if (scalar(@file_glob) != 1){
          die "($prog, $func) More than one file or no file found in glob ($pressure_file), exiting.";
@@ -903,7 +903,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          }   
       } elsif ($SALINITY_DATA_SELECTION eq "smos"){
          $salinity_data_selection = 1;
-         $salinity_file = $SALINITY."/".$year."/".$year.sprintf("%02d", $i)."_POA-SSS-???-1M-*-MIRAS-SMOS.nc";
+         $salinity_file = $SALINITY."/".$year."/".$year.sprintf("%02d", $i)."*POA-SSS-???-1M-*-MIRAS-SMOS.nc";
          @file_glob = glob("$salinity_file");
          if (scalar(@file_glob) != 1){
             die "($prog, $func) More than one file or no file found in glob ($salinity_file), exiting.";
@@ -933,7 +933,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
          }
       } elsif ($RAIN_DATA_SELECTION eq "trmm"){
          $rain_data_selection = 0;
-    $rain_file = $RAIN."/".$year."/".$year.sprintf("%02d", $i)."_OCF-RAI-???-1M-*-*.nc";
+    $rain_file = $RAIN."/".$year."/".$year.sprintf("%02d", $i)."*OCF-RAI-???-1M-*-*.nc";
          @file_glob = glob("$rain_file");
          if (scalar(@file_glob) != 1){
             die "($prog, $func) More than one file or no file found in glob ($rain_file), exiting.";
@@ -964,7 +964,7 @@ for (my $y=$year_start; $y<=$year_end; $y++){
           # SOCAT data
           # note SOCAT data are currently in a user space, so the next line is commented out
           #$PCO2 = $home_dir."/".$PCO2;
-         $pco2_file = $PCO2."/*".sprintf("%02d", $i)."_OCF-CO2-???-1M-*-*.nc";
+         $pco2_file = $PCO2."/*".sprintf("%02d", $i)."*OCF-CO2-???-1M-*-*.nc";
          @file_glob = glob("$pco2_file");
          if (scalar(@file_glob) != 1){
             die "($prog, $func) More than one file or no file found in glob ($pco2_file), exiting.";

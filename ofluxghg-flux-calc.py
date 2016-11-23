@@ -2210,15 +2210,28 @@ if sst_gradients == 0 and use_sstskin == 0 and use_sstfnd == 1:
       else:
          sstskinK_fdata[i] = missing_value
 
+#IGA added for the case where only foundation is provided and gradients are on------------------------------
+elif sst_gradients == 1 and use_sstskin == 0 and use_sstfnd == 1:
+   print "%s SUsing SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - 0.14)(ignoring SSTskin data in configuration file)." % (function)
+    #  actually copy sstfnd data into the sstskin dataset to make sure
+   for i in arange(nx * ny):
+      if sstfndK_fdata[i] != missing_value:
+         sstskinK_fdata[i] = sstfndK_fdata[i]-cool_skin_difference
+         #sstskinC_fdata[i] = sstfndC_fdata[i]-cool_skin_difference #IGA_temp changed as sstskinC has not yet been defined
+         sstskinK_stddev_fdata[i] =  sstfndK_stddev_fdata[i]
+         sstskinK_count_fdata[i] = sstfndK_count_fdata[i]
+      else:
+         sstskinK_fdata[i] = missing_value
+#IGA added for the case where only foundation is provided and gradients are on------------------------------
+
 elif sst_gradients == 0 and use_sstskin == 1 and use_sstfnd == 0:
    print "%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + 0.14) for flux calculation (ignoring SSTfnd data in configuration file)." % (function)
     #setting sstfnd_ data fields to skin values   
    for i in arange(nx * ny):
       if sstskinK_fdata[i] != missing_value:
-         sstskinK_fdata[i] = sstskinK_fdata[i] + cool_skin_difference
-         sstskinC_fdata[i] = sstskinC_fdata[i] + cool_skin_difference    
          sstfndK_fdata[i] = sstskinK_fdata[i] + cool_skin_difference
-         sstfndC_fdata[i] = sstskinC_fdata[i] + cool_skin_difference
+         sstskinK_fdata[i] = sstskinK_fdata[i] + cool_skin_difference
+         #sstfndC_fdata[i] = sstskinC_fdata[i] + cool_skin_difference     #IGA_temp changed as sstskinC has not yet been defined
          sstfndK_stddev_fdata[i] =  sstskinK_stddev_fdata[i]
          sstfndK_count_fdata[i] = sstskinK_count_fdata[i]
       else:
@@ -2240,7 +2253,6 @@ elif sst_gradients == 1 and use_sstskin == 1 and use_sstfnd == 1:
 else:
    print "\n%s sst_gradients (%d), use_sstskin (%d) and use_sstfnd (%d) combination in configuration not recognised, exitiing." % (function, sst_gradients, use_sstskin, use_sstfnd)
    sys.exit(1)
-
 
  # quality filtering and conversion of SST datasets
 if TAKAHASHI_DRIVER != True:

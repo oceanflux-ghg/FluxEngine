@@ -42,7 +42,6 @@ fill_value = -999.0
 missing_value_int = -999
 fill_value_int = -999
 
-
  # valid data ranges for testing output products and flagging violations
  # orignally set in TS, some have been modified based on the actual input datasets
  # these are used in the NetCDF metadata and to check the valid data ranges to create the
@@ -1559,11 +1558,10 @@ with Dataset(sstskin_infile,'r') as data:
     try:
       sstskinK_fill_value = sstskinK._FillValue  
     except:
-      #sstskinK_fill_value = sstskinK_data.max()#IGA
-      sstskinK_fill_value = sstskinK[:].fill_value#IGA_fill_value
+      sstskinK_fill_value = missing_value
     
      # assumes sstskin_prod ends in something like '_mean'
-     # so need to load '_coun't and '_stddev' fields as well which are assumed to exist
+     # so need to load '_count and '_stddev' fields as well which are assumed to exist
     if TAKAHASHI_DRIVER != True:
        m = re.match(r"(\w+\_)\w+", sstskin_prod)
        sstskinK_stddev_prod = m.group(1) + 'stddev'
@@ -1604,25 +1602,13 @@ with Dataset(sstskin_infile,'r') as data:
       print "\n%s data variable 'time' missing from sstskin-netcdf input (%s)" % (function, sstskin_infile)
       sys.exit(1)
 
-
  # open salinity dataset
 with Dataset(salinity_infile,'r') as data:
    try:
       sal = data.variables[salinity_prod]
-      if salinity_data_selection == 1:# SMOS chosen - latitude opposite to taka so needs flipping)
-         # sal_ny, sal_nx = sal.shape      
-         # sal_data = sal[:,:]
-         sal_data = sal[0,:,:]#IGA
-         sal_data,flipped = flip_data(data,sal_data)#If necessary - data will be flipped using flipud
-#         sal_data = flipud(sal_data)
-         sal_ny, sal_nx = sal_data.shape 
-      elif salinity_data_selection == 0:
-         sal_n, sal_ny, sal_nx = sal.shape      
-         sal_data = sal[0,:,:]
-      else:
-         print "\n%s salinity data selection is unrecognised, exiting " % (function)
-         sys.exit(1)
-
+      sal_data = sal[0,:,:]#IGA
+      sal_data,flipped = flip_data(data,sal_data)#If necessary - data will be flipped using flipud #This will error is in-situ data does not have associated latitude/longitude
+      sal_ny, sal_nx = sal_data.shape
    except:
       print "\n%s data variable '%s' missing from sal-netcdf input (%s)" % (function, salinity_prod, salinity_infile)
       sys.exit(1)
@@ -1654,7 +1640,7 @@ with Dataset(pco2_infile,'r') as data:
       pco2_sw_data = pco2_sw[0,:,:]
        # stddev information only exists for SOCAT data
       #print "\n\npco2_data_selection %s (%s)\n\n" % (pco2_data_selection, pco2_prod) 
-      if pco2_data_selection != 0:
+      if pco2_data_selection == 2:
          m = re.match(r"(\w+\d?\_)\w+$", pco2_prod)
          try: 
              pco2_sw_stddev_prod = m.group(0) + '_std'
@@ -1956,7 +1942,10 @@ with Dataset(rain_infile,'r') as data:
          rain_data = rain[:,:,0]
          rain_data = transpose(rain_data)
          rain_data,flipped = flip_data(data,rain_data)#If necessary - data will be flipped using flipud
-         rain_fill_value = rain._FillValue
+         try:
+             rain_fill_value = rain._FillValue
+         except:
+             rain_fill_value = sig_wv_ht_fill_value
      ##Ians additional code to bring in the error data###########
          # print '\n%sIGA adding rain error data'
          # rain_err = data.variables['Error']
@@ -1983,9 +1972,13 @@ with Dataset(ice_infile,'r') as data:
         ice_data = ice[0,:,:]
       except: #IGA Update - supports CERSAT ice data which does not have a time dimension
         ice_ny, ice_nx = ice.shape
-        ice_data = ice[:]
+        ice_data = ice[:].view(ma.MaskedArray)
+        ice_data[ice_data<0]=ma.masked#CERSAT uses -1 for missing value. As it is a fraction/percentage, negative numbers will always be missing values
       ice_data,flipped = flip_data(data,ice_data)#If necessary - data will be flipped using flipud
-      ice_fill_value = ice._FillValue     
+      try:
+          ice_fill_value = ice._FillValue
+      except:
+          ice_fill_value = ice.fill_value
    except:
       print "\n%s data variable '%s' is missing from ice-netcdf input (%s)" % (function, ice_prod, ice_infile)
       sys.exit(1)
@@ -2181,7 +2174,7 @@ for i in arange(nx * ny):
       if (susp_particles_fdata[i] == susp_particles_fill_value):
          susp_particles_fdata[i] = missing_value         
     # rain_fdata 
-   
+
    if ((rain_fdata[i] == rain_fill_value) or (rain_fdata[i] == rain_missing_value)):
       rain_fdata[i] = missing_value
    else: # conversion of data to mm hr^-1 (from mm day^-1)
@@ -2194,7 +2187,7 @@ if TAKAHASHI_DRIVER:
          ice_fdata[i] /= 100.0
 
 
- # interpreting fnd_data option
+  # interpreting fnd_data option
 cool_skin_difference = 0.14 #Relationship and value from Donlon et al., 2002; page 358, first paragraph
 if TAKAHASHI_DRIVER:
    cool_skin_difference = 0.0
@@ -2253,6 +2246,7 @@ elif sst_gradients == 1 and use_sstskin == 1 and use_sstfnd == 1:
 else:
    print "\n%s sst_gradients (%d), use_sstskin (%d) and use_sstfnd (%d) combination in configuration not recognised, exitiing." % (function, sst_gradients, use_sstskin, use_sstfnd)
    sys.exit(1)
+
 
  # quality filtering and conversion of SST datasets
 if TAKAHASHI_DRIVER != True:
@@ -2450,7 +2444,6 @@ b11_fdata = array([missing_value] * nx*ny)
 d12_fdata = array([missing_value] * nx*ny)
 
  # always using XCO2 from 2000 for SOCAT data
- # FOR WORKSHOP - need to get to the bottom of this
 if pco2_data_selection != 0 and pco2_data_selection !=3:#IGA added and to account for in-situ data
    pco2_increment_air = (year - 2000.0) * 1.5
    print "%s year: %d fCO2/pCO2_increment_air: %lf (uatm)" % (function, year, pco2_increment_air)
@@ -2482,7 +2475,7 @@ for i in arange(nx * ny):
        # correction to different years, correction is data and year specific.
        # note for 2010, correction for SOCAT isn't strictly required. However the contents of the exponential will collapse
        # to 1 (with some rounding error expected), so effectively no correction will be applied
-      if GAS == 'CO2':                  
+      if GAS == 'CO2' and pco2_data_selection != 3:
           pco2_sw_cor_fdata[i] = pco2_increment + (pco2_sw_fdata[i] *exp( (0.0423*(sstfndC_fdata[i] - sstpco2_fdata[i])) - (0.0000435*((sstfndC_fdata[i]*sstfndC_fdata[i]) - (sstpco2_fdata[i]*sstpco2_fdata[i]) )) + pCO2_salinity_term) )
       else:
           pco2_sw_cor_fdata[i] = pco2_sw_fdata[i]

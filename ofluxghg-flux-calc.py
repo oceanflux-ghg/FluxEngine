@@ -1575,10 +1575,11 @@ with Dataset(sstskin_infile,'r') as data:
        sstskinK_stddev_data = array([missing_value] * sstskinK_nx*sstskinK_ny)
        sstskinK_count_data = array([missing_value] * sstskinK_nx*sstskinK_ny)
    except:
-    print "\n%s data variable '%s' or '%s' or '%s' is/are missing from sstskin-netcdf input (%s)" % (function, sstskin_prod, sstskinK_stddev_prod, sstskinK_count_prod, sstskin_infile)
+    try:
+     print "\n%s data variable '%s' or '%s' or '%s' is/are missing from sstskin-netcdf input (%s)" % (function, sstskin_prod, sstskinK_stddev_prod, sstskinK_count_prod, sstskin_infile)
+    except:
+     print "\n%s data variable '%s' or '%s' or '%s' is/are missing from sstskin-netcdf input (%s)" % (function, sstskin_prod, 'Std_dev', 'count', sstskin_infile)
     sys.exit(1)
-
-
 
    try:
       latitude_data = data.variables[latitude_prod][:]
@@ -1805,9 +1806,7 @@ if use_sstfnd == 1:
           # passing sstfnd_prod from command line
          sstfndK = data.variables[sstfnd_prod]
          sstfndK_n, sstfndK_ny, sstfndK_nx = sstfndK.shape
-         sstfndK_data =  sstfndK[0,:,:]
-         if mean(sstfndK_data)<200:#IGA-added if to check whether data are celsius or Kelvin
-           sstfndK_data =  sstfndK_data+273.15
+         sstfndK_data =  sstfndK[0,:,:]+273.15
 
          sstfndK_data,flipped = flip_data(data,sstfndK_data)#If necessary - data will be flipped using flipud
          try:
@@ -1938,8 +1937,8 @@ with Dataset(rain_infile,'r') as data:
          rain_missing_value = rain.missing_value
       elif rain_data_selection == 1: # GPCP data are in mm day^-1
          rain = data.variables[rain_prod]
-         rain_nx, rain_ny, rain_n = rain.shape
-         rain_data = rain[:,:,0]
+         rain_n, rain_ny, rain_nx = rain.shape
+         rain_data = rain[0,:,:]
          rain_data = transpose(rain_data)
          rain_data,flipped = flip_data(data,rain_data)#If necessary - data will be flipped using flipud
          try:

@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file contains settings control various aspects of how the flux engine runs and should not be modified unless you're confident that you know what you're doing.
+
+	<DataLayers> define default metadata for each recognised DataLayer (input and output).
+	<ConfigParameters> defines the data types allowed values and metadata for valid configuration files.
+-->
+
+<Settings>
+	<!--DataLayer definitions:
+		Specifies the list of recognised DataLayers and their minBound/maxBound values (and eventually their units)-->
+	<DataLayers>
+		<!--<DataLayer name="windu10" netCDFName="WS1_mean" units="m s-1" minBound="0.0" maxBound="50.0"-->
+		<DataLayer name="windu10" netCDFName="WS1_mean" units="m s-1" minBound="0.0" maxBound="100.0"
+			 standardName="wind_speed"
+			 longName="Wind speed at 10m used for determining k">
+		</DataLayer>
+
+		<DataLayer name="windu10_stddev" netCDFName="WS1_stddev" units="m s-1" minBound="0.0" maxBound="100.0"
+			 standardName="wind_speed_stddev"
+			 longName="Standard deviation of wind speed at 10m used for calculating the mean wind speed">
+		</DataLayer>
+
+		<DataLayer name="windu10_count" netCDFName="WS1_N" units="count" minBound="0" maxBound="100"
+			 standardName="wind_speed_count"
+			 longName="Count of data points of wind speed at 10m used for calculating the mean wind speed">
+		</DataLayer>
+
+		<DataLayer name="sstskin" netCDFName="ST1_Kelvin_mean" units="degreeC" minBound="271.35" maxBound="373.15"
+			 standardName="sea_surface_skin_temperature"
+			 longName="Sea surface skin temperature used for the flux calculations">
+		</DataLayer>
+
+		<DataLayer name="sstskinC" netCDFName="ST1_mean" units="degreeC" minBound="-1.8" maxBound="100.0"
+			 standardName="sea_surface_skin_temperature"
+			 longName="Sea surface skin temperature used for the flux calculations">
+		</DataLayer>
+
+		<DataLayer name="sstskin_stddev" netCDFName="ST1_stddev" units="degreeC" minBound="-1.8" maxBound="100.0"
+			 standardName="sea_surface_skin_temperature_stddev"
+			 longName="Standard deviation of Sea surface skin temperature used to create the mean sea surface skin data">
+		</DataLayer>
+
+		<DataLayer name="sstskin_count" netCDFName="ST1_N" units="count" minBound="0" maxBound="100"
+			 standardName="sea_surface_skin_temperature_count"
+			 longName="Count of data points of Sea surface skin temperature used to create the mean sea surface skin data">
+		</DataLayer>
+
+		<DataLayer name="sstfndC" netCDFName="FT1_mean" units="degreeC" minBound="-1.8" maxBound="100.0"
+			 standardName="sea_surface_foundation_temperature"
+			 longName="foundation SST used for the flux calculations">
+		</DataLayer>
+
+		<DataLayer name="sstfnd_stddev" netCDFName="FT1_stddev" units="degreeC" minBound="0.0" maxBound="100.0"
+			 standardName="sea_surface_foundation_temperature_stddev"
+			 longName="standard deviation of data used to calculate the mean foundation SST">
+		</DataLayer>
+
+		<DataLayer name="sstfnd_count" netCDFName="FT1_N" units="count" minBound="0" maxBound="100"
+			 standardName="sea_surface_foundation_temperature_count"
+			 longName="Count of data points used to create the mean foundation sea surface temperature data">
+		</DataLayer>
+
+		<DataLayer name="sigma0"></DataLayer>
+
+		<!--<DataLayer name="sig_wv_ht" netCDFName="SW1_mean" units="m" minBound="0.0" maxBound="20.0"-->
+		<DataLayer name="sig_wv_ht" netCDFName="SW1_mean" units="m" minBound="0.0" maxBound="100.0"
+			 standardName="sea_surface_wave_significant_height"
+			 longName="Significant wave height data used for determining kb">
+		</DataLayer>
+
+		<DataLayer name="sig_wv_ht_stddev" netCDFName="SW1_stddev" units="m" minBound="0.0" maxBound="100.0"
+			 standardName="sea_surface_wave_significant_height_stddev"
+			 longName="Standard deviation of significant wave height data used to calculate significant wave height">
+		</DataLayer>
+
+		<DataLayer name="sig_wv_ht_count" netCDFName="SW1_N" units="count" minBound="0" maxBound="100"
+			 standardName="sea_surface_wave_significant_height_count"
+			 longName="count of data point of significant wave height data used to calculate significant wave height">
+		</DataLayer>
+
+		<DataLayer name="pressure" netCDFName="air_pressure" units="millibar" minBound="0.0" maxBound="1500.0"
+			standardName="air_pressure"
+			longName="Daily mean sea level air pressure derived from modelled air pressure data">
+		</DataLayer>
+
+		<DataLayer name="ice" netCDFName="P1" units="%" minBound="0.0" maxBound="100.0"
+			standardName="sea_ice_area_fraction"
+			longName="Percentage of sea area covered by ice (fraction if Takahashi driven)">
+		</DataLayer>
+
+		<DataLayer name="rain" netCDFName="R1" units="mm hr-1" minBound="0.0" maxBound="1000.0"
+			standardName="rainfall_rate"
+			longName="Precipitation Estimate from EO and/or satellite/gauge combined data set">
+		</DataLayer>
+
+		<DataLayer name="vco2_air" netCDFName="VCO2" units="micromol mol-1" minBound="0.0" maxBound="500.0"
+			standardName="dry_molecular_fraction_of_carbon_dioxide_in_atmosphere"
+			longName="Concentration of CO2 in dry air in 2010 from NOAA ESLR (or dry molecular fraction of carbon dioxide in the atmosphere)">
+		</DataLayer>
+
+		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm?" minBound="0.0" maxBound="500.0"
+			standardName="partial_pressure_of_CO2_in_air"
+			longName="partial pressure of CO2 in air">
+		</DataLayer>
+
+		<DataLayer name="sstgrad" netCDFName="OFA05" units="count" minBound="0.0" maxBound="100.0"
+			standardName="sea_surface_temperature_gradients"
+			longName="climatology of regions of of strong sst gradients as determined from GHRSST OSTIA data">
+		</DataLayer>
+
+		<DataLayer name="biology" netCDFName="OFA12" units="mg m-3" minBound="0.0" maxBound="100.0"
+			standardName="mass_concentration_of_chlorophyll_a_in_sea_water"
+			longName="mass concentration of chlorphyll-a at the surface from ESA Ocean Colour CCI data">
+		</DataLayer>
+
+		<DataLayer name="suspended_particles" netCDFName="OFA10" units="sr-1" minBound="0.0" maxBound="1.0"
+			standardName="surface_ratio_of_upwelling_radiance_emerging_from_sea_water_to_downwelling_radiative_flux_in_air"
+			longName="Ratio of water leaving radiance to downwelling irradiance">
+		</DataLayer>
+
+		<DataLayer name="atlantic_ocean_mask" netCDFName="OFA07_atlantic" units="count" minBound="0" maxBound="1"
+			standardName="Atlantic Ocean mask"
+			longName="Atlantic Ocean mask">
+		</DataLayer>
+
+		<DataLayer name="pacific_ocean_mask" netCDFName="OFA07_pacific" units="count" minBound="0" maxBound="1"
+			standardName="Pacific Ocean mask"
+			longName="Pacific Ocean mask">
+		</DataLayer>
+
+		<DataLayer name="southern_ocean_mask" netCDFName="OFA07_southern" units="count" minBound="0" maxBound="1"
+			standardName="Southern Ocean mask"
+			longName="Southern Ocean mask">
+		</DataLayer>
+
+		<DataLayer name="indian_ocean_mask" netCDFName="OFA07_indian" units="count" minBound="0" maxBound="1"
+			standardName="Indian Ocean mask"
+			longName="Indian Ocean mask">
+		</DataLayer>
+
+		<DataLayer name="longhurst_mask" netCDFName="OFA06" units="count" minBound="0" maxBound="51"
+			standardName="Longhurst_provinces"
+			longName="Longhurst provinces">
+		</DataLayer>
+
+		<DataLayer name="pco2_sw" netCDFName="SFUG_krig" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="surface_partial_pressure_of_carbon_dioxide_in_sea_water"
+			 longName="pCO2 in sea water from climtology">
+		</DataLayer>
+
+		<DataLayer name="pco2_sst" units="degreeC" minBound="-1.8" maxBound="30.5"></DataLayer>
+
+		<DataLayer name="pco2_sw_stddev" netCDFName="SFUG_stddev" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="surface_partial_pressure_of_carbon_dioxide_in_sea_water"
+			 longName="pCO2 in sea water from climtology">
+		</DataLayer>
+
+		<DataLayer name="pco2_air_cor" netCDFName="OAPC1" units="microatm" minBound="0.0" maxBound="500.0"
+			 standardName="water_surface_partial_pressure_of_carbon_dioxide_in_air"
+			 longName="Water surface partial pressure (pCO2) in air from climtology corrected using modelled sea level pressure">
+		</DataLayer>
+
+		<DataLayer name="pco2_sw_cor" netCDFName="OBPC" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="sub_skin_partial_pressure_of_carbon_dioxide_in_sea_water"
+			 longName="Sub skin partial pressure (pCO2) of carbon dioxide">
+		</DataLayer>
+
+		<DataLayer name="scskin" netCDFName="SC" units="count" minBound="0.0" maxBound="4000.0"
+			 standardName="schmidt_number_at_sea_skin"
+			 longName="Schmidt number calculated using the sea surface skin temperature">
+		</DataLayer>
+
+		<!--<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-0.75" maxBound="0.6"-->
+		<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-1000.0" maxBound="1000.0"
+			 standardName="air_to_sea_carbon_dioxide_flux"
+			 longName="Air-sea CO2 flux using the %s %s gas transfer velocity (k)">
+			 </DataLayer> <!-- Oddly minBoundmaxBound is overwritten in flux engine to -1000+1000 -->
+
+		<DataLayer name="kt" netCDFName="OK1" units="cm h-1" minBound="0.0" maxBound="100.0"
+			 standardName="total_gas_transfer_velocity_of_carbon_dioxide"
+			 longName="OceanFluxGHG total (kd+kb) gas transfer velocity">
+			 </DataLayer>
+
+		<!-- Note the higher maxBound as a temporary fix for netCDF output and check_output ranges being different
+			 in some cases in the older version. This should be specified in the config file
+			 (default should be 100.0). 400 (K2) 24000.0 7650-->
+		<DataLayer name="k" netCDFName="OK3" units="cm h-1" minBound="0.0" maxBound="7650.0"
+			 standardName="choosen_gas_transfer_velocity"
+			 longName="Chosen Gas transfer velocity">
+			 </DataLayer>
+
+		<DataLayer name="kd" netCDFName="OKD" units="cm h-1" minBound="0.0" maxBound="100.0"
+			 standardName="direct_gas_transfer_velocity_of_carbon_dioxide_from_backscatter"
+			 longName="Direct gas transfer velocity">
+		</DataLayer>
+		<DataLayer name="kb" netCDFName="OKB1" units="cm h-1" minBound="0.0" maxBound="100.0"
+			 standardName="bubble_gas_transfer_velocity_of_carbon_dioxide"
+			 longName="Bubble mediated gas transfer velocity">
+			 </DataLayer>
+
+		<DataLayer name="krain" netCDFName="OKR" units="cm h-1" minBound="0.0" maxBound="100.0"
+			 standardName="gas_transfer_at_sea_surface_due_rain"
+			 longName="Gas transfer velocity due to rain from Ho et al Tellus 1997">
+			 </DataLayer>
+
+		<DataLayer name="salinity" netCDFName="OKS1" units="count" minBound="15.0" maxBound="40.0"
+			standardName="sea_water_salinity"
+			longName="salinity in sea water">
+		</DataLayer>
+
+<!--
+		<DataLayer name="sstskinC" netCDFName="OKT1" units="degreeC" minBound="-1.8" maxBound="30.5"
+			standardName="sea_surface_temperature_used_for_gas_transfer_velocity_and_schmidt"
+			longName="sea surface temperature used to calculate the gas transfer velocity and schmidt number">
+		</DataLayer>
+-->
+
+		<DataLayer name="concw" netCDFName="OSFC" units="g m-3" minBound="0.0" maxBound="500.0"
+			standardName="sub_skin_concentration_of_carbon_dioxide_in_sea_water"
+			longName="Sub skin concentration of carbon dioxide in sea water g-C m^-3">
+		</DataLayer>
+
+		<DataLayer name="conca" netCDFName="OIC1" units="g m-3" minBound="0.0" maxBound="400.0"
+			standardName="concentration_of_carbon_dioxide_at_the_sea_air_interface"
+			longName="Concentration of carbon dioxide at the sea water and air interface in g-C m^-3">
+		</DataLayer>
+
+<!--
+		<DataLayer name="concw" netCDFName="OSFC" units="g m-3" minBound="0.095" maxBound="0.27"
+			standardName="sub_skin_concentration_of_carbon_dioxide_in_sea_water"
+			longName="Sub skin concentration of carbon dioxide in sea water g-C m^-3">
+		</DataLayer>
+
+		<DataLayer name="conca" netCDFName="OIC1" units="g m-3" minBound="0.11" maxBound="0.22"
+			standardName="concentration_of_carbon_dioxide_at_the_sea_air_interface"
+			longName="Concentration of carbon dioxide at the sea water and air interface in g-C m^-3">
+		</DataLayer>
+-->
+		<DataLayer name="dpco2_cor" netCDFName="dpCO2" units="mictoatm" minBound="-500.0" maxBound="500.0"
+			standardName="difference_in_water_and_air_partial_pressure_of_carbon_dioxide"
+			longName="Delta pCO2">
+		</DataLayer>
+
+		<DataLayer name="FKo07_fdata" netCDFName="OFWR" units="g C m-2 day-1" minBound="-0.75" maxBound="0.6"
+			 standardName="air_to_sea_carbon_dioxide_flux_due_rain"
+			 longName="Air-sea CO2 flux using the Komori et al. 2007 wet deposition term">
+		</DataLayer>
+
+		<DataLayer name="whitecap" netCDFName="OW1" units="%" minBound="0.0" maxBound="100.0"
+			 standardName="percentage_whitecap" longName="Percentage whitecapping from simple U10 wind parameterisation">
+		</DataLayer>
+
+		<DataLayer name="failed_quality" netCDFName="OFA11" units="count" minBound="0" maxBound="255"
+			standardName="data_values_failed_TS_ranges"
+			longName="Layer of data values that have failed the OceanFluxGHG TS data ranges">
+		</DataLayer>
+
+		<!-- process indicator layer attributes -->
+		<DataLayer name="lowwind" netCDFName="OFA01" units="count" minBound="0" maxBound="1"
+			standardName="Regions_of_low_wind"
+			longName="Regions of low wind determined from the U10 input data">
+		</DataLayer>
+
+		<DataLayer name="diurnalw" netCDFName="OFA03" units="count" minBound="0" maxBound="1"
+			standardName="Regions_of_diurnal_warming"
+			longName="Regions of diurnal warming where sstskin > sstfnd (as determined from the sstskin and sstfnd input data)">
+		</DataLayer>
+
+		<DataLayer name="bioclass" netCDFName="OFA04" units="count" minBound="0" maxBound="3"
+			standardName="Regions of low medium and high biological activity"
+			longName="Regions of low medium and high biological activity">
+		</DataLayer>
+
+		<!-- takahashi outputs-->
+		<DataLayer name="humidity" netCDFName="humidity" units="%" minBound="-1500.0" maxBound="1500.0"
+			standardName="relative_humidity"
+			longName="relative humidity calculated using ratio of PH2O climatology and PH20 sst/salinity relationship">
+		</DataLayer>
+
+		<DataLayer name="pH2O_diff" netCDFName="pH2O_diff" units="%" minBound="-1500.0" maxBound="1500.0"
+			standardName="water_vapour_pressure_difference"
+			longName="pH2O_takahashi minus PH2O calculated">
+		</DataLayer>
+
+		<DataLayer name="pH2O_takahashi" netCDFName="pH2O_takahashi" units="mb" minBound="-1500.0" maxBound="1500.0"
+			standardName="water_vapour_pressure"
+			longName="pH2O_takahashi from climatology">
+		</DataLayer>
+
+		<DataLayer name="pCO2a_diff" netCDFName="pCO2a_diff" units="microatm" minBound="-1500.0" maxBound="1500.0"
+			standardName="difference_pco2a"
+			longName="pco2a calculated from Wiess and Price 1980 minus Takahashi pCO2a">
+		</DataLayer>
+
+		<DataLayer name="dpCO2_diff" netCDFName="dpCO2_diff" units="microatm" minBound="-1500.0" maxBound="1500.0"
+			standardName="difference_dpco2"
+			longName="dpco2 calculated minus Takahashi dpCO2">
+		</DataLayer>
+
+		<DataLayer name="solskin_takadata" netCDFName="taka_skin_solubility" units="mmol kg-1 atm-1" minBound="0.0" maxBound="1.0"
+			standardName="solubility_of_carbon_dioxide_in_seawater_at_the_sea_air_interface"
+			longName="solubility as calculated using the sstskin (ST1) data">
+		</DataLayer>
+
+		<DataLayer name="FH06_takadata" netCDFName="taka_flux" units="g C m-2 mon-1" minBound="0.0" maxBound="1.0"
+			standardName="air_to_sea_carbon_dioxide_flux"
+			longName="Air-sea CO2 flux using the %s %s gas transfer velocity (k)">
+		</DataLayer>
+
+		<!-- debug products -->
+		<DataLayer name="pH2O" netCDFName="PH2O" units="mb" minBound="0.0" maxBound="1500.0"
+			standardName="water_vapour_pressure"
+			longName="water vapour pressure from salinity and SST relationship of Weiss and Price 1980 Marine Chemistry">
+		</DataLayer>
+
+		<DataLayer name="dpconc_cor" netCDFName="Dconc" units="g m-3" minBound="-500.0" maxBound="500.0"
+			standardName="difference_in_mass_boundary_layer_and_interface_concentrations_carbon_dioxide"
+			longName="difference between the interface and mass boundary layer concentrations">
+		</DataLayer>
+
+		<DataLayer name="solubility_skin" netCDFName="skin_solubility" units="mol kg-1 atm-1" minBound="0.0" maxBound="1.0"
+			standardName="solubility_of_carbon_dioxide_in_seawater_at_the_sea_air_interface"
+			longName="solubility as calculated using the sstskin (ST1) data">
+		</DataLayer>
+
+		<DataLayer name="solubility_fnd" netCDFName="fnd_solubility" units="mol kg-1 atm-1" minBound="0.0" maxBound="1.0"
+			standardName="solubility_of_carbon_dioxide_in_seawater_at_depth"
+			longName="solubility as calculated using the sstfnd (FT1) data">
+		</DataLayer>
+
+		<DataLayer name="solubility_distilled" netCDFName="solskinDistilWater" units="p; lg-1 atm-1" minBound="0.0" maxBound="1.0"
+			standardName="solubility_of_carbon_dioxide_in_distilled_water"
+			longName="solubility as calculated using the sstskin (ST1) data in distilled water">
+		</DataLayer>
+
+		<!--Misc. / incomplete?-->
+		<DataLayer name="sstfnd" netCDFName="FT1_Kelvin_mean"></DataLayer>
+		<!--<DataLayer name="scfnd" netCDFName="scfnd"></DataLayer>-->
+		<DataLayer name="pco2_sw_cor" netCDFName="OBPC" minBound="200" maxBound="800"></DataLayer>
+		<DataLayer name="windu10_moment2"></DataLayer>
+		<DataLayer name="windu10_moment3"></DataLayer>
+
+	</DataLayers>
+
+	<!-- Default values and metadata for config file parameters
+		 Valid types: path, multioption, switch (yes/no), float, string, DataLayer-->
+	<ConfigParameters>
+		<Variable name="src_home" required="true" type="path"></Variable>
+		<Variable name="output_dir" required="true" type="path"></Variable>
+		<Variable name="flux_calc" required="true" type="multioption">
+			<Option value="1" str="rapid"></Option>
+			<Option value="2" str="equilibrium"></Option>
+			<Option value="3" str="bulk"></Option>
+		</Variable>
+		<!--<Variable name="lat_grid_size" required="true" type="integer"></Variable>
+		<Variable name="lon_grid_size" required="true" type="integer"></Variable> -->
+
+		<Variable name="sst_gradients" required="true" type="switch"></Variable>
+		<Variable name="use_sstskin" required="true" type="switch"></Variable>
+		<Variable name="use_sstfnd" required="true" type="switch"></Variable>
+
+		<Variable name="latitude_prod" required="true" type="string"></Variable>
+		<Variable name="longitude_prod" required="true" type="string"></Variable>
+		<Variable name="time_prod" required="true" type="string"></Variable>
+
+		<Variable name="pco2_data_selection" required="true" type="multioption">
+			<Option value="0" str="taka"></Option>
+			<Option value="1" str="socat_pco2"></Option>
+			<Option value="2" str="socat_fco2"></Option>
+			<Option value="3" str="insitu_pco2"></Option>
+			<Option value="4" str="SOCAT_v4"></Option>
+			<Option value="45" str="SOCAT_v4_clim"></Option>
+		</Variable>
+
+		<Variable name="rain_data_selection" required="true" type="multioption">
+			<Option value="0" str="taka"></Option>
+			<Option value="1" str="gpcp"></Option>
+		</Variable>
+
+		<!-- Note: k_parameterisation is a string not multioption because the string is matched to class name in rate_parameterisation.py -->
+		<Variable name="k_parameterisation" required="true" type="string"></Variable>
+
+
+
+		<!-- These input datalayers are always required and each need a path and prod -->
+		<Variable name="pco2_sw" required="true" type="DataLayer"></Variable>
+		<Variable name="vco2_air" required="true" type="DataLayer"></Variable>
+		<Variable name="pco2_sst" required="true" type="DataLayer"></Variable>
+		<Variable name="pco2_air" required="true" type="DataLayer"></Variable>
+		<Variable name="sstskin" required="true" type="DataLayer"></Variable>
+		<Variable name="windu10" required="true" type="DataLayer"></Variable>
+		<Variable name="sigma0" required="true" type="DataLayer"></Variable>
+		<Variable name="sig_wv_ht" required="true" type="DataLayer"></Variable>
+		<Variable name="ice" required="true" type="DataLayer"></Variable>
+		<Variable name="rain" required="true" type="DataLayer"></Variable>
+		<Variable name="pressure" required="true" type="DataLayer"></Variable>
+		<Variable name="salinity" required="true" type="DataLayer"></Variable>
+
+		<!-- These input datalayers are optional -->
+		<Variable name="windu10_moment2" required="false" type="DataLayer"></Variable>
+		<Variable name="windu10_moment3" required="false" type="DataLayer"></Variable>
+		<Variable name="biology" required="false" type="DataLayer"></Variable>
+		<Variable name="suspended_particles" required="false" type="DataLayer"></Variable>
+		<Variable name="sstgrad" required="false" type="DataLayer"></Variable>
+		<Variable name="atlantic_ocean_mask" required="false" type="DataLayer"></Variable>
+		<Variable name="pacific_ocean_mask" required="false" type="DataLayer"></Variable>
+		<Variable name="southern_ocean_mask" required="false" type="DataLayer"></Variable>
+		<Variable name="indian_ocean_mask" required="false" type="DataLayer"></Variable>
+		<Variable name="longhurst_mask" required="false" type="DataLayer"></Variable>
+
+
+
+		<!-- these should be optional and/or moved to datalayer attributes: -->
+		<Variable name="random_noise_windu10" required="true" type="switch"></Variable>
+		<Variable name="random_noise_sstskin" required="true" type="switch"></Variable>
+		<Variable name="random_noise_sstfnd" required="true" type="switch"></Variable>
+		<Variable name="random_noise_pco2" required="true" type="switch"></Variable>
+
+		<Variable name="bias_windu10" required="true" type="switch"></Variable>
+		<Variable name="bias_windu10_value" required="true" type="float"></Variable>
+		<Variable name="bias_sstskin" required="true" type="switch"></Variable>
+		<Variable name="bias_sstskin_value" required="true" type="float"></Variable>
+		<Variable name="bias_sstfnd" required="true" type="switch"></Variable>
+		<Variable name="bias_sstfnd_value" required="true" type="float"></Variable>
+		<Variable name="bias_pco2" required="true" type="switch"></Variable>
+		<Variable name="bias_pco2_value" required="true" type="float"></Variable>
+
+		<Variable name="bias_k" required="true" type="switch"></Variable>
+		<Variable name="bias_k_percent" required="true" type="switch"></Variable>
+		<Variable name="bias_k_value" required="true" type="float"></Variable>
+		<Variable name="bias_k_biology_value" required="true" type="float"></Variable>
+		<Variable name="bias_k_wind_value" required="true" type="float"></Variable>
+
+		<Variable name="kd_weighting" required="true" type="float"></Variable>
+		<Variable name="kb_weighting" required="true" type="float"></Variable>
+		<Variable name="kb_asymmetry" required="true" type="float"></Variable>
+
+		<Variable name="bias_sstskin_due_rain" required="true" type="switch"></Variable>
+		<Variable name="rain_wet_deposition" required="true" type="switch"></Variable>
+		<Variable name="k_rain_linear_ho1997" required="true" type="switch"></Variable>
+		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch"></Variable>
+
+		<!-- These values are conditional on other values -->
+		<Variable name="saline_skin_value" required="false" type="float" default="0.0"></Variable>
+
+		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
+		<Variable name="ATMGAS" required="false" type="string" default="V"></Variable>
+		<Variable name="LOG_PATH" required="false" type="string" default="fluxengine.log"></Variable>
+
+	</ConfigParameters>
+</Settings>
+
+<!--
+<DataLayer name="" netCDFName="" units="" minBound="0.0" maxBound="1500.0"
+	standardName=""
+	longName="">
+</DataLayer>
+-->
+
+
+
+
+
+
+

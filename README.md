@@ -25,7 +25,7 @@ To operate the system with different gases, the appropriate switch should be cha
 
 v3.0 (April 2018)
 ----
-These updates have been verified against SOCATv4. All results were identical to those produced using V2.0.
+These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. Additionally verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2015). Results were identical to those produced using FluxEngine v1 and FluxEngine v2.
 Changes include:
 
     •   A more flexible way of specifying input data in the configuration files,
@@ -34,3 +34,6 @@ Changes include:
     •   A move toward an API-like toolkit, beyond a simple set of commandline tools
     •   A more modularised structure to the code including modular k parameterisation and data pre-processing to facilitate easy extension
     •   Metadata and default options specified in an xml file (settings.xml)
+    •   Automatic validation scripts for SOCATv4 and Takahashi09
+
+

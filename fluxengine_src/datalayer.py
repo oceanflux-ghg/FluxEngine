@@ -130,7 +130,7 @@ class DataLayer:
         if preprocessing != None:
             for preprocessingFunction in preprocessing:
                 preprocessingFunction(self); #Modifies in place
-        
+
         #TODO: Should recalculate_fdata after preprocessing in case of bad preprocessing function? Or force preprocessing functions to modify 'data' not 'fdata' and calculate fdata after.
         
         #Replace anything outside of the valid range with missing_value

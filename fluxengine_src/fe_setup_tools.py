@@ -229,10 +229,10 @@ def generate_glob(globSig, year, monthNum):
     glob = glob.replace("<Mmm>", calendar.month_abbr[monthNum+1]);
     glob = glob.replace("<mmm>", calendar.month_abbr[monthNum+1].lower());
     
-    glob = glob.rsplit("/", 1);
+    #glob.rsplit("/", 1);
     #print "Split result:", glob;
     
-    return (glob[0], glob[1]);
+    return (path.dirname(glob), path.basename(glob));
 
 
 #Returns a list of filepaths which match a glob

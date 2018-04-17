@@ -570,6 +570,7 @@ class FluxEngine:
         
         try:
             self._add_single_data_layer(name, infile, prod, transposeData, preprocessing=preprocessing);
+            
         except KeyError:
             print "\n%s: Data variable '%s' is missing from %s input (%s)" % (function, prod, name, infile);
             return False;
@@ -577,6 +578,8 @@ class FluxEngine:
             print "\n%s: %s" % (function, e.args);
             return False;
         
+        #TODO: stddev and count should be turned into separate datalayers in the config file processing stage, rather
+        #      than testing for _prods and adding them here. Then _add_single_data_layer can be merged with this function.
         #If they have been specified, search for stddev.
         if stddevProd != None:
             if stddevProd == "auto": #automatically detect stddev product
@@ -633,7 +636,7 @@ class FluxEngine:
     
     #Creates a DataLayer which is filled (by default) with DataLayer.missing_value.
     #The DataLayer will be added to self.data and is accessable by it's 'name', e.g. self.data["new_datalayer"].
-    #If not dimensions (nx, ny) are specified, then the default self.nx and self.ny dimensions are used.
+    #If no dimensions (nx, ny) are specified, then the default self.nx and self.ny dimensions are used.
     #If there is known metadata for the datalayer (e.g. min, max, units etc.) these will be loaded from settings.xml
     #Metadata can be overwritten in the config file using the the datalayer name and the xml attribute from the settings.xml file, e.g.:
     #       datalayername_units = C m^2s^-1
@@ -647,7 +650,7 @@ class FluxEngine:
         
         self.data[name] = dl;
     
-    #Returns a DataLayerMetaData for the named DataLayer.
+    #Returns a DataLayerMetaData instance for the named DataLayer.
     #First it will search for default values specified in the settings xml file
     #Failing that the default default values are used
     #Finally any metadata values which are specified in the config file are used to overwrite default values
@@ -690,7 +693,7 @@ class FluxEngine:
         #function = "(ofluxghg_flux_calc, FluxEngine.run)";
         status = self._check_datalayers(); #Check for consistency of datalayers (e.g. dimensions all match one another).
         if status == True:
-            return self._run_fluxengine_(self.runParams);
+            return self._run_fluxengine(self.runParams);
         else:
             print "Not all datalayers are consistent (check dimensions of data).";
             return status;
@@ -749,7 +752,7 @@ class FluxEngine:
         return True;
 
 
-    def _run_fluxengine_(self, runParams):
+    def _run_fluxengine(self, runParams):
         function = "(ofluxghg_flux_calc, FluxEngine._run_fluxengine_)";
         #return 0;
         
@@ -921,7 +924,7 @@ class FluxEngine:
         else:
            print "\n%s sst_gradients_switch (%d), use_sstskin_switch (%d) and use_sstfnd_switch (%d) combination in configuration not recognised, exiting." % (function, runParams.sst_gradients_switch, runParams.use_sstskin_switch, runParams.use_sstfnd_switch)
            return 1;
-        
+       
 
         #quality filtering and conversion of SST datasets
         #Calculate sstskinC and sstfndC
@@ -932,6 +935,7 @@ class FluxEngine:
             if self.data["sstskin"].fdata[i] != missing_value:
                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15;
                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i] - 273.15;
+        
 #           for i in arange(nx * ny):
 #              # convert SSTfnd to centrigrade and store the result
 #              if (self.data["sstfnd"].fdata[i] != missing_value):
@@ -1054,6 +1058,7 @@ class FluxEngine:
                  self.data["sstskin"].fdata[i] = missing_value
                  self.data["sstfndC"].fdata[i] = missing_value
                  self.data["sstskinC"].fdata[i] = missing_value
+                 
         # ensure that the different SST data all cover the same spatial regions
         # convert all missing values into standard value, rather than variations that seem to exist in some of these data
         #note this is an intersect operation (compared to the above)

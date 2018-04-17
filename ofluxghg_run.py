@@ -39,7 +39,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
         print "Hostname identified as: ", hostname;
         print "Working directory is: ", workingDirectory;
     
-    global fe;
+    global fe; #For debugging purposes this makes it easy to query the FluxEngine object after execution has finished.
     
     
     #Parse config file
@@ -114,12 +114,12 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
             
             #Run fluxengine            
             if fe != None:
-                try:
+                #try:
                     returnCode = fe.run();
-                except Exception as e:
-                    print "\n\n%s: Exception caught while running FluxEngine:" % function;
-                    print type(e), e.args;
-                    return 1;
+                #except Exception as e:
+                #    print "\n\n%s: Exception caught while running FluxEngine:" % function;
+                #    print type(e), e.args;
+                #    return 1;
             
             #Check for successful run, if one fails don't run the rest.
             if returnCode != 0:

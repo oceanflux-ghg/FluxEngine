@@ -25,7 +25,7 @@ To operate the system with different gases, the appropriate switch should be cha
 
 v3.0 (April 2018)
 ----
-These updates have been verified against SOCATv4. All results were identical to those produced using V1.0.
+These updates have been verified against SOCATv4. All results were identical to those produced using V2.0.
 Changes include:
 
     •   A more flexible way of specifying input data in the configuration files,

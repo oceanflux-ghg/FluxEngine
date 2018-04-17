@@ -22,3 +22,15 @@ The updates include improved:
 Specifically, data on irregular grids can now be handled through the main flux calculations. Note: the ofluxghg-flux-budgets.py tool is only valid for regular (1deg x 1deg) grids. 
 In-situ data should be put in separate netCDF files and the last two digits of the filename needs to represent the month of interest as a two digit number. e.g. January -> ’01’. 
 To operate the system with different gases, the appropriate switch should be changed in ofluxghg-flux-calc.py. Please use ofluxghg-flux-calc.py --help for further information.
+
+v3.0 (April 2018)
+----
+These updates have been verified against SOCATv4. All results were identical to those produced using V1.0.
+Changes include:
+
+    •   A more flexible way of specifying input data in the configuration files,
+    •   Data pre-processing options (e.g. unit conversion),
+    •   Python is used for all tools, allowing a more streamlined workflow,
+    •   A move toward an API-like toolkit, beyond a simple set of commandline tools
+    •   A more modularised structure to the code including modular k parameterisation and data pre-processing to facilitate easy extension
+    •   Metadata and default options specified in an xml file (settings.xml)

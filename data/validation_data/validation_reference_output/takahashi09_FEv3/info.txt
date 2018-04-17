@@ -1,0 +1,17 @@
+2018/04/17:
+Takahashi09 validation run reference dataset using FluxEngine v3.0 2018.
+
+Originally downloaded from:
+OCEANFLUX-SHARED/workspace/i.g.c.ashton_exeter.ac.uk/results/reference_run/reference_run_results2
+
+Total global net flux (-1.4950457 TgC/yr) is within 94.9803233545 (%) of the value quoted in Takahashi2009 (-1.42 TgC/yr).
+
+-1.4950457      (NET FLUX TgC)   (94.9803233545%)
+-0.16299923     (MISSING FLUX TgC)
+-1.4950457      (30.5 DAY FLUX TgC)
+80.8272097      (GROSS DOWNWARD FLUX TgC)
+8.81228768      (MISSING GROSS DOWNWARD FLUX TgC)
+80.8272097      (30.5 DAY GROSS DOWNWARD FLUX TgC)
+79.332164       (GROSS UPWARD FLUX TgC)
+8.64928845      (MISSING GROSS UPWARD FLUX TgC)
+79.332164       (30.5 DAY GROSS UPWARD FLUX TgC)

@@ -13,26 +13,32 @@ from ofluxghg_run import run_fluxengine;
 from fluxengine_src.tools.ofluxghg_flux_budgets import run_flux_budgets;
 from fluxengine_src.tools.compare_net_budgets import calc_net_budget_percentages
 from argparse import Namespace;
-from os import getcwd, path;
+from os import path;
+import inspect;
 
 #Runs the validation proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
 def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
+    #Determine the path of the FluxEngine root directory.
+    selfPath = inspect.stack()[0][1];
+    feRoot = path.dirname(path.dirname(path.dirname(selfPath))); #Not ideal, relies on scripts being in the root/fluxengine_src/tools directory.
+    
     #Run flux engine
     if verbose:
         print "Running FluxEngine for year 2010...";
-    configFilePath = "configs/socatv4_sst_salinity_gradients-N00.conf";
+    configFilePath = path.join(feRoot, "configs/socatv4_sst_salinity_gradients-N00.conf");
     runStatus = run_fluxengine(configFilePath, [2010], range(0,12), processLayersOff=True, verbose=False);
     
     
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC', dir=path.join(getcwd(),
-                                'output/validate_socatv4_sst_salinity_N00/'), fluxdataset='OF', gridarea=0,
+    outputFilePath = "output/validate_socatv4_sst_salinity_N00";
+    fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
+                                dir=path.join(feRoot, outputFilePath), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
-                                kwdataset='OK3', landdataset='land_proportion', landfile=path.join(getcwd(), 'data/onedeg_land.nc'),
-                                maskdatasets=[], maskfile=path.join(getcwd(), 'data/World_Seas-IHO-mask.nc'),
-                                outroot=path.join(getcwd(), 'output/validate_socatv4_sst_salinity_N00/'), places=10, ref=None,
+                                kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, 'data/onedeg_land.nc'),
+                                maskdatasets=[], maskfile=path.join(feRoot, 'data/World_Seas-IHO-mask.nc'),
+                                outroot=path.join(feRoot, outputFilePath), places=10, ref=None,
                                 regions=[], verbosity=0, window=None);
     run_flux_budgets(fluxBudgetsArgs);
     

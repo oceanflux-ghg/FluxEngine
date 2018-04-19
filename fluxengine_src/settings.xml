@@ -388,7 +388,8 @@
 		<Variable name="vco2_air" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_sst" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_air" required="true" type="DataLayer"></Variable>
-		<Variable name="sstskin" required="true" type="DataLayer"></Variable>
+		<Variable name="sstskin" required="false" type="DataLayer"></Variable>
+		<Variable name="sstfnd" required="false" type="DataLayer"></Variable>
 		<Variable name="windu10" required="true" type="DataLayer"></Variable>
 		<Variable name="sigma0" required="true" type="DataLayer"></Variable>
 		<Variable name="sig_wv_ht" required="true" type="DataLayer"></Variable>

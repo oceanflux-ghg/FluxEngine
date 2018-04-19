@@ -894,7 +894,13 @@ class FluxEngine:
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
             print "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - 0.16)(ignoring SSTskin data in configuration file)." % (function)
             #actually copy sstfnd data into the sstskin dataset to make sure
-            for i in arange(nx * ny):
+            if "sstskin" not in self.data: #Must add the sstskin layer first!
+                self.add_empty_data_layer("sstskin");
+                if "sstfnd_stddev" in self.data:
+                    self.add_empty_data_layer("sstskin_stddev");
+                if "sstfnd_count" in self.data:    
+                    self.add_empty_data_layer("sstskin_count");
+            for i in arange(nx * ny): #sstdkin = sstfnd - cool_skin_difference
                 if self.data["sstfnd"].fdata[i] != missing_value:
                     self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i]-cool_skin_difference
                     self.data["sstskin_stddev"].fdata[i] =  self.data["sstfnd_stddev"].fdata[i]

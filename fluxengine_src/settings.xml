@@ -359,6 +359,7 @@
 		<Variable name="use_sstskin" required="true" type="switch"></Variable>
 		<Variable name="use_sstfnd" required="true" type="switch"></Variable>
 
+		<Variable name="axes_data_layer" required="true" type="string"></Variable>
 		<Variable name="latitude_prod" required="true" type="string"></Variable>
 		<Variable name="longitude_prod" required="true" type="string"></Variable>
 		<Variable name="time_prod" required="true" type="string"></Variable>

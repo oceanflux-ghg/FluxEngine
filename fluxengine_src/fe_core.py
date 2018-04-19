@@ -624,10 +624,10 @@ class FluxEngine:
             #If this is the first datalayer to be added, use this to set the nx and ny dimensions
             #   (all other datalayers will be checked against this to ensure conformity)
             #if len(self.data) == 1:
-            if name == "sstskin":
-                self.nx = dl.nx;
-                self.ny = dl.ny;
-                print "Using %s to infer grid dimensions (%d, %d)." % (name, self.ny, self.nx);
+            #if name == "sstskin":
+            #    self.nx = dl.nx;
+            #    self.ny = dl.ny;
+            #    print "Using %s to infer grid dimensions (%d, %d)." % (name, self.ny, self.nx);
             
         except IOError as e:
             print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
@@ -698,19 +698,25 @@ class FluxEngine:
             print "Not all datalayers are consistent (check dimensions of data).";
             return status;
     
+    #Reads longitude, latitude, time and dimension sizes (nx, ny).
     def _load_lon_lat_time(self):
         function = "(ofluxghg_flux_calc, FluxEngine._load_lon_lat_time)";
-        #self.add_data_layer("longitude", self.runParams["sstskin_infile"], self.runParams["longitude_prod"]);
-        #self.add_data_layer("latitude", self.runParams["sstskin_infile"], self.runParams["latitude_prod"]);
+        
+        #Find the path of the relevent datalayer.
+        try:
+            axesDatalayerInfile = getattr(self.runParams, self.runParams.axes_data_layer+"_infile");
+        except ValueError as e:
+            print "Couldn't find file path for axes_data_layer (%s). Check that this is correctly defined in the config file (it must match the name of another datalayer)." % self.runParams.axes_data_layer;
+            print e.args;
         
         #Read longitude, latitude and time data from the sstskin infile, so open this file.
         try:
-            dataset = Dataset(self.runParams.sstskin_infile);
+            dataset = Dataset(axesDatalayerInfile);
         except IOError as e:
-            print "\n%s: sstskin inputfile %s does not exist" % (function, self.runParams.sstskin_infile)
+            print "\n%s: axes_data_layer (%s) inputfile %s does not exist" % (function, self.runParams.axes_data_layer, axesDatalayerInfile);
             print type(e), e.args;
         
-        #Read lon and lat
+        #Read lat and lat
         try:
             self.latitude_data = dataset.variables[self.runParams.latitude_prod][:];
             self.longitude_data = dataset.variables[self.runParams.longitude_prod][:];
@@ -727,11 +733,15 @@ class FluxEngine:
             self.latitude_grid = self.latitude_data;
             self.longitude_grid = self.longitude_data;
             
-        
+        #read time
         try:
             self.time_data = dataset.variables[self.runParams.time_prod][:];
         except KeyError as e:
             print "%s: Couldn't find time (%s%) variables in %s." % (function, self.runParams.time_prod, self.runParams.sstskin_infile);
+
+        #set dimensions
+        self.ny, self.nx = self.latitude_grid.shape;
+        print "%s: Grid dimensions set to: (%d, %d)" % (function, self.ny, self.nx);
 
     #Ran after each datalayer is read in. Checks for consistency between datalayers.
     #Rescales data layers which can be rescaled.

@@ -9,7 +9,8 @@ Compares output to a known reference output for verification.
 @author: Tom Holding
 """
 
-from ofluxghg_run import run_fluxengine;
+#from ofluxghg_run import run_fluxengine;
+from fluxengine_src.fe_setup_tools import run_fluxengine;
 from fluxengine_src.tools.ofluxghg_flux_budgets import run_flux_budgets;
 from fluxengine_src.tools.compare_net_budgets import read_global_core_budgets, calc_net_budget_percentages
 from argparse import Namespace;

@@ -359,6 +359,7 @@
 		<Variable name="use_sstskin" required="true" type="switch"></Variable>
 		<Variable name="use_sstfnd" required="true" type="switch"></Variable>
 
+		<Variable name="axes_data_layer" required="true" type="string"></Variable>
 		<Variable name="latitude_prod" required="true" type="string"></Variable>
 		<Variable name="longitude_prod" required="true" type="string"></Variable>
 		<Variable name="time_prod" required="true" type="string"></Variable>
@@ -387,7 +388,8 @@
 		<Variable name="vco2_air" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_sst" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_air" required="true" type="DataLayer"></Variable>
-		<Variable name="sstskin" required="true" type="DataLayer"></Variable>
+		<Variable name="sstskin" required="false" type="DataLayer"></Variable>
+		<Variable name="sstfnd" required="false" type="DataLayer"></Variable>
 		<Variable name="windu10" required="true" type="DataLayer"></Variable>
 		<Variable name="sigma0" required="true" type="DataLayer"></Variable>
 		<Variable name="sig_wv_ht" required="true" type="DataLayer"></Variable>
@@ -446,6 +448,7 @@
 		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
 		<Variable name="ATMGAS" required="false" type="string" default="V"></Variable>
 		<Variable name="LOG_PATH" required="false" type="string" default="fluxengine.log"></Variable>
+		<Variable name="cool_skin_difference" required="false" type="float" default="-0.17"></Variable>
 
 	</ConfigParameters>
 </Settings>

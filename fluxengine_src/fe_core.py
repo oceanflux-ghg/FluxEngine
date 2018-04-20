@@ -31,6 +31,7 @@ from numpy import any as npany;
 from random import normalvariate
 import logging;
 from os import path;
+import inspect;
 
 from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
@@ -552,6 +553,9 @@ class FluxEngine:
     def __init__(self, parameterDict):
         self.runParams = RunParameters();
         self.runParams.set_parameters(parameterDict);
+        
+        #self.rootDirectory = path.abspath(path.dirname(inspect.stack()[0][1]));
+        #TODO: Shouldn't used src_home, this is going to be removed from config file soon. Use rootDirectory instead.
         self.defaultSettings = Settings(path.join(self.runParams.src_home, "settings.xml")); #Load default settings metadata for datalayers.
         self.data = {};
         self.kParameterisationFunctors = [] #List of functor objects which encapsulates the k rate calculation.
@@ -791,7 +795,7 @@ class FluxEngine:
         ny = self.ny;
 
         ### Adding empty data layers for data that are computed later.
-        #If there isn't any sstfnd data create empty arrays to fill later. (i.e. sstfnd = sstskin + cool_skin_difference);
+        #If there isn't any sstfnd data create empty arrays to fill later. (i.e. sstfnd = sstskin + runParams.cool_skin_difference);
         if ("sstfnd" not in self.data) and (runParams.use_sstfnd_switch == 0):
             self.add_empty_data_layer("sstfnd");
             self.add_empty_data_layer("sstfnd_stddev");
@@ -864,15 +868,11 @@ class FluxEngine:
         
         
         #interpreting fnd_data option
-        cool_skin_difference = 0.17; #0.16; #Relationship and value from Donlon et al., 2002; page 358, first paragraph
-        if runParams.TAKAHASHI_DRIVER == True:
-           cool_skin_difference = 0.0;
-        
         ####Derive sstskin as necessary.
         #Two possible datasets: sstskin and sstfnd, from different parts of the water column.
         #One option: sst gradients
         #If using only one dataset then copy that over the other. Otherwise keep both.
-        #cool_skin_difference is the assumed temperature difference between the skin and foundation layer
+        #runParams.cool_skin_difference is the assumed temperature difference between the skin and foundation layer
         
         #using sstfnd, so copy sstfnd into sstskin
         #sstskin = sstfnd
@@ -890,7 +890,7 @@ class FluxEngine:
         
         
         #IGA added for the case where only foundation is provided and gradients are on------------------------------
-        #must estimate sstskin (= sstfnd - cool_skin_difference)
+        #must estimate sstskin (= sstfnd - runParams.cool_skin_difference)
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
             print "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - 0.16)(ignoring SSTskin data in configuration file)." % (function)
             #actually copy sstfnd data into the sstskin dataset to make sure
@@ -900,9 +900,9 @@ class FluxEngine:
                     self.add_empty_data_layer("sstskin_stddev");
                 if "sstfnd_count" in self.data:    
                     self.add_empty_data_layer("sstskin_count");
-            for i in arange(nx * ny): #sstdkin = sstfnd - cool_skin_difference
+            for i in arange(nx * ny): #sstdkin = sstfnd - runParams.cool_skin_difference
                 if self.data["sstfnd"].fdata[i] != missing_value:
-                    self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i]-cool_skin_difference
+                    self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i]-runParams.cool_skin_difference
                     self.data["sstskin_stddev"].fdata[i] =  self.data["sstfnd_stddev"].fdata[i]
                     self.data["sstskin_count"].fdata[i] = self.data["sstfnd_count"].fdata[i]
                 else:
@@ -915,8 +915,8 @@ class FluxEngine:
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
                  
-                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + cool_skin_difference
-                 self.data["sstskin"].fdata[i] = self.data["sstskin"].fdata[i] + cool_skin_difference
+                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference
+                 self.data["sstskin"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference
                  self.data["sstfnd_stddev"].fdata[i] = self.data["sstskin_stddev"].fdata[i]
                  self.data["sstfnd_count"].fdata[i] = self.data["sstskin_count"].fdata[i]
               else:
@@ -928,7 +928,7 @@ class FluxEngine:
             #setting sstfnd_ data fields to skin values  
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
-                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + cool_skin_difference
+                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference
                  self.data["sstfnd_stddev"].fdata[i] =  self.data["sstskin_stddev"].fdata[i]
                  self.data["sstfnd_count"].fdata[i] = self.data["sstskin_count"].fdata[i]
               else:

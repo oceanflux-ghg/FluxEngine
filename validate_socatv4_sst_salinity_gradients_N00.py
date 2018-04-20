@@ -33,13 +33,13 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    outputFilePath = "output/validate_socatv4_sst_salinity_N00";
+    outputFilePath = "output/validate_socatv4_sst_salinity_N00/";
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
-                                dir=path.join(feRoot, outputFilePath), fluxdataset='OF', gridarea=0,
+                                dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
                                 kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, 'data/onedeg_land.nc'),
                                 maskdatasets=[], maskfile=path.join(feRoot, 'data/World_Seas-IHO-mask.nc'),
-                                outroot=path.join(feRoot, outputFilePath), places=10, ref=None,
+                                outroot=path.join(feRoot, outputFilePath, ''), places=10, ref=None,
                                 regions=[], verbosity=0, window=None);
     run_flux_budgets(fluxBudgetsArgs);
     

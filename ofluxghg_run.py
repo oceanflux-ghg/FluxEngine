@@ -63,7 +63,7 @@ if __name__ == "__main__":
         monthsToRun = [monthsToRun[0]];
         yearsToRun = [yearsToRun[0]];
     
-    setup.run_fluxengine(clArgs.config, yearsToRun, monthsToRun, verbose=clArgs.verbose,
+    returnCode, fe = setup.run_fluxengine(clArgs.config, yearsToRun, monthsToRun, verbose=clArgs.verbose,
                    processLayersOff=clArgs.process_layers_off,
                    takahashiDriver=clArgs.use_takahashi_driver,
                    pco2DirOverride=clArgs.pco2_dir_override,

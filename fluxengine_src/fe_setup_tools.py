@@ -469,9 +469,6 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
         print "Hostname identified as: ", hostname;
         print "Working directory is: ", workingDirectory;
     
-    global fe; #For debugging purposes this makes it easy to query the FluxEngine object after execution has finished.
-    
-    
     #Parse config file
     configPath = path.join(workingDirectory, configFilePath);
     configVariables = read_config_file(configPath, verbose=verbose);
@@ -555,7 +552,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
             if returnCode != 0:
                 print ("%s: There was an error running flux engine:\n\n"%function), e.args[0];
                 print "Exiting...";
-                return returnCode;
+                return (returnCode, fe);
             else:
                 print "Flux engine exited with exit code:", returnCode;
                 print calendar.month_abbr[monthNum+1], year, "completed successfully.\n";
@@ -564,7 +561,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
     #runStatus["return_code"] = returnCode;
     #runStatus["output_dir"] = runParameters["output_dir"];
     #runStatus["config_used"] = configFilePath;
-    return 0;
+    return (0, fe); #return code, FluxEngine object.
 
 
 ##returns a dictionary the initialisation requirements for each rate parameterisation object (classes derived from KCalculationBase).

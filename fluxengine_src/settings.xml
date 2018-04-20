@@ -448,6 +448,7 @@
 		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
 		<Variable name="ATMGAS" required="false" type="string" default="V"></Variable>
 		<Variable name="LOG_PATH" required="false" type="string" default="fluxengine.log"></Variable>
+		<Variable name="cool_skin_difference" required="false" type="float" default="-0.17"></Variable>
 
 	</ConfigParameters>
 </Settings>

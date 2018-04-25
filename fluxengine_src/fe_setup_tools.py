@@ -470,7 +470,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
         print "Working directory is: ", rootPath;
     
     #Parse config file
-    configPath = path.join(rootPath, configFilePath);
+    configPath = path.join(configFilePath); #Don't make configFilePath absolute!
     configVariables = read_config_file(configPath, verbose=verbose);
     
     #Parse settings file for default metadata about the config variables

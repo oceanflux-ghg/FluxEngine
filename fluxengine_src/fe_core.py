@@ -31,7 +31,6 @@ from numpy import any as npany;
 from random import normalvariate
 import logging;
 from os import path;
-import inspect;
 
 from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
@@ -1072,37 +1071,39 @@ class FluxEngine:
         # calculations for components of the flux calculation
         #########################################################
          
-        # year correction for pCO2/fCO2 data
-        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
-        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
-        if runParams.pco2_data_selection == 0:
-        # increment to be added to pCO2w and pCO2a in Takahashi climatology
-        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-        # Takahashi data are normalised to the year 2000
-           pco2_increment = (runParams.year - 2000.0) * 1.5
-           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
-           # need handling for SOCAT data for years before 2010
-           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-           # so assuming -1.5uatm for each year prior to 2010
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
-           # need handling for SOCAT data for years before 2010
-           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-           # so assuming -1.5uatm for each year prior to 2010
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
-           pco2_increment = 0.0
-        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
-           pco2_increment = 0.0
-           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        else:
-           pco2_increment = 0.0
+        # pCO2/fCO2 extrapolation (if turned on) from reference year
+        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_extrapolation;
+        
+#        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
+#        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
+#        if runParams.pco2_data_selection == 0:
+#        # increment to be added to pCO2w and pCO2a in Takahashi climatology
+#        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#        # Takahashi data are normalised to the year 2000
+#           pco2_increment = (runParams.year - 2000.0) * 1.5
+#           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
+#           # need handling for SOCAT data for years before 2010
+#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#           # so assuming -1.5uatm for each year prior to 2010
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
+#           # need handling for SOCAT data for years before 2010
+#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#           # so assuming -1.5uatm for each year prior to 2010
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
+#           pco2_increment = 0.0
+#        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
+#           pco2_increment = 0.0
+#           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        else:
+#           pco2_increment = 0.0
             
         DeltaT_fdata = array([missing_value] * nx*ny)
         

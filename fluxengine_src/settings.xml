@@ -364,6 +364,9 @@
 		<Variable name="longitude_prod" required="true" type="string"></Variable>
 		<Variable name="time_prod" required="true" type="string"></Variable>
 
+		<Variable name="pco2_reference_year" required="true" type="float" default="2010"></Variable>
+		<Variable name="pco2_annual_extrapolation" required="true" type="float" default="0.0"></Variable>
+
 		<Variable name="pco2_data_selection" required="true" type="multioption">
 			<Option value="0" str="taka"></Option>
 			<Option value="1" str="socat_pco2"></Option>

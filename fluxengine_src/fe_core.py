@@ -31,7 +31,6 @@ from numpy import any as npany;
 from random import normalvariate
 import logging;
 from os import path;
-import inspect;
 
 from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
@@ -252,7 +251,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 variable.long_name = dataLayers[dataLayerName].longName;
         except AttributeError:
             print "%s: No longName found for datalayer named '%s'." % (function, dataLayerName);
-   
+    
     #set some global attributes
     setattr(ncfile, 'Conventions', 'CF-1.6') 
     setattr(ncfile, 'Institution', 'Originally developed by the partners of the ESA OceanFlux GHG and OceanFlux GHG Evolution projects. Now continued by the CarbonLab team at the University of Exeter.') 
@@ -556,7 +555,7 @@ class FluxEngine:
         
         #self.rootDirectory = path.abspath(path.dirname(inspect.stack()[0][1]));
         #TODO: Shouldn't used src_home, this is going to be removed from config file soon. Use rootDirectory instead.
-        self.defaultSettings = Settings(path.join(self.runParams.src_home, "settings.xml")); #Load default settings metadata for datalayers.
+        self.defaultSettings = Settings(path.join(path.dirname(__file__), "settings.xml")); #Load default settings metadata for datalayers.
         self.data = {};
         self.kParameterisationFunctors = [] #List of functor objects which encapsulates the k rate calculation.
                                             #The k rate calculation can be extended in a modular fashion.
@@ -892,7 +891,7 @@ class FluxEngine:
         #IGA added for the case where only foundation is provided and gradients are on------------------------------
         #must estimate sstskin (= sstfnd - runParams.cool_skin_difference)
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-            print "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - 0.16)(ignoring SSTskin data in configuration file)." % (function)
+            print "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %d)(ignoring SSTskin data in configuration file)." % (function, runParams.cool_skin_difference)
             #actually copy sstfnd data into the sstskin dataset to make sure
             if "sstskin" not in self.data: #Must add the sstskin layer first!
                 self.add_empty_data_layer("sstskin");
@@ -910,7 +909,7 @@ class FluxEngine:
         
         #Using sstskin, so calculate it from sstfnd.
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print "%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + 0.17) for flux calculation (ignoring SSTfnd data in configuration file)." % (function)
+           print "%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %d) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference)
            #setting sstfnd_ data fields to skin values
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
@@ -924,7 +923,7 @@ class FluxEngine:
                  self.data["sstskin"].fdata[i] = missing_value
                  
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print "%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + 0.16 for flux calculation (ignoring SSTfnd data in configuration file)." % (function)
+           print "%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %d for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference)
             #setting sstfnd_ data fields to skin values  
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
@@ -951,34 +950,6 @@ class FluxEngine:
             if self.data["sstskin"].fdata[i] != missing_value:
                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15;
                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i] - 273.15;
-        
-#           for i in arange(nx * ny):
-#              # convert SSTfnd to centrigrade and store the result
-#              if (self.data["sstfnd"].fdata[i] != missing_value):
-#                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i] - 273.15
-#              else:
-#                 self.data["sstfndC"].fdata[i] = missing_value
-#              # convert SSTskin to centrigrade and store the result
-#              if (self.data["sstskin"].fdata[i] != missing_value):
-#                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15
-#              else:
-#                 self.data["sstskinC"].fdata[i] = missing_value
-        
-         # quality filtering if using TAKAHASHI_DRIVER
-         # TAKAHASHI data are in oC (and not Kelvin), so we have to apply the reverse
-#        if TAKAHASHI_DRIVER == True:
-#           for i in arange(nx * ny):
-#              if (self.data["sstfnd"].fdata[i] != missing_value):
-#                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i]
-#                 self.data["sstfnd"].fdata[i] = self.data["sstfndC"].fdata[i] + 273.15
-#              else:
-#                 self.data["sstfndC"].fdata[i] = missing_value
-#        
-#              if (self.data["sstskin"].fdata[i] != missing_value):
-#                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i]
-#                 self.data["sstskin"].fdata[i] = self.data["sstskinC"].fdata[i] + 273.15
-#              else:
-#                 self.data["sstskinC"].fdata[i] = missing_value
         
          # ability to randomly perturb the input datasets
          # needed for the ensemble analyses
@@ -1100,37 +1071,39 @@ class FluxEngine:
         # calculations for components of the flux calculation
         #########################################################
          
-        # year correction for pCO2/fCO2 data
-        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
-        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
-        if runParams.pco2_data_selection == 0:
-        # increment to be added to pCO2w and pCO2a in Takahashi climatology
-        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-        # Takahashi data are normalised to the year 2000
-           pco2_increment = (runParams.year - 2000.0) * 1.5
-           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
-           # need handling for SOCAT data for years before 2010
-           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-           # so assuming -1.5uatm for each year prior to 2010
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
-           # need handling for SOCAT data for years before 2010
-           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-           # so assuming -1.5uatm for each year prior to 2010
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
-           pco2_increment = 0.0
-        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
-           pco2_increment = (runParams.year - 2010.0) * 1.5
-           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
-           pco2_increment = 0.0
-           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-        else:
-           pco2_increment = 0.0
+        # pCO2/fCO2 extrapolation (if turned on) from reference year
+        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_extrapolation;
+        
+#        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
+#        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
+#        if runParams.pco2_data_selection == 0:
+#        # increment to be added to pCO2w and pCO2a in Takahashi climatology
+#        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#        # Takahashi data are normalised to the year 2000
+#           pco2_increment = (runParams.year - 2000.0) * 1.5
+#           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
+#           # need handling for SOCAT data for years before 2010
+#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#           # so assuming -1.5uatm for each year prior to 2010
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
+#           # need handling for SOCAT data for years before 2010
+#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
+#           # so assuming -1.5uatm for each year prior to 2010
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
+#           pco2_increment = 0.0
+#        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
+#           pco2_increment = (runParams.year - 2010.0) * 1.5
+#           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
+#           pco2_increment = 0.0
+#           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
+#        else:
+#           pco2_increment = 0.0
             
         DeltaT_fdata = array([missing_value] * nx*ny)
         
@@ -1317,7 +1290,7 @@ class FluxEngine:
             #Check each input exists #TODO: This should go in the pre-run checks!
             for inputDataName in kParameterisationFunctor.input_names():
                 if inputDataName not in self.data: #This additional check isn't really needed as it is done in the functor and in the driver script.
-                    raise KeyError("Selected kParameterisation (%s) requires input data layers which have not been provided. Required the following DataLayers:\n"+str(kParameterisationFunctor.input_names()));
+                    raise KeyError("Selected kParameterisation ("+kParameterisationFunctor.name+") requires input data layers which have not been provided. Required the following DataLayers:\n"+str(kParameterisationFunctor.input_names()));
             
             #Before running it is necessary to create any non-existing output layers that are required by the k calculation
             for outputDataName in kParameterisationFunctor.output_names():

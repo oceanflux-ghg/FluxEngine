@@ -12,7 +12,7 @@ This includes:
 @author: tomholding
 """
 
-from os import path, listdir, getcwd, makedirs;
+from os import path, listdir, makedirs;
 import inspect;
 import time;
 import socket; #for gethostname
@@ -464,17 +464,17 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
                    takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     hostname = socket.gethostname();
-    workingDirectory = getcwd();
+    rootPath = path.dirname(path.dirname(inspect.stack()[0][1]));
     if verbose:
         print "Hostname identified as: ", hostname;
-        print "Working directory is: ", workingDirectory;
+        print "Working directory is: ", rootPath;
     
     #Parse config file
-    configPath = path.join(workingDirectory, configFilePath);
+    configPath = path.join(configFilePath); #Don't make configFilePath absolute!
     configVariables = read_config_file(configPath, verbose=verbose);
     
     #Parse settings file for default metadata about the config variables
-    settingsPath = path.join(workingDirectory, configVariables["src_home"], "settings.xml");
+    settingsPath = path.join(rootPath, configVariables["src_home"], "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
     

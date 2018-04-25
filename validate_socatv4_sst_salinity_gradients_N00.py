@@ -48,7 +48,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if verbose:
         print "\n\nComparing output to reference data...";
     newPath = "output/validate_socatv4_sst_salinity_N00/_global.txt";
-    refPath = "data/validation_data/validation_reference_output/socatv4_sst_salinity_N00_reference/SST_Salinity_gradients-N00_global.txt";
+    refPath = "data/validation_data/validation_reference_output/socatv4_sst_salinity_N00_reference_FEv2/SST_Salinity_gradients-N00_global.txt";
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;

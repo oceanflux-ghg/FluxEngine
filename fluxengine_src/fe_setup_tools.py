@@ -214,9 +214,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
     
     if (configVariables["use_sstskin"]==True) and ("sstskin_path" not in configVariables):
         raise ValueError("%s: use_sstskin is set but no sstskin inputfile (sstskin_path) was specified in the config file." % function);
-    
-    if (configVariables["sst_gradients"]==True) and ("sstgrad_path" not in configVariables):
-        raise ValueError("%s: use_gradients is set but no sstgrad inputfile (sstgrad_path) was specified in the config file: " % function);
+
 
 #Substitutes month/year tokens to create a valid glob.
 #Returns the a tuple containing (searchDirectory, fileGlob)
@@ -464,7 +462,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
                    takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     hostname = socket.gethostname();
-    rootPath = path.dirname(path.dirname(inspect.stack()[0][1]));
+    rootPath = path.abspath(path.join(__file__, "../.."));
     if verbose:
         print "Hostname identified as: ", hostname;
         print "Working directory is: ", rootPath;
@@ -474,7 +472,7 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
     configVariables = read_config_file(configPath, verbose=verbose);
     
     #Parse settings file for default metadata about the config variables
-    settingsPath = path.join(rootPath, configVariables["src_home"], "settings.xml");
+    settingsPath = path.join(rootPath, "fluxengine_src", "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
     

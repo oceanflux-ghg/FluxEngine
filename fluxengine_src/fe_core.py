@@ -783,11 +783,6 @@ class FluxEngine:
                 logger.setLevel(logging.DEBUG);
         except:
             print "\n%s Couldn't initialise logger at path %s" % (function, runParams.LOG_PATH);
-    
-        if DEBUG:
-           print "\n%s Flux model: %d, k_parmaterisation: %d" % (function, runParams.flux_calc, runParams.k_parameterisation);
-           print "\n%s Using the following files %s (sstskin), %s (sstfnd) %s (windu10) %s (sal) %s (rain) %s (bio) %s (sstgrad)" % (function, runParams.sstskin_infile, runParams.sstfnd_infile, runParams.windu10_infile, runParams.salinity_infile, runParams.rain_infile, runParams.biology_infile, runParams.sstgrad_infile);
-           print "\n%s Using the following products %s (sstskin), %s (sstfnd) %s (windu10) %s (msl) %s (sal) %s (rain) %s (bio) %s (sstgrad)" % (function, runParams.sstskin_prod, runParams.sstfnd_prod, runParams.windu10_prod, runParams.pressure_prod, runParams.salinity_prod, runParams.rain_prod, runParams.biology_prod, runParams.sstgrad_prod);
         
         #TODO: Replace directly with self.nx, self.ny, no need to use local variables here.
         nx = self.nx;

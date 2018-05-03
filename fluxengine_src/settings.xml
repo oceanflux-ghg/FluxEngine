@@ -413,35 +413,12 @@
 
 
 		<!-- these should be optional and/or moved to datalayer attributes: -->
-		<Variable name="random_noise_windu10" required="true" type="switch"></Variable>
-		<Variable name="random_noise_sstskin" required="true" type="switch"></Variable>
-		<Variable name="random_noise_sstfnd" required="true" type="switch"></Variable>
-		<Variable name="random_noise_pco2" required="true" type="switch"></Variable>
-
-		<Variable name="bias_windu10" required="true" type="switch"></Variable>
-		<Variable name="bias_windu10_value" required="true" type="float"></Variable>
-		<Variable name="bias_sstskin" required="true" type="switch"></Variable>
-		<Variable name="bias_sstskin_value" required="true" type="float"></Variable>
-		<Variable name="bias_sstfnd" required="true" type="switch"></Variable>
-		<Variable name="bias_sstfnd_value" required="true" type="float"></Variable>
-		<Variable name="bias_pco2" required="true" type="switch"></Variable>
-		<Variable name="bias_pco2_value" required="true" type="float"></Variable>
 
 		<Variable name="bias_k" required="true" type="switch"></Variable>
 		<Variable name="bias_k_percent" required="true" type="switch"></Variable>
 		<Variable name="bias_k_value" required="true" type="float"></Variable>
 		<Variable name="bias_k_biology_value" required="true" type="float"></Variable>
 		<Variable name="bias_k_wind_value" required="true" type="float"></Variable>
-
-		<!--- kb vs kd weighting for 'equilibrium' flux model? -->
-		<Variable name="kd_weighting" required="true" type="float"></Variable>
-		<Variable name="kb_weighting" required="true" type="float"></Variable>
-		<Variable name="kb_asymmetry" required="true" type="float"></Variable>
-
-		<Variable name="bias_sstskin_due_rain" required="true" type="switch"></Variable>
-		<Variable name="rain_wet_deposition" required="true" type="switch"></Variable>
-		<Variable name="k_rain_linear_ho1997" required="true" type="switch"></Variable>
-		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch"></Variable>
 
 		<!-- These values are conditional on other values and/or have default values -->
 		<Variable name="saline_skin_value" required="false" type="float" default="0.0"></Variable>
@@ -452,10 +429,45 @@
 		<Variable name="cool_skin_difference" required="false" type="float" default="-0.17"></Variable>
 
 		<Variable name="pco2_reference_year" required="true" type="float" default="2010"></Variable>
-		<Variable name="pco2_annual_extrapolation" required="true" type="float" default="0.0"></Variable>
+		<Variable name="pco2_annual_correction" required="true" type="float" default="0.0"></Variable>
+
+		<Variable name="random_noise_windu10" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_sstskin" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_sstfnd" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_pco2" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_windu10" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_windu10_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstskin_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstfnd" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstfnd_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_pco2" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_pco2_value" required="true" type="float" default="0.0"></Variable>
+
+		<Variable name="kb_asymmetry" required="true" type="float" default="1.0"></Variable>
+
+		<Variable name="bias_sstskin_due_rain" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstskin_due_rain_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin_due_rain_intensity" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin_due_rain_wind" required="true" type="float" default="0.0"></Variable>
+
+
+		<Variable name="rain_wet_deposition" required="true" type="switch" default="no"></Variable>
+		<Variable name="k_rain_linear_ho1997" required="true" type="switch" default="no"></Variable>
+		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch" default="no"></Variable>
 
 	</ConfigParameters>
 </Settings>
+
+<!-- known custom variables:
+		<Variable name="kd_weighting" required="false" type="float"></Variable>
+		<Variable name="kb_weighting" required="false" type="float"></Variable>
+		k_generic_sc
+		k_generic_a0
+		k_generic_a1
+		k_generic_a2
+		k_generic_a3
+-->
 
 <!--
 <DataLayer name="" netCDFName="" units="" minBound="0.0" maxBound="1500.0"

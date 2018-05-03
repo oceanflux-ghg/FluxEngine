@@ -40,7 +40,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
    kd_fdata = array([DataLayer.missing_value] * nx*ny)
    kb_fdata = array([DataLayer.missing_value] * nx*ny)
    
-   for i in arange(nx * ny):   
+   for i in arange(nx * ny):
 
       # kinematic viscosity
      if ( (sstskinC_fdata[i] != DataLayer.missing_value) ):        
@@ -91,6 +91,9 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
                 
    return kd_fdata, kb_fdata
 
+# kb_weighting and kd_weighting: Weighting for kb and kd components of k_GoddijnMurphy_Fangohr2012 k parameterisation
+# Setting both equal to 1.0 means that the total k will simply be a linear combination
+# These need to both be valid real numbers
 def OceanFluxGHG_kt(kd_fdata, kb_fdata, nx, ny, kb_weighting, kd_weighting):
    #combining the Oceanflux kd and kb components
    ktotal_fdata = array([DataLayer.missing_value] * nx * ny)
@@ -133,9 +136,9 @@ class KCalculationBase:
 class k_example(KCalculationBase):
     #Optional initialiser arguments can be used, but their names must correspond to names in the config file.
     #For example k_generic_sc is used here.
-    def __init__(self, k_generic_sc):
+    def __init__(self, example_init_parameter):
         self.name = self.__class__.__name__;
-        self.k_generic_sc = k_generic_sc;
+        self.parameter = example_init_parameter; #'example_init_parameter' would need to be defined in the configuration file
     
     #Must return a list of strings corresponding to the input data layers required by the k calculations. These must already exist.
     def input_names(self):
@@ -253,6 +256,7 @@ class k_Nightingale2000(KCalculationBase):
                 self.k[i] = DataLayer.missing_value
         
         return True;
+
 
 
 class kt_OceanFluxGHG(KCalculationBase):
@@ -653,7 +657,7 @@ class KCalculationExtension:
 #add ho1997 value to data from chosen k parameterisation (adds rain component to the results from the existing choice of parameterisation)
 #see Ashton2016
 #note: data are filtered based on windu10 to ensure that they cover the same data as the wind based paramterisations 
-class AddKRainLinearHo19997(KCalculationExtension):
+class AddKRainLinearHo1997(KCalculationExtension):
     def __init__(self):
         self.name = self.__class__.__name__;
     

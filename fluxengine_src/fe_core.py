@@ -843,6 +843,7 @@ class FluxEngine:
         self.add_empty_data_layer("pco2_sw_cor");
         
         #apply additive saline skin value, but why selectively apply it?
+        #TODO: Why are these hard-coded values. Should be using minBound and maxBound?
         self.add_empty_data_layer("salinity_skin");
         for i in arange(self.nx * self.ny):
             if (self.data["salinity"].fdata[i] >= 0.0) and (self.data["salinity"].fdata[i] <= 50.0):
@@ -1067,38 +1068,7 @@ class FluxEngine:
         #########################################################
          
         # pCO2/fCO2 extrapolation (if turned on) from reference year
-        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_extrapolation;
-        
-#        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
-#        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
-#        if runParams.pco2_data_selection == 0:
-#        # increment to be added to pCO2w and pCO2a in Takahashi climatology
-#        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#        # Takahashi data are normalised to the year 2000
-#           pco2_increment = (runParams.year - 2000.0) * 1.5
-#           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
-#           # need handling for SOCAT data for years before 2010
-#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#           # so assuming -1.5uatm for each year prior to 2010
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
-#           # need handling for SOCAT data for years before 2010
-#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#           # so assuming -1.5uatm for each year prior to 2010
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
-#           pco2_increment = 0.0
-#        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
-#           pco2_increment = 0.0
-#           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        else:
-#           pco2_increment = 0.0
+        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_correction;
             
         DeltaT_fdata = array([missing_value] * nx*ny)
         
@@ -1373,6 +1343,7 @@ class FluxEngine:
               self.data["conca"].fdata[i] = ((self.data["solubility_skin"].fdata[i] * conc_factor) * self.data["pco2_air_cor"].fdata[i])
               
               #flux calculation
+              #TODO: This is partially K-parameterisation dependent. Need to decouple this...
               if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
                  kd_component = self.data["kd"].fdata[i] * k_factor
                  kb_component = self.data["kb"].fdata[i] * k_factor

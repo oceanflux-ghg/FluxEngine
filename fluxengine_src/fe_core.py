@@ -1316,6 +1316,9 @@ class FluxEngine:
         self.add_empty_data_layer("concw");
         self.add_empty_data_layer("conca");
         self.add_empty_data_layer("FKo07");
+        
+        #Update FH06 (OF/gas flux data layer) descritpion to reflect the gas transfer velocity calculation used in the calculation.
+        self.data["FH06"].longName = self.data["FH06"].longName % self.data["k"].name;
 
         #If using rain wet deposition, calculate the gas solubility in distilled water
         if runParams.rain_wet_deposition_switch:
@@ -1463,6 +1466,7 @@ class FluxEngine:
 #        for name in ["krain", "kt", "kb", "kd"]:
 #            if name not in self.data:
 #                self.add_empty_data_layer(name);
+        
         
         #write out the final ouput to netcdf
         write_netcdf(self);

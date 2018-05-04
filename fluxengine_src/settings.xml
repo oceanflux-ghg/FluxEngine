@@ -173,7 +173,7 @@
 		<!--<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-0.75" maxBound="0.6"-->
 		<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-1000.0" maxBound="1000.0"
 			 standardName="air_to_sea_carbon_dioxide_flux"
-			 longName="Air-sea CO2 flux using the %s %s gas transfer velocity (k)">
+			 longName="Air-sea CO2 flux using the %s gas transfer velocity (k)">
 			 </DataLayer> <!-- Oddly minBoundmaxBound is overwritten in flux engine to -1000+1000 -->
 
 		<DataLayer name="kt" netCDFName="OK1" units="cm h-1" minBound="0.0" maxBound="100.0"

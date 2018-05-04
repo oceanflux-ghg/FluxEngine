@@ -33,7 +33,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    outputFilePath = "output/validate_socatv4_sst_salinity_N00/";
+    outputFilePath = path.join("output", "validate_socatv4_sst_salinity_N00");
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
                                 dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
@@ -47,8 +47,8 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #compare similarity flux budgets output between new and ref runs
     if verbose:
         print "\n\nComparing output to reference data...";
-    newPath = "output/validate_socatv4_sst_salinity_N00/_global.txt";
-    refPath = "data/validation_data/validation_reference_output/socatv4_sst_salinity_N00_reference_FEv2/SST_Salinity_gradients-N00_global.txt";
+    newPath = path.join("output", "validate_socatv4_sst_salinity_N00", "_global.txt");
+    refPath = path.join("data", "validation_data", "validation_reference_output", "socatv4_sst_salinity_N00_reference_FEv2", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;

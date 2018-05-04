@@ -96,7 +96,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
 # These need to both be valid real numbers
 def OceanFluxGHG_kt(kd_fdata, kb_fdata, kb_weighting, kd_weighting):
    #combining the Oceanflux kd and kb components
-   dataLength = len(dk_fdata);
+   dataLength = len(kd_fdata);
    ktotal_fdata = array([DataLayer.missing_value] * dataLength)
    for i in arange(dataLength):  
        # summing the results

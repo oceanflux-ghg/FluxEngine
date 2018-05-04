@@ -1459,6 +1459,7 @@ class FluxEngine:
         # write out results
         #        
         #Temp refactoring:
+        #TODO: Remove this and test.
         for name in ["krain", "kt", "kb", "kd"]:
             if name not in self.data:
                 self.add_empty_data_layer(name);

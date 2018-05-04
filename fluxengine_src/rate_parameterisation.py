@@ -151,7 +151,7 @@ class k_example(KCalculationBase):
     #Main k calculation. Input and output datalayers can be extracted from 'data'.
     #Should modify output layers in place (i.e. without copying), and return True or False to indicate successful execution.
     def __call__(self, data):
-        print self.long_name, "with k_generic_sc as", self.k_generic_sc;
+        print self.name, "with k_generic_sc as", self.k_generic_sc;
         return True;
 
 
@@ -202,7 +202,7 @@ class k_Ho2006(KCalculationBase):
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide";
-            data["k"].long_name="Ho et al., 2006 (H06) gas transfer velocity";
+            data["k"].longName="Ho et al., 2006 (H06) gas transfer velocity";
             
         except KeyError as e:
             print "%s: Required data layer for selected k parameterisation was not found." % function;
@@ -280,8 +280,8 @@ class kt_OceanFluxGHG(KCalculationBase):
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
-            data["k"].standard_name = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
-            data["k"].long_name = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
+            data["k"].standardName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
+            data["k"].longName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
         except KeyError as e:
             print "%s: Required data layer for selected k parameterisation was not found." % function;
             print type(e), e.args;

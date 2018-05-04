@@ -29,18 +29,18 @@ def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, sc
       
     return kdwind_fdata
 
-def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata, nx, ny, pco2_sw_fdata, scskin_fdata):
-    
+def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata,  pco2_sw_fdata, scskin_fdata):
+   dataLength = len(sigma0_fdata);
     # determine the combined Goddijn-Murphy 2012 and Fangohr and Woolf parameterisation
-   kinematic_fdata = array([DataLayer.missing_value] * nx*ny)
-   CD_fdata = array([DataLayer.missing_value] * nx*ny)
-   friction_fdata = array([DataLayer.missing_value] * nx*ny)
+   kinematic_fdata = array([DataLayer.missing_value] * dataLength)
+   CD_fdata = array([DataLayer.missing_value] * dataLength)
+   friction_fdata = array([DataLayer.missing_value] * dataLength)
    
    #kt_fdata = array([missing_value] * nx*ny) #TMH: This doens't appear to be used...
-   kd_fdata = array([DataLayer.missing_value] * nx*ny)
-   kb_fdata = array([DataLayer.missing_value] * nx*ny)
+   kd_fdata = array([DataLayer.missing_value] * dataLength)
+   kb_fdata = array([DataLayer.missing_value] * dataLength)
    
-   for i in arange(nx * ny):
+   for i in arange(dataLength):
 
       # kinematic viscosity
      if ( (sstskinC_fdata[i] != DataLayer.missing_value) ):        
@@ -48,7 +48,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
         kinematic_fdata[i] = 0.00000183 * exp( (-(sstskinC_fdata[i])) / 36.0)
      else:
         kinematic_fdata[i] = DataLayer.missing_value
-     pco2_sw_fdata.shape = (nx, ny)
+     pco2_sw_fdata.shape = (dataLength)
 
       # wind drag coefficient
       # algorithm is only value for a wind speed of up to 26 ms^-1
@@ -94,10 +94,11 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
 # kb_weighting and kd_weighting: Weighting for kb and kd components of k_GoddijnMurphy_Fangohr2012 k parameterisation
 # Setting both equal to 1.0 means that the total k will simply be a linear combination
 # These need to both be valid real numbers
-def OceanFluxGHG_kt(kd_fdata, kb_fdata, nx, ny, kb_weighting, kd_weighting):
+def OceanFluxGHG_kt(kd_fdata, kb_fdata, kb_weighting, kd_weighting):
    #combining the Oceanflux kd and kb components
-   ktotal_fdata = array([DataLayer.missing_value] * nx * ny)
-   for i in arange(nx * ny):  
+   dataLength = len(dk_fdata);
+   ktotal_fdata = array([DataLayer.missing_value] * dataLength)
+   for i in arange(dataLength):  
        # summing the results
        # units are in 10^-4 m/s
       if ( (kd_fdata[i] != DataLayer.missing_value) and (kb_fdata[i] != DataLayer.missing_value) ):
@@ -289,7 +290,7 @@ class kt_OceanFluxGHG(KCalculationBase):
         
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2, self.sstskinC, self.pco2_sw, self.scskin);
         # calculate the total kt
-        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.nx, self.ny, self.kb_weighting, self.kd_weighting);
+        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting);
         self.k[:] = self.kt;
         
         return True;
@@ -592,7 +593,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
         
         #overwrite kd with Goddijn-Murphy et al., JGR 2012 gas transfer...
         self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin, self.nx, self.ny);
-        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.nx, self.ny, self.kb_weighting, self.kd_weighting);
+        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting);
         self.k[:] = self.kt
         return True;
 

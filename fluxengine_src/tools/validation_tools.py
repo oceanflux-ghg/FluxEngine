@@ -7,10 +7,6 @@ Provides validation tools which can validate FluxEngine output against a known r
 @author: tomholding
 """
 
-#Use SET_PATHS to ensure that we are running the development version of the FluxEngine and not any previously installed version.
-#import SET_PATHS;
-#rootPath, srcPath = SET_PATHS.set_paths(verbose=True);
-
 
 from fluxengine_src.fe_setup_tools import run_fluxengine, read_config_file;
 from fluxengine_src.tools.ofluxghg_flux_budgets import run_flux_budgets;
@@ -21,26 +17,6 @@ from netCDF4 import Dataset;
 import calendar;
 
 import numpy as np;
-
-##requires 2D matrices as inputs (old and new). returns a 2D matrix which contains the difference between old and new (old-new).
-#def calc_diff(old, new):
-#    if old.shape != old.shape:
-#        raise ValueError("old and new shape do not match.");
-#    
-#    #convert to standard np.arrays, but don't modify original type.
-#    old2 = np.array(old);
-#    new2 = np.array(new);
-#    
-#    output = np.zeros(old.shape);
-#    
-#    #
-#    for y in range(0, old.shape[1]):
-#        for x in range(0, old.shape[0]):
-#            #if old[x,y] != -999.0 and new[x,y] != -999.0:
-#            curDiff =  old2[x,y] - new2[x,y];
-#            output[x,y] = curDiff;
-#
-#    return output;
 
 #returns a copy of data with all nans replaced with missingValues
 def nans_to_missing_value(data, missingValue=-999.0):
@@ -54,11 +30,29 @@ def nans_to_missing_value(data, missingValue=-999.0):
     fdata.shape = data.shape;
     return fdata;
 
-#Do everything needed to run a validation run.
+#Perform a validation run. This includes running flux engine, calculating flux budgets,
+#comparing output netCDF files for each month to reference output files, comparing flux
+#budget outputs to reference files and reporting important deviations or missing variables.
+#Arguments as follows:
+#   name - just used for printing messages to screen (useful if running a batch of simulations or piping output to a log file).
+#   year - the year to run the validation for.
+#   configFilePath - file path to the config file. Note that the output directory is extracted from this so it is needed even if runFluxEngine=False
+#   referencePath - directory which contains the netCDF output and/or flux budgets output for the reference run.
+#   referenceFluxBudgetsFilename - name of the flux budgets output file you want to use.
+#   runFluxEngine - If true FluxEngine will be ran for the year and config file provided.
+#                   If false no new data will be generated (useful is validating separately to running).
+#   runFluxBudgets - If true the ofluxghg_flux_budgets tool will be ran on the FluxEngine output. If false it is assumed that this already exists.
+#   validateNetCDFOutput - If true then each variable in the output netCDF file will be compared between new and reference runs.
+#   failThresholdNetCDFOutput - the threshold for failing netCDF output validation (magnitude of difference between sum of absolute differences
+#                               between new and reference netCDF variables).
+#   validateFluxBudgets - if true then the annual flux budgets will be compared between new and reference runs.
+#   failThresholdFLuxBudgetOutput - the threshold for failing flux budgets validation (allowed percentage difference between new and reference).
+#   takahashiRun - set if this is performing a takahashi validation run (using all inputs from takahashi 2009 dataset).
+#   verbose - if true additional output will be printed to stdout.
 def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=True, runFluxBudgets=True, #these two arguments force the fluxengine / flux-budgets to run overwriting any previous data.
                  validateNetCDFOutput=True, failThresholdNetCDFOutput=0.000001, #Compare netCDF output variables? Threshold is for sum of abs difference
-                  validateFluxBudgets=True, failThresholdFluxBudgetsOutput=1.0, #Compare flux budget outputs? Threshold in percent
+                 validateFluxBudgets=True, failThresholdFluxBudgetsOutput=1.0, #Compare flux budget outputs? Threshold in percent
                  takahashiRun=False, verbose=False):
 
     validationSuccessful = True; #Assume validation was successful until something goes wrong.

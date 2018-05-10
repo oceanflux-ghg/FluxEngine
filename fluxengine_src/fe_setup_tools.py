@@ -17,7 +17,9 @@ import inspect;
 import time;
 import socket; #for gethostname
 import calendar;
+from datetime import date, timedelta, datetime;
 import fnmatch; #matching file globs
+from numpy import cumsum;
 
 import fe_core as fluxengine
 import rate_parameterisation as k_params; #This is where k parameterisation logic is kept.
@@ -201,6 +203,19 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             if varName[0:-4]+"prod" not in configVariables:
                 raise ValueError("%s: DataLayer path is specified (%s) but there is no corresponding prod. '%s' must be also be defined in the configuration file." % (function, varName, varName[0:-4]+"prod"));
     
+    #TODO: add datetime data type to settings.xml?
+    #deltatime is a special case
+    #Parse delta time config attribute
+    try:
+        tmpTime = datetime.strptime(configVariables["temporal_resolution"], "%d %H:%M");
+        configVariables["temporal_resolution"] = timedelta(days=tmpTime.day, hours=tmpTime.hour, minutes=tmpTime.minute);
+        if verbose:
+            print "Temporal resolution set to: ", configVariables["temporal_resolution"];
+    except ValueError:
+        if verbose:
+            print "Temporal resolution has been set to default (monthly)";
+        configVariables["temporal_resolution"] = None;
+    
     #Now process custom vars. Try to convert them to a float, but if they fail assume they're supposed to be a string.
     for varName in customVars:
         try:
@@ -214,25 +229,36 @@ def verify_config_variables(configVariables, metadata, verbose=False):
     
     if (configVariables["use_sstskin"]==True) and ("sstskin_path" not in configVariables):
         raise ValueError("%s: use_sstskin is set but no sstskin inputfile (sstskin_path) was specified in the config file." % function);
-    
-    if (configVariables["sst_gradients"]==True) and ("sstgrad_path" not in configVariables):
-        raise ValueError("%s: use_gradients is set but no sstgrad inputfile (sstgrad_path) was specified in the config file: " % function);
 
-#Substitutes month/year tokens to create a valid glob.
-#Returns the a tuple containing (searchDirectory, fileGlob)
-def generate_glob(globSig, year, monthNum):
-    glob = globSig;
-    glob = glob.replace("<YYYY>", str(year));
-    glob = glob.replace("<YY>", str(year)[-2:]);
-    glob = glob.replace("<MM>", "%02d"%(monthNum+1));
-    glob = glob.replace("<MMM>", calendar.month_abbr[monthNum+1].upper());
-    glob = glob.replace("<Mmm>", calendar.month_abbr[monthNum+1]);
-    glob = glob.replace("<mmm>", calendar.month_abbr[monthNum+1].lower());
+
+#Substitutes various time tokens into the input string.
+#Does not modify the original arguments.
+#Accounts for leap years correctly.
+#curDatetime should be a datetime object.
+def substitute_tokens(inputStr, curDatetime):
+    year = curDatetime.year;
+    month = curDatetime.month;
+    day = curDatetime.day;
+    hour = curDatetime.hour;
+    minute = curDatetime.minute;
+
+    outputStr = inputStr;
+    outputStr = outputStr.replace("<YYYY>", str(year));
+    outputStr = outputStr.replace("<YY>", str(year)[-2:]);
+    outputStr = outputStr.replace("<MM>", "%02d"%(month));
+    outputStr = outputStr.replace("<MMM>", calendar.month_abbr[month].upper());
+    outputStr = outputStr.replace("<Mmm>", calendar.month_abbr[month]);
+    outputStr = outputStr.replace("<mmm>", calendar.month_abbr[month].lower());
+    outputStr = outputStr.replace("<DD>", "%02d"%day); #<DD> day of the month
+        
+    #<DDD> day of the year
+    cumulativeDaysByMonth = [0] + list(cumsum([calendar.monthrange(year, m)[1] for m in range(1,12)])); #Cumulative days in each month of the year (accounting for leap years)
+    outputStr = outputStr.replace("<DDD>", "%03d"%(day+cumulativeDaysByMonth[month-1])); #Day number in year, starting at 1 (up to 365 or 366 on leap years)
     
-    #glob.rsplit("/", 1);
-    #print "Split result:", glob;
-    
-    return (path.dirname(glob), path.basename(glob));
+    outputStr = outputStr.replace("<hh>", "%02d"%hour); #<hh> hours in 24 hour time.
+    outputStr = outputStr.replace("<mm>", "%02d"%minute) #<mm> mintue past the hour
+
+    return outputStr;
 
 
 #Returns a list of filepaths which match a glob
@@ -255,13 +281,13 @@ def match_filenames(givenPath, glob):
 #Converts between inconsistencies in the config file naming convention and FluxEngine nameing convention, e.g.:
 #   path -> infile
 #   appending _switch to bool variables
-def create_run_parameters(configVariables, varMetadata, year, monthNum, processTimeStr, configFile, processIndicatorLayersOff):
+def create_run_parameters(configVariables, varMetadata, curTimePoint, processTimeStr, configFile, processIndicatorLayersOff):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     
     runParams = {};
     #Copy over misc. parameters
     #runParams["year"] = 2000 if clArgs.use_takahashi_validation==True else runParams["year"] = year;
-    runParams["year"] = year;
+    runParams["year"] = curTimePoint.year;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
     runParams["src_home"] = configVariables["src_home"];
@@ -276,17 +302,19 @@ def create_run_parameters(configVariables, varMetadata, year, monthNum, processT
         #DataLayerPaths: These can change based on month and year.
         if varName in varMetadata:
             if varMetadata[varName]["type"] == varMetadata[varName]["type"] == "DataLayerPath":
-                curPath, curGlob = generate_glob(configVariables[varName], year, monthNum);
+                pathGlob = substitute_tokens(configVariables[varName], curTimePoint); #substitute time tokens into the path/glob
+                curDir = path.dirname(pathGlob); #Directory to search in.
+                curGlob = path.basename(pathGlob); #File glob to match against.
                 #print "path:", curPath
                 #print "glob:", curGlob;
                 try:
-                    matches = match_filenames(curPath, curGlob);
+                    matches = match_filenames(curDir, curGlob);
                     matches = [match for match in matches if match.rsplit('/', 1)[-1][0] != '.']; #Remove hidden metadata files created by MACOS on some file systems. Required if sharing folders between MACOS and LINUX/WINDOWS.
                     
                     #If there's exactly one match for the file glob, add the data layer.
                     if len(matches) == 1: #Store the file path.
                         dataLayerName = varName[0:-5];
-                        runParams[dataLayerName+"_infile"] = path.join(curPath, matches[0]);
+                        runParams[dataLayerName+"_infile"] = path.join(curDir, matches[0]);
                         runParams[dataLayerName+"_prod"] = configVariables[dataLayerName+"_prod"];
                         runParams[dataLayerName+"_stddev_prod"] = configVariables[dataLayerName+"_stddev_prod"] if dataLayerName+"_stddev_prod" in configVariables else None;
                         runParams[dataLayerName+"_count_prod"] = configVariables[dataLayerName+"_count_prod"] if dataLayerName+"_count_prod" in configVariables else None;
@@ -297,9 +325,9 @@ def create_run_parameters(configVariables, varMetadata, year, monthNum, processT
                             runParams[dataLayerName+"_preprocessing"] = "no_preprocessing";
                         
                     else: #There isn't exactly 1 matching file, so we have a problem, add it to the list.
-                        missingFiles.append( (varName, path.join(curPath, curGlob) ) );
+                        missingFiles.append( (varName, path.join(curDir, curGlob) ) );
                 except Exception as e:
-                    print "Invalid filepath when checking for %s: %s" % (varName, curPath);
+                    print "Invalid filepath when checking for %s: %s" % (varName, curDir);
                     print type(e), e.args;
                     return None;
         
@@ -323,16 +351,13 @@ def create_run_parameters(configVariables, varMetadata, year, monthNum, processT
             return None;
             
 
-    #Output file
-    outFile = "OceanFluxGHG-month%02d-%s-%d-v0.nc" % (monthNum+1, calendar.month_abbr[monthNum+1].lower(), year);
-#    if clArgs.use_takahashi_validation==True:
-#        ##TODO: This needs to be corrected by passing "start_year 2000 end_year 2000" in the command line arguments once the correct ice and pressure data are being used.
-#        outDir = path.join(configVariables["output_dir"], str(2000), "%02d"%(monthNum+1));
-#    else:
-    outDir = path.join(configVariables["output_dir"], str(year), "%02d"%(monthNum+1));
+    #Output file/path
+    outputRoot = configVariables["output_dir"];
+    outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
+    outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
 
-    runParams["output_dir"] = outDir;
-    runParams["output_path"] = path.join(outDir, outFile);
+    runParams["output_dir"] = path.join(outputRoot, outputStructure); #root output directory
+    runParams["output_path"] = path.join(outputRoot, outputStructure, outputFile);
     
     
     return runParams;
@@ -459,12 +484,56 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, v
     
     return fe;
 
+#Takes a string start date and a string end date and returns a list of date objects between them (inclusive of start and end)
+#deltaTime is a datetime.deltatime object which specifies the interval between timepoints. If set to None then intervals will be monthly.
+#singleDate returns a list containing only the first date (used for testing).
+#Valid date/time string formats: YYYY, YYYY-MM-DD, YYYY-MM-DD hh:mm
+def generate_datetime_points(startStr, endStr, deltaTime=None, singleDate=False):
+    #Parse start/end date strings
+    try: #Parsing start date string
+        startYear = int(startStr);
+        startDate = datetime(startYear, 1, 1);
+    except ValueError: #startStr is not a single year, so try it as a datetime string
+        try:
+            startDate = datetime.strptime(startStr, "%Y-%m-%d %H:%M");
+        except ValueError: #startStr is not a single year, so try it as a date string (with no time component)
+            startDate = datetime.strptime(startStr, "%Y-%m-%d");
+    
+    try: #Parsing end date string
+        endYear = int(endStr);
+        endDate = datetime(endYear, 12, 31);
+    except ValueError: #endStr is not a single year, so try it as a datetime string
+        try:
+            endDate = datetime.strptime(endStr, "%Y-%m-%d %H:%M");
+        except ValueError: #endStr is not a single year, so try it as a date string (with no time component)
+            endDate = datetime.strptime(endStr, "%Y-%m-%d");
+    
+    
+    if startDate > endDate:
+        raise ValueError("Start date (%s) is after end data (%s)." % (str(startDate), str(endDate)));
+    
+    #Create datetime objects for each date between the start and end dates.
+    timePoints = [];
+    currentDate = startDate;
+    while currentDate <= endDate:
+        timePoints.append(currentDate);
+        if deltaTime == None: #Increment by the number of days in the current month (taking into account leap years)
+            currentDate += timedelta(days=calendar.monthrange(currentDate.year, currentDate.month)[1]);
+        else: #Increment by deltatime
+            currentDate += deltaTime;
+
+    if singleDate: #Discard all other time points and just return the first one.
+        return [timePoints[0]];
+    else:
+        return timePoints;
+
+
 #Takes a config file, a list of years and months, and runs the flux engine for each month/year combination.
-def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, processLayersOff=True,
-                   takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None):
+def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=False, processLayersOff=True,
+                   takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     hostname = socket.gethostname();
-    rootPath = path.dirname(path.dirname(inspect.stack()[0][1]));
+    rootPath = path.abspath(path.join(__file__, "../.."));
     if verbose:
         print "Hostname identified as: ", hostname;
         print "Working directory is: ", rootPath;
@@ -474,9 +543,8 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
     configVariables = read_config_file(configPath, verbose=verbose);
     
     #Parse settings file for default metadata about the config variables
-    settingsPath = path.join(rootPath, configVariables["src_home"], "settings.xml");
+    settingsPath = path.join(rootPath, "fluxengine_src", "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
-    
     
     #Substitute commandline override arguments (-pco2_dir_override, -output_dir_override)
     if (pco2DirOverride != None):
@@ -509,53 +577,56 @@ def run_fluxengine(configFilePath, yearsToRun, monthsToRun, verbose=False, proce
     processTimeStr = time.strftime("%d/%m/%Y %H:%M:%S");
     print "Executing on '%s' at %s" % (hostname, processTimeStr);
     
-    for year in yearsToRun:
-        for monthNum in monthsToRun:
-            #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
-            #So these must be generated on a per-month/year basis.
-            try:
-                runParameters = create_run_parameters(configVariables, metadata, year, monthNum, processTimeStr, configFilePath, processLayersOff);
-                
-                #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
-                if takahashiDriver == True:
-                    runParameters["TAKAHASHI_DRIVER"] = True;
-                else:
-                    runParameters["TAKAHASHI_DRIVER"] = False;
-            except ValueError as e:
-                print e.args;
-                return;
-            except OSError as e:
-                print e.args;
-                return;
+    #Generate a list of datetime objects overwhich to run the simulations
+    timePoints = generate_datetime_points(startDate, endDate, deltaTime=configVariables["temporal_resolution"], singleDate=singleRun);
+    #print "num timepoints:", len(timePoints);
+    #input("key to continue...");
+    for timePoint in timePoints:
+        #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
+        #So these must be generated on a per-month/year basis.
+        try:
+            runParameters = create_run_parameters(configVariables, metadata, timePoint, processTimeStr, configFilePath, processLayersOff);
             
-            #Create output file path
-            try:
-                if path.exists(runParameters["output_dir"]) == False:
-                    makedirs(runParameters["output_dir"]);
-            except OSError as e:
-                print "Couldn't create output directory '%s'. Do you have write access?" % runParameters["output_dir"];
-                print type(e), e.args;
-            
-            #Create fluxengine object setup according to runParameters
-            fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
-            
-            #Run fluxengine            
-            if fe != None:
-                #try:
-                    returnCode = fe.run();
-                #except Exception as e:
-                #    print "\n\n%s: Exception caught while running FluxEngine:" % function;
-                #    print type(e), e.args;
-                #    return 1;
-            
-            #Check for successful run, if one fails don't run the rest.
-            if returnCode != 0:
-                print ("%s: There was an error running flux engine:\n\n"%function), e.args[0];
-                print "Exiting...";
-                return (returnCode, fe);
+            #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
+            if takahashiDriver == True:
+                runParameters["TAKAHASHI_DRIVER"] = True;
             else:
-                print "Flux engine exited with exit code:", returnCode;
-                print calendar.month_abbr[monthNum+1], year, "completed successfully.\n";
+                runParameters["TAKAHASHI_DRIVER"] = False;
+        except ValueError as e:
+            print e.args;
+            return;
+        except OSError as e:
+            print e.args;
+            return;
+        
+        #Create output file path
+        try:
+            if path.exists(runParameters["output_dir"]) == False:
+                makedirs(runParameters["output_dir"]);
+        except OSError as e:
+            print "Couldn't create output directory '%s'. Do you have write access?" % runParameters["output_dir"];
+            print type(e), e.args;
+        
+        #Create fluxengine object to use runParameters
+        fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
+        
+        #Run fluxengine            
+        if fe != None:
+            #try:
+                returnCode = fe.run();
+            #except Exception as e:
+            #    print "\n\n%s: Exception caught while running FluxEngine:" % function;
+            #    print type(e), e.args;
+            #    return 1;
+        
+        #Check for successful run, if one fails don't run the rest.
+        if returnCode != 0:
+            print ("%s: There was an error running flux engine:\n\n"%function), e.args[0];
+            print "Exiting...";
+            return (returnCode, fe);
+        else:
+            print "Flux engine exited with exit code:", returnCode;
+            print "%d02"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "completed successfully.\n";
             
     #runStatus = {};
     #runStatus["return_code"] = returnCode;

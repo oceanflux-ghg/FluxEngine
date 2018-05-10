@@ -173,7 +173,7 @@
 		<!--<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-0.75" maxBound="0.6"-->
 		<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-1000.0" maxBound="1000.0"
 			 standardName="air_to_sea_carbon_dioxide_flux"
-			 longName="Air-sea CO2 flux using the %s %s gas transfer velocity (k)">
+			 longName="Air-sea CO2 flux using the %s gas transfer velocity (k)">
 			 </DataLayer> <!-- Oddly minBoundmaxBound is overwritten in flux engine to -1000+1000 -->
 
 		<DataLayer name="kt" netCDFName="OK1" units="cm h-1" minBound="0.0" maxBound="100.0"
@@ -364,9 +364,6 @@
 		<Variable name="longitude_prod" required="true" type="string"></Variable>
 		<Variable name="time_prod" required="true" type="string"></Variable>
 
-		<Variable name="pco2_reference_year" required="true" type="float" default="2010"></Variable>
-		<Variable name="pco2_annual_extrapolation" required="true" type="float" default="0.0"></Variable>
-
 		<Variable name="pco2_data_selection" required="true" type="multioption">
 			<Option value="0" str="taka"></Option>
 			<Option value="1" str="socat_pco2"></Option>
@@ -386,13 +383,11 @@
 
 
 
-		<!-- These input datalayers are always required and each need a path and prod -->
+		<!-- These input datalayers are always required (I think?) and each need a path and prod -->
 		<Variable name="pco2_sw" required="true" type="DataLayer"></Variable>
 		<Variable name="vco2_air" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_sst" required="true" type="DataLayer"></Variable>
 		<Variable name="pco2_air" required="true" type="DataLayer"></Variable>
-		<Variable name="sstskin" required="false" type="DataLayer"></Variable>
-		<Variable name="sstfnd" required="false" type="DataLayer"></Variable>
 		<Variable name="windu10" required="true" type="DataLayer"></Variable>
 		<Variable name="sigma0" required="true" type="DataLayer"></Variable>
 		<Variable name="sig_wv_ht" required="true" type="DataLayer"></Variable>
@@ -401,7 +396,9 @@
 		<Variable name="pressure" required="true" type="DataLayer"></Variable>
 		<Variable name="salinity" required="true" type="DataLayer"></Variable>
 
-		<!-- These input datalayers are optional -->
+		<!-- These input datalayers are optional or only required for certain parameter options -->
+		<Variable name="sstskin" required="false" type="DataLayer"></Variable>
+		<Variable name="sstfnd" required="false" type="DataLayer"></Variable>
 		<Variable name="windu10_moment2" required="false" type="DataLayer"></Variable>
 		<Variable name="windu10_moment3" required="false" type="DataLayer"></Variable>
 		<Variable name="biology" required="false" type="DataLayer"></Variable>
@@ -416,19 +413,6 @@
 
 
 		<!-- these should be optional and/or moved to datalayer attributes: -->
-		<Variable name="random_noise_windu10" required="true" type="switch"></Variable>
-		<Variable name="random_noise_sstskin" required="true" type="switch"></Variable>
-		<Variable name="random_noise_sstfnd" required="true" type="switch"></Variable>
-		<Variable name="random_noise_pco2" required="true" type="switch"></Variable>
-
-		<Variable name="bias_windu10" required="true" type="switch"></Variable>
-		<Variable name="bias_windu10_value" required="true" type="float"></Variable>
-		<Variable name="bias_sstskin" required="true" type="switch"></Variable>
-		<Variable name="bias_sstskin_value" required="true" type="float"></Variable>
-		<Variable name="bias_sstfnd" required="true" type="switch"></Variable>
-		<Variable name="bias_sstfnd_value" required="true" type="float"></Variable>
-		<Variable name="bias_pco2" required="true" type="switch"></Variable>
-		<Variable name="bias_pco2_value" required="true" type="float"></Variable>
 
 		<Variable name="bias_k" required="true" type="switch"></Variable>
 		<Variable name="bias_k_percent" required="true" type="switch"></Variable>
@@ -436,16 +420,8 @@
 		<Variable name="bias_k_biology_value" required="true" type="float"></Variable>
 		<Variable name="bias_k_wind_value" required="true" type="float"></Variable>
 
-		<Variable name="kd_weighting" required="true" type="float"></Variable>
-		<Variable name="kb_weighting" required="true" type="float"></Variable>
-		<Variable name="kb_asymmetry" required="true" type="float"></Variable>
-
-		<Variable name="bias_sstskin_due_rain" required="true" type="switch"></Variable>
-		<Variable name="rain_wet_deposition" required="true" type="switch"></Variable>
-		<Variable name="k_rain_linear_ho1997" required="true" type="switch"></Variable>
-		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch"></Variable>
-
-		<!-- These values are conditional on other values -->
+		<!-- These values are conditional on other values and/or have default values -->
+		<Variable name="temporal_resolution" required="false" type="string" default="monthly"></Variable> <!-- Valid formats are YYYY, YYYY-MM-DD, YYYY-MM-DD hh:mm, any other strings are interpretted as monthly -->
 		<Variable name="saline_skin_value" required="false" type="float" default="0.0"></Variable>
 
 		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
@@ -453,8 +429,50 @@
 		<Variable name="LOG_PATH" required="false" type="string" default="fluxengine.log"></Variable>
 		<Variable name="cool_skin_difference" required="false" type="float" default="-0.17"></Variable>
 
+		<Variable name="pco2_reference_year" required="true" type="float" default="2010"></Variable>
+		<Variable name="pco2_annual_correction" required="true" type="float" default="0.0"></Variable>
+
+		<Variable name="random_noise_windu10" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_sstskin" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_sstfnd" required="true" type="switch" default="no"></Variable>
+		<Variable name="random_noise_pco2" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_windu10" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_windu10_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstskin_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstfnd" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstfnd_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_pco2" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_pco2_value" required="true" type="float" default="0.0"></Variable>
+
+		<Variable name="kb_asymmetry" required="true" type="float" default="1.0"></Variable>
+
+		<Variable name="bias_sstskin_due_rain" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_sstskin_due_rain_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin_due_rain_intensity" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_sstskin_due_rain_wind" required="true" type="float" default="0.0"></Variable>
+
+
+		<Variable name="rain_wet_deposition" required="true" type="switch" default="no"></Variable>
+		<Variable name="k_rain_linear_ho1997" required="true" type="switch" default="no"></Variable>
+		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch" default="no"></Variable>
+
+
+		<Variable name="output_structure" required="true" type="string" default="&lt;YYYY&gt;/&lt;MM&gt;"></Variable>
+		<Variable name="output_file" required="true" type="string" default="OceanFluxGHG-month&lt;MM&gt;-&lt;mmm&gt;-&lt;YYYY&gt;-v0.nc"></Variable>
+
 	</ConfigParameters>
 </Settings>
+
+<!-- known custom variables:
+		<Variable name="kd_weighting" required="false" type="float"></Variable>
+		<Variable name="kb_weighting" required="false" type="float"></Variable>
+		k_generic_sc
+		k_generic_a0
+		k_generic_a1
+		k_generic_a2
+		k_generic_a3
+-->
 
 <!--
 <DataLayer name="" netCDFName="" units="" minBound="0.0" maxBound="1500.0"

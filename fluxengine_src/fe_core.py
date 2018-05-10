@@ -36,6 +36,8 @@ from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
 from debug_tools import calc_mean; #calculate mean ignoring missing values.
 
+from datetime import timedelta;
+
  # debug mode switches
 DEBUG = False
 DEBUG_PRODUCTS = True
@@ -263,6 +265,11 @@ def write_netcdf(fluxEngineObject, verbose=False):
         if paramValue is not None:
             if type(paramValue) is bool: #netCDF does not support bool types.
                 paramValue = int(paramValue);
+            elif isinstance(paramValue, timedelta): #netCDF does not support object instances.
+                paramValue = str(paramValue);
+            elif paramValue == None: #netCDF does not support None type.
+                paramValue = "None";
+            
             setattr(ncfile, paramName, paramValue);
  
     ncfile.close();

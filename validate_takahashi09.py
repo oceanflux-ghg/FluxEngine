@@ -26,13 +26,13 @@ def run_takahashi09_validation(verbose=True):
     if verbose:
         print "Running FluxEngine for year 2000 using takahashi09 validation";
     configFilePath = path.join("configs", "takahashi09_validation.conf");
-    runStatus = run_fluxengine(configFilePath, [2000], range(0,12), processLayersOff=True, takahashiDriver=True, verbose=False);
+    runStatus = run_fluxengine(configFilePath, 2000, 2000, processLayersOff=True, takahashiDriver=True, verbose=False);
     
     
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    outputPath = path.join(feRoot, "output","validate_takahashi09");
+    outputPath = path.join(feRoot, "output","validate_takahashi09","");
     
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC', dir=outputPath,
                                 fluxdataset='OF', gridarea=0,

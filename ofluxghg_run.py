@@ -44,26 +44,18 @@ if __name__ == "__main__":
                         action="store_true");
     clParser.add_argument("-use_takahashi_driver", "-t", help="indicates that this is a Takahashi validation run. This should only be used in conjunction with the supplied takahashi09_validation/conf file.",
                           action="store_true", default=False);
-    #clParser.add_argument("-use_takahashi_validation", "-t", help="DEPRECIATED: This is non-functional and should not be used. Instead use the takahashi validation configuration file provided in the 'configs' folder.",
-    #                    action="store_true");
     clParser.add_argument("-verbose", "-v", help="verbose: increases the amount of information sent to stdout.",
                         action="store_true");
-    clParser.add_argument("-year_start", "-s", metavar='\b', help="first year to evaluate (default=2010)", type=int, default=2010);
-    clParser.add_argument("-year_end", "-e", metavar='\b', help="final year to evaluate (default=2010)", type=int, default=2010);
+    #clParser.add_argument("-year_start", "-s", metavar='\b', help="first year to evaluate (default=2010)", type=int, default=2010);
+    clParser.add_argument("-start_date", "-s", metavar='\b', help="Flux calculation will be computed from this date (default = 01-01-2010 00:00).", type=str, default="01-01-2010 00:00");
+    clParser.add_argument("-end_date", "-e", metavar='\b', help="Flux calculation will be computed up to (and potentially including) this date (default = 31-12-2010 23:59).", type=str, default="31-12-2010 23:59");
     #clParser.add_argument("-list_k, help="...", action="store_true", default=False);
     #clParser.add_argument("-list_preprocessing", help="...", action="store_true", default=False);
-    clParser.add_argument("-m1", help="only run a single month (useful for testing).", action="store_true", default=False);
+    clParser.add_argument("-S1", help="only run a timepoint (e.g. a single month or single day depending on temporal resolution). This can be useful for testing.", action="store_true", default=False);
     clArgs = clParser.parse_args();
     
     
-    #Months and years to run the model over
-    yearsToRun = range(clArgs.year_start, clArgs.year_end+1);
-    monthsToRun = range(0,12);
-    if clArgs.m1 == True: #If m1 flag is set, just run the first month.
-        monthsToRun = [monthsToRun[0]];
-        yearsToRun = [yearsToRun[0]];
-    
-    returnCode, fe = setup.run_fluxengine(clArgs.config, yearsToRun, monthsToRun, verbose=clArgs.verbose,
+    returnCode, fe = setup.run_fluxengine(clArgs.config, clArgs.start_date, clArgs.end_date, singleRun=clArgs.S1, verbose=clArgs.verbose,
                    processLayersOff=clArgs.process_layers_off,
                    takahashiDriver=clArgs.use_takahashi_driver,
                    pco2DirOverride=clArgs.pco2_dir_override,

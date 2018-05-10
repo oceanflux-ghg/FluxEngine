@@ -421,6 +421,7 @@
 		<Variable name="bias_k_wind_value" required="true" type="float"></Variable>
 
 		<!-- These values are conditional on other values and/or have default values -->
+		<Variable name="temporal_resolution" required="false" type="string" default="monthly"></Variable> <!-- Valid formats are YYYY, YYYY-MM-DD, YYYY-MM-DD hh:mm, any other strings are interpretted as monthly -->
 		<Variable name="saline_skin_value" required="false" type="float" default="0.0"></Variable>
 
 		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
@@ -455,6 +456,10 @@
 		<Variable name="rain_wet_deposition" required="true" type="switch" default="no"></Variable>
 		<Variable name="k_rain_linear_ho1997" required="true" type="switch" default="no"></Variable>
 		<Variable name="k_rain_nonlinear_h2012" required="true" type="switch" default="no"></Variable>
+
+
+		<Variable name="output_structure" required="true" type="string" default="&lt;YYYY&gt;/&lt;MM&gt;"></Variable>
+		<Variable name="output_file" required="true" type="string" default="OceanFluxGHG-month&lt;MM&gt;-&lt;mmm&gt;-&lt;YYYY&gt;-v0.nc"></Variable>
 
 	</ConfigParameters>
 </Settings>

@@ -27,13 +27,13 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if verbose:
         print "Running FluxEngine for year 2010...";
     configFilePath = path.join(feRoot, "configs/socatv4_sst_salinity_gradients-N00.conf");
-    runStatus = run_fluxengine(configFilePath, [2010], range(0,12), processLayersOff=True, verbose=False);
+    runStatus = run_fluxengine(configFilePath, 2010, 2010, processLayersOff=True, verbose=False);
     
     
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    outputFilePath = path.join("output", "validate_socatv4_sst_salinity_N00");
+    outputFilePath = path.join("output", "validate_socatv4_sst_salinity_N00", "");
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
                                 dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',

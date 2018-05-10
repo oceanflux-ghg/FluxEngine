@@ -612,12 +612,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         
         #Run fluxengine            
         if fe != None:
-            #try:
-                returnCode = fe.run();
-            #except Exception as e:
-            #    print "\n\n%s: Exception caught while running FluxEngine:" % function;
-            #    print type(e), e.args;
-            #    return 1;
+            returnCode = fe.run();
         
         #Check for successful run, if one fails don't run the rest.
         if returnCode != 0:
@@ -627,12 +622,8 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         else:
             print "Flux engine exited with exit code:", returnCode;
             print "%d02"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "completed successfully.\n";
-            
-    #runStatus = {};
-    #runStatus["return_code"] = returnCode;
-    #runStatus["output_dir"] = runParameters["output_dir"];
-    #runStatus["config_used"] = configFilePath;
-    return (0, fe); #return code, FluxEngine object.
+    
+    return (returnCode, fe); #return code, FluxEngine object.
 
 
 ##returns a dictionary the initialisation requirements for each rate parameterisation object (classes derived from KCalculationBase).

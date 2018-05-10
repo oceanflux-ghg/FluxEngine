@@ -280,6 +280,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 #Calculates solubility of distilled water (i.e. assuming 0 salinity) given global temperature.
 #overwrites solubilityDistilled with the calculated value.
 #TODO: no need to pass nx, ny into all these functions.
+#TODO: rain_wet_deposition_switch isn't used!
 def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny):
     #First create a 0 salinity dataset
     salDistil = array([missing_value] * len(salinity))

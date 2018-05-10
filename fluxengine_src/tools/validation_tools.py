@@ -63,7 +63,7 @@ def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgets
     #Does the flux engine need running? if so run it
     if runFluxEngine:
         print "Running FluxEngine... (%s)" % name;
-        runStatus, fe = run_fluxengine(configFilePath, [year], range(0,12), processLayersOff=True, takahashiDriver=takahashiRun, verbose=False);
+        runStatus, fe = run_fluxengine(configFilePath, year, year, processLayersOff=True, takahashiDriver=takahashiRun, verbose=False);
     
     #extract output directory from config file
     validationOutputPath = path.join(read_config_file(configFilePath, verbose=False)["output_dir"], ''); #Add '/' to the end (required for flux_budgets)

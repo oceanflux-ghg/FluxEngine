@@ -36,6 +36,8 @@ from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
 from debug_tools import calc_mean; #calculate mean ignoring missing values.
 
+from datetime import timedelta;
+
  # debug mode switches
 DEBUG = False
 DEBUG_PRODUCTS = True
@@ -263,6 +265,11 @@ def write_netcdf(fluxEngineObject, verbose=False):
         if paramValue is not None:
             if type(paramValue) is bool: #netCDF does not support bool types.
                 paramValue = int(paramValue);
+            elif isinstance(paramValue, timedelta): #netCDF does not support object instances.
+                paramValue = str(paramValue);
+            elif paramValue == None: #netCDF does not support None type.
+                paramValue = "None";
+            
             setattr(ncfile, paramName, paramValue);
  
     ncfile.close();
@@ -273,6 +280,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 #Calculates solubility of distilled water (i.e. assuming 0 salinity) given global temperature.
 #overwrites solubilityDistilled with the calculated value.
 #TODO: no need to pass nx, ny into all these functions.
+#TODO: rain_wet_deposition_switch isn't used!
 def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny):
     #First create a 0 salinity dataset
     salDistil = array([missing_value] * len(salinity))
@@ -783,11 +791,6 @@ class FluxEngine:
                 logger.setLevel(logging.DEBUG);
         except:
             print "\n%s Couldn't initialise logger at path %s" % (function, runParams.LOG_PATH);
-    
-        if DEBUG:
-           print "\n%s Flux model: %d, k_parmaterisation: %d" % (function, runParams.flux_calc, runParams.k_parameterisation);
-           print "\n%s Using the following files %s (sstskin), %s (sstfnd) %s (windu10) %s (sal) %s (rain) %s (bio) %s (sstgrad)" % (function, runParams.sstskin_infile, runParams.sstfnd_infile, runParams.windu10_infile, runParams.salinity_infile, runParams.rain_infile, runParams.biology_infile, runParams.sstgrad_infile);
-           print "\n%s Using the following products %s (sstskin), %s (sstfnd) %s (windu10) %s (msl) %s (sal) %s (rain) %s (bio) %s (sstgrad)" % (function, runParams.sstskin_prod, runParams.sstfnd_prod, runParams.windu10_prod, runParams.pressure_prod, runParams.salinity_prod, runParams.rain_prod, runParams.biology_prod, runParams.sstgrad_prod);
         
         #TODO: Replace directly with self.nx, self.ny, no need to use local variables here.
         nx = self.nx;
@@ -848,6 +851,7 @@ class FluxEngine:
         self.add_empty_data_layer("pco2_sw_cor");
         
         #apply additive saline skin value, but why selectively apply it?
+        #TODO: Why are these hard-coded values. Should be using minBound and maxBound?
         self.add_empty_data_layer("salinity_skin");
         for i in arange(self.nx * self.ny):
             if (self.data["salinity"].fdata[i] >= 0.0) and (self.data["salinity"].fdata[i] <= 50.0):
@@ -1072,38 +1076,7 @@ class FluxEngine:
         #########################################################
          
         # pCO2/fCO2 extrapolation (if turned on) from reference year
-        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_extrapolation;
-        
-#        # if runParams.pco2_data_selection == 1, then using SOCAT data so no increment is added as SOCAT are normalised to 2010
-#        # if runParams.pco2_data_selection == 0, then using Takahashi et al data which are normalised to 2000
-#        if runParams.pco2_data_selection == 0:
-#        # increment to be added to pCO2w and pCO2a in Takahashi climatology
-#        # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#        # Takahashi data are normalised to the year 2000
-#           pco2_increment = (runParams.year - 2000.0) * 1.5
-#           print "\n%s year: %d Takahashi pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 1): # signifies that SOCAT pco2 data are being used
-#           # need handling for SOCAT data for years before 2010
-#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#           # so assuming -1.5uatm for each year prior to 2010
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCAT pCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 2): # signifies that SOCAT fco2 data are being used
-#           # need handling for SOCAT data for years before 2010
-#           # 1.5uatm per year since 2000 as set by Takahashi et al 2009.
-#           # so assuming -1.5uatm for each year prior to 2010
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCAT fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 4): # signifies that in situ or time-series data are being used - no increment
-#           pco2_increment = 0.0
-#        elif (runParams.pco2_data_selection == 45): # signifies that SOCATv4 climatology is being used - increments apply
-#           pco2_increment = (runParams.year - 2010.0) * 1.5
-#           print "\n%s year: %d SOCATv4 climatology fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        elif (runParams.pco2_data_selection == 3): # signifies that in situ or time-series data are being used - no increment
-#           pco2_increment = 0.0
-#           print "\ng%s year: %d insitu fCO2_increment: %lf (uatm) (runParams.pco2_data_selection: %d)" % (function, runParams.year, pco2_increment,runParams.pco2_data_selection)
-#        else:
-#           pco2_increment = 0.0
+        pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_correction;
             
         DeltaT_fdata = array([missing_value] * nx*ny)
         
@@ -1351,6 +1324,9 @@ class FluxEngine:
         self.add_empty_data_layer("concw");
         self.add_empty_data_layer("conca");
         self.add_empty_data_layer("FKo07");
+        
+        #Update FH06 (OF/gas flux data layer) descritpion to reflect the gas transfer velocity calculation used in the calculation.
+        self.data["FH06"].longName = self.data["FH06"].longName % self.data["k"].name;
 
         #If using rain wet deposition, calculate the gas solubility in distilled water
         if runParams.rain_wet_deposition_switch:
@@ -1378,6 +1354,7 @@ class FluxEngine:
               self.data["conca"].fdata[i] = ((self.data["solubility_skin"].fdata[i] * conc_factor) * self.data["pco2_air_cor"].fdata[i])
               
               #flux calculation
+              #TODO: This is partially K-parameterisation dependent. Need to decouple this...
               if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
                  kd_component = self.data["kd"].fdata[i] * k_factor
                  kb_component = self.data["kb"].fdata[i] * k_factor
@@ -1493,9 +1470,11 @@ class FluxEngine:
         # write out results
         #        
         #Temp refactoring:
-        for name in ["krain", "kt", "kb", "kd"]:
-            if name not in self.data:
-                self.add_empty_data_layer(name);
+        #TODO: Remove this and test.
+#        for name in ["krain", "kt", "kb", "kd"]:
+#            if name not in self.data:
+#                self.add_empty_data_layer(name);
+        
         
         #write out the final ouput to netcdf
         write_netcdf(self);

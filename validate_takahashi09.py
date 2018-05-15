@@ -77,7 +77,7 @@ def run_takahashi09_validation(verbose=True):
     #Test 2: Compare similarity of flux budgets to reference data for FEv1:
     if verbose:
         print "\n\nValidation Test 2) Comparing validation output to FluxEngine v1.0 output:";
-    refFEv1Path = path.join(feRoot, "data","validation_data","validation_reference_output","takahashi09_FEv1", "_global.txt");
+    refFEv1Path = path.join(feRoot, "data","validation_data","validation_reference_netflux","takahashi09_FEv1", "_global.txt");
     diffsFEv1 = calc_net_budget_percentages(budgetsOutputFilePath, refFEv1Path, verbose=False);
     numFailed = 0;
     
@@ -101,7 +101,7 @@ def run_takahashi09_validation(verbose=True):
     #Test 3: Compare similarity of flux budgets to reference data for FEv2:
     if verbose:
         print "\n\nValidation Test 3) Comparing validation output to FluxEngine v2.0 output:";
-    refFEv2Path = path.join(feRoot, "data","validation_data","validation_reference_output","takahashi09_FEv2", "_global.txt");
+    refFEv2Path = path.join(feRoot, "data","validation_data","validation_reference_netflux","takahashi09_FEv2", "_global.txt");
     diffsFEv2 = calc_net_budget_percentages(budgetsOutputFilePath, refFEv2Path, verbose=False);
     numFailed = 0;
     

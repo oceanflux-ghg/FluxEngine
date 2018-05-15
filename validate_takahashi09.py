@@ -25,20 +25,20 @@ def run_takahashi09_validation(verbose=True):
     #Run flux engine
     if verbose:
         print "Running FluxEngine for year 2000 using takahashi09 validation";
-    configFilePath = "configs/takahashi09_validation.conf";
-    runStatus = run_fluxengine(configFilePath, [2000], range(0,12), processLayersOff=True, takahashiDriver=True, verbose=False);
+    configFilePath = path.join("configs", "takahashi09_validation.conf");
+    runStatus = run_fluxengine(configFilePath, 2000, 2000, processLayersOff=True, takahashiDriver=True, verbose=False);
     
     
     #run net budgets
     if verbose:
         print "\n\nNow calculating flux budgets...";
-    outputPath = path.join(feRoot, "output/validate_takahashi09/")
+    outputPath = path.join(feRoot, "output","validate_takahashi09","");
     
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC', dir=outputPath,
                                 fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
-                                kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, 'data/onedeg_land.nc'),
-                                maskdatasets=[], maskfile=path.join(feRoot, 'data/World_Seas-final-complete_IGA.nc'),
+                                kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, "data", "onedeg_land.nc"),
+                                maskdatasets=[], maskfile=path.join(feRoot, "data", "World_Seas-final-complete_IGA.nc"),
                                 outroot=outputPath, places=10, ref=None,
                                 regions=[], verbosity=0, window=None);
     
@@ -77,7 +77,7 @@ def run_takahashi09_validation(verbose=True):
     #Test 2: Compare similarity of flux budgets to reference data for FEv1:
     if verbose:
         print "\n\nValidation Test 2) Comparing validation output to FluxEngine v1.0 output:";
-    refFEv1Path = path.join(feRoot, "data/validation_data/validation_reference_output/takahashi09_FEv1/", "_global.txt");
+    refFEv1Path = path.join(feRoot, "data","validation_data","validation_reference_netflux","takahashi09_FEv1", "_global.txt");
     diffsFEv1 = calc_net_budget_percentages(budgetsOutputFilePath, refFEv1Path, verbose=False);
     numFailed = 0;
     
@@ -101,7 +101,7 @@ def run_takahashi09_validation(verbose=True):
     #Test 3: Compare similarity of flux budgets to reference data for FEv2:
     if verbose:
         print "\n\nValidation Test 3) Comparing validation output to FluxEngine v2.0 output:";
-    refFEv2Path = path.join(feRoot, "data/validation_data/validation_reference_output/takahashi09_FEv2/", "_global.txt");
+    refFEv2Path = path.join(feRoot, "data","validation_data","validation_reference_netflux","takahashi09_FEv2", "_global.txt");
     diffsFEv2 = calc_net_budget_percentages(budgetsOutputFilePath, refFEv2Path, verbose=False);
     numFailed = 0;
     

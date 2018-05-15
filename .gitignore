@@ -15,3 +15,6 @@ Thumbs.db
 
 ### Output directory ###
 output/**
+
+### Full validation suite files ###
+full_validation/**

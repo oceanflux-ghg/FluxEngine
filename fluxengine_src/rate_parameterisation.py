@@ -29,18 +29,18 @@ def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, sc
       
     return kdwind_fdata
 
-def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata, nx, ny, pco2_sw_fdata, scskin_fdata):
-    
+def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata,  pco2_sw_fdata, scskin_fdata):
+   dataLength = len(sigma0_fdata);
     # determine the combined Goddijn-Murphy 2012 and Fangohr and Woolf parameterisation
-   kinematic_fdata = array([DataLayer.missing_value] * nx*ny)
-   CD_fdata = array([DataLayer.missing_value] * nx*ny)
-   friction_fdata = array([DataLayer.missing_value] * nx*ny)
+   kinematic_fdata = array([DataLayer.missing_value] * dataLength)
+   CD_fdata = array([DataLayer.missing_value] * dataLength)
+   friction_fdata = array([DataLayer.missing_value] * dataLength)
    
    #kt_fdata = array([missing_value] * nx*ny) #TMH: This doens't appear to be used...
-   kd_fdata = array([DataLayer.missing_value] * nx*ny)
-   kb_fdata = array([DataLayer.missing_value] * nx*ny)
+   kd_fdata = array([DataLayer.missing_value] * dataLength)
+   kb_fdata = array([DataLayer.missing_value] * dataLength)
    
-   for i in arange(nx * ny):   
+   for i in arange(dataLength):
 
       # kinematic viscosity
      if ( (sstskinC_fdata[i] != DataLayer.missing_value) ):        
@@ -48,7 +48,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
         kinematic_fdata[i] = 0.00000183 * exp( (-(sstskinC_fdata[i])) / 36.0)
      else:
         kinematic_fdata[i] = DataLayer.missing_value
-     pco2_sw_fdata.shape = (nx, ny)
+     pco2_sw_fdata.shape = (dataLength)
 
       # wind drag coefficient
       # algorithm is only value for a wind speed of up to 26 ms^-1
@@ -91,10 +91,14 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
                 
    return kd_fdata, kb_fdata
 
-def OceanFluxGHG_kt(kd_fdata, kb_fdata, nx, ny, kb_weighting, kd_weighting):
+# kb_weighting and kd_weighting: Weighting for kb and kd components of k_GoddijnMurphy_Fangohr2012 k parameterisation
+# Setting both equal to 1.0 means that the total k will simply be a linear combination
+# These need to both be valid real numbers
+def OceanFluxGHG_kt(kd_fdata, kb_fdata, kb_weighting, kd_weighting):
    #combining the Oceanflux kd and kb components
-   ktotal_fdata = array([DataLayer.missing_value] * nx * ny)
-   for i in arange(nx * ny):  
+   dataLength = len(kd_fdata);
+   ktotal_fdata = array([DataLayer.missing_value] * dataLength)
+   for i in arange(dataLength):  
        # summing the results
        # units are in 10^-4 m/s
       if ( (kd_fdata[i] != DataLayer.missing_value) and (kb_fdata[i] != DataLayer.missing_value) ):
@@ -133,9 +137,9 @@ class KCalculationBase:
 class k_example(KCalculationBase):
     #Optional initialiser arguments can be used, but their names must correspond to names in the config file.
     #For example k_generic_sc is used here.
-    def __init__(self, k_generic_sc):
+    def __init__(self, example_init_parameter):
         self.name = self.__class__.__name__;
-        self.k_generic_sc = k_generic_sc;
+        self.parameter = example_init_parameter; #'example_init_parameter' would need to be defined in the configuration file
     
     #Must return a list of strings corresponding to the input data layers required by the k calculations. These must already exist.
     def input_names(self):
@@ -148,7 +152,7 @@ class k_example(KCalculationBase):
     #Main k calculation. Input and output datalayers can be extracted from 'data'.
     #Should modify output layers in place (i.e. without copying), and return True or False to indicate successful execution.
     def __call__(self, data):
-        print self.long_name, "with k_generic_sc as", self.k_generic_sc;
+        print self.name, "with k_generic_sc as", self.k_generic_sc;
         return True;
 
 
@@ -199,7 +203,7 @@ class k_Ho2006(KCalculationBase):
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide";
-            data["k"].long_name="Ho et al., 2006 (H06) gas transfer velocity";
+            data["k"].longName="Ho et al., 2006 (H06) gas transfer velocity";
             
         except KeyError as e:
             print "%s: Required data layer for selected k parameterisation was not found." % function;
@@ -255,6 +259,7 @@ class k_Nightingale2000(KCalculationBase):
         return True;
 
 
+
 class kt_OceanFluxGHG(KCalculationBase):
     def __init__(self, kb_weighting, kd_weighting):
         self.name = self.__class__.__name__;
@@ -276,8 +281,8 @@ class kt_OceanFluxGHG(KCalculationBase):
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
-            data["k"].standard_name = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
-            data["k"].long_name = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
+            data["k"].standardName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
+            data["k"].longName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
         except KeyError as e:
             print "%s: Required data layer for selected k parameterisation was not found." % function;
             print type(e), e.args;
@@ -285,7 +290,7 @@ class kt_OceanFluxGHG(KCalculationBase):
         
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2, self.sstskinC, self.pco2_sw, self.scskin);
         # calculate the total kt
-        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.nx, self.ny, self.kb_weighting, self.kd_weighting);
+        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting);
         self.k[:] = self.kt;
         
         return True;
@@ -588,7 +593,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
         
         #overwrite kd with Goddijn-Murphy et al., JGR 2012 gas transfer...
         self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin, self.nx, self.ny);
-        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.nx, self.ny, self.kb_weighting, self.kd_weighting);
+        self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting);
         self.k[:] = self.kt
         return True;
 
@@ -653,7 +658,7 @@ class KCalculationExtension:
 #add ho1997 value to data from chosen k parameterisation (adds rain component to the results from the existing choice of parameterisation)
 #see Ashton2016
 #note: data are filtered based on windu10 to ensure that they cover the same data as the wind based paramterisations 
-class AddKRainLinearHo19997(KCalculationExtension):
+class AddKRainLinearHo1997(KCalculationExtension):
     def __init__(self):
         self.name = self.__class__.__name__;
     

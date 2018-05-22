@@ -207,8 +207,12 @@ def verify_config_variables(configVariables, metadata, verbose=False):
     #deltatime is a special case
     #Parse delta time config attribute
     try:
-        tmpTime = datetime.strptime(configVariables["temporal_resolution"], "%d %H:%M");
-        configVariables["temporal_resolution"] = timedelta(days=tmpTime.day, hours=tmpTime.hour, minutes=tmpTime.minute);
+        days, time = configVariables["temporal_resolution"].split(" ");
+        hours, minutes = time.split(":");
+        configVariables["temporal_resolution"](days=int(days), hours=int(hours), minutes=int(minutes));
+        
+        #tmpTime = datetime.strptime(configVariables["temporal_resolution"], "%d %H:%M");
+        #configVariables["temporal_resolution"] = timedelta(days=tmpTime.day, hours=tmpTime.hour, minutes=tmpTime.minute);
         if verbose:
             print "Temporal resolution set to: ", configVariables["temporal_resolution"];
     except ValueError:

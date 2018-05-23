@@ -1,541 +1,455 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 #Created by Peter Land, Plymouth Marine Laboratory.
 #IGA branch to create files with different geographical grids (i.e. not necessarily regular)
+#TMH option for specifying different grid resolutions
 
 '''Program to convert text files to netcdf files with the correct dimensions to be used as input for the Flux Engine software. 
 Input inFiles should be csv, or tab delimited text file(s). Headers are interrogated for lat/long, fCO2, N2O, CH4, SST and dates.
 IGA ??/??/2016 Updated variable names to include CH4 and N20
 IGA 5/5/2016 Updated filenames to allow for Arctic (or other) grid
-IGA 11/5/2016 Updated to include vCO2_air data as req'd in FE '''
+IGA 11/5/2016 Updated to include vCO2_air data as req'd in FE
+TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0 '''
 
-#TO DO - Make generic for gas names so any gas can be used. 
 
-import numpy as np, argparse, csv, sys
-from netCDF4 import Dataset
-from datetime import datetime, timedelta
-from glob import iglob, glob
+import numpy as np, argparse;
+from netCDF4 import Dataset;
+from datetime import datetime, timedelta;
+import pandas as pd;
+from glob import glob;
 
-MISSING = -999.
-defaultNcFile = "/Users/iga202/Ifremer/OCEANFLUX-SHARED/workspace/i.g.c.ashton_exeter.ac.uk/text2ncdfout.nc"
-defaultRefNcFile = "/Users/iga202/Ifremer/OCEANFLUX-DATA/composites/air_pressure_at_sea_level/arctic/ecmwf/2008/200801_OCF-PRE-ARC-1M-25km-ECMWF.nc"#choose local file that has the correct dimensions for output.
+##############
+# Global definitions
+##############
+MISSING_VALUE = np.nan;#-999.0 #Missing value to be used in output netCDF file
+CL_DATE_FORMATS = ["%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]; #Formats which can be used to specify start and end dates in the commandline arguments
 
-delimiters = [',', '\t', 'None']
-latNames = ["latitude", "lat (n)", "lat"]
-lonNames = ["longitude", "lon (e)", "lon"]
-fCO2Names = ["fco2_rec","fco2_recommended","pco2"]
-pN2ONames = ["pn2o"]
-pCH4Names = ["pch4"]
-SSTNames = ["temp","sst"]
-vco2Names = ['vco2', 'vco2_air', 'conc_air']
-dateTimeNames = ["date/time", "date"]
-yearNames = ["yr"]
-monthNames = ["mon"]
-dayNames = ["day"]
-hourNames = ["hour"]
-minuteNames = ["min"]
-epoch = datetime(1970,1,1)
-invalidlatlon_count = 0
+#Dimension names for the output netCDF will not change, so define them here. Use to create variables in the output file.
+DIM_NAME_TIME = "time";
+DIM_NAME_LAT = "latitude";
+DIM_NAME_LON = "longitude";
+DIM_NAMES = (DIM_NAME_TIME, DIM_NAME_LAT, DIM_NAME_LON);
 
-def datetimeFormat(datestring, myFormat = None):
-  '''try reading date/time string in various formats'''
-  datestring = datestring.rstrip()
-  formats = ["%d/%m/%Y", "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y%H:%M:%S", "%d/%m/%y", "%d/%m/%y %H:%M", "%d/%m/%y %H:%M:%S"]
-  if myFormat is not None: # try current format first
+#############
+# Function definitions
+#############
+
+#Parse and set variables from command line arguments. Returns an object containing each command line argument as an attribute.
+def parse_cl_arguments():
+    description = unicode("""Converts text encoded data (e.g. csv, tsv) to netCDF3 data which is compatible for use with FluxEngine.
+    The text input file must have a header containing the column names.
+    Column names must start with a letter (a-z or A-Z) and can only contain letters, numbers, spaces, underscores and certain symbols.
+    For information on allowed symbols consult the netCDF3 documentation.
+    Symbol requirements do not apply to units (e.g. "Temp [°C]" or "fCO2 [µatm]" are valid column name if unit parsing is on.)""", 'utf-8');
+    
+    parser = argparse.ArgumentParser(description=description);
+    parser.add_argument("inFiles", nargs="+", help="list of paths to input text file(s) containing the data you want to use. These must all have the same header configuration and column names. Standard Unix glob patterns are supported.");
+    parser.add_argument("-n", "--ncOutPath", help="Path to the output netCDF file(s). Note that if more than one netCDF file will be created a date/time stamp will be appended to this filename indicating the start of this temporal 'bin'.");
+    parser.add_argument("-s", "--startTime", default="1900-01-01",
+        help="start date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
+    parser.add_argument("-e", "--endTime", default="2100-01-01",
+        help="end date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
+    parser.add_argument("-t", "--temporalResolution", default="monthly",
+        help="Temporal resolution to use. Defaults to monthly. Format required (days hours:minutes): D hh:mm")
+    parser.add_argument("--latProd", default="Latitude",
+        help="latitude product name. This should match the column name in the input text file. Default is 'Latitude'");
+    parser.add_argument("--lonProd", default="Longitude",
+        help="longitude product name. This should match the column name in the input text file. Default is 'Longitude'");
+    parser.add_argument("--latResolution", default=1.0, type=float, help="spatial resolution of the grid (latitude)");
+    parser.add_argument("--lonResolution", default=1.0, type=float, help="spatial resolution of the grid (longitude)");
+    parser.add_argument("--delim", default="\t",
+        help="delimiter token used to seperate data in the input text file. Default is a tab.")
+    parser.add_argument("-d", "--dateIndex", type=int, default=0,
+        help="The column number (starting from 0) which contains the date/time field in your input text file. Default is a 0.");
+    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[0],
+        help="Number of comment lines before the header to be ignored). Default is a 0.");
+    parser.add_argument("--cols", nargs="+", default=None,
+        help="List of column names or numbers which will be added to the output netCDF file. Default will add all non-date/time columns.");
+    parser.add_argument("-m", "--missing_value", default="nan", help="Indicates a missing value in the input text file. Default is 'nan'.");
+    parser.add_argument("-u", "--parse_units", action="store_true",
+                          help="will automatically parse units in the header column names if follow the variable name and are formatted between square brackets (e.g. Depth [m])");
+    parser.add_argument("--encoding", default="utf-8", help="Encoding of the input text file. Default it 'utf-8'");
+    parser.add_argument("-l", "--limits", type=float, nargs = 4, default = [-90.0, 90.0, -180.0, 180],
+                        help="Coordinates which define the grid limits given in latitude and longitude: South North West East, e.g. -45 -30 -45 10 Defaults to -90 90 -180 180")
+    clArgs = parser.parse_args();
+    
+    #Convert YYYY start time to be last day of the year.
     try:
-      return datetime.strptime(datestring, myFormat), myFormat
-    except:
-      pass
-  for myFormat in formats:
+        intYear = int(clArgs.startTime);
+        clArgs.startTime = str(intYear)+"-12-31 23:59:59";
+    except ValueError:
+        pass; #It's not a YYYY year format, so no need to convert.
+        
+    #Parse start and end times and create datetime objects
     try:
-      return datetime.strptime(datestring, myFormat), myFormat
-    except:
-      pass
-      print 'No format for date...',datestring
-  return None
-
-def stringIndex(inList, strings):
-  '''return index of inList containing one of strings'''
-  inList = [x.strip(' ') for x in inList]
-  for string in strings:
+        startTime, formatUsed = parseDateTimeString(clArgs.startTime, CL_DATE_FORMATS)
+        clArgs.startTime = startTime;
+    except ValueError as e:
+        print e.clArgs;
+        raise SystemExit("Unable to parse start datetime "+clArgs.startTime);
     try:
-      return inList.index(string)
-    except:
-      pass
-  return None
+        endTime, formatUsed = parseDateTimeString(clArgs.endTime, CL_DATE_FORMATS);
+        clArgs.endTime = endTime;
+    except ValueError as e:
+        print e.args;
+        raise SystemExit("Unable to parse end datetime "+clArgs.endTime);
+    
+    #Parse temporalResolution
+    if clArgs.temporalResolution != "monthly":
+        days, time = clArgs.temporalResolution.split(" ");
+        hours, minutes = time.split(":");
+        clArgs.temporalResolution = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
+    
+    #Expand file globs
+    expandedGlobs = [];
+    for filepath in clArgs.inFiles:
+        expandedGlobs += glob(filepath);
+    clArgs.inFiles = expandedGlobs;
+    
+    print clArgs.inFiles;
+    
+    return clArgs;
 
-parser = argparse.ArgumentParser()
-parser.add_argument("inFiles", nargs="+", help="input csv file(s)")
-parser.add_argument("-n", "--ncFile", help="output netCDF file")
-parser.add_argument("-r", "--refNcFile", help="reference netCDF file")
-parser.add_argument("-s", "--startTime",
-  help="start date (and time) DD/MM/(YY)YY (HH:MM(:SS))")
-parser.add_argument("-e", "--endTime",
-  help="end date (and time) DD/MM/(YY)YY (HH:MM(:SS))")
-parser.add_argument("-m", "--month", type = int,
-  help="month to include (1-12)")
-parser.add_argument("-l", "--limits", type = float, nargs = 4,
-  help="[N latitude, S latitude, W longitude, E longitude]")
-args = parser.parse_args()
 
-if args.ncFile is None:
-  ncFileName = defaultNcFile
-else:
-  ncFileName = args.ncFile
-if args.refNcFile is None:
-  refNcFileName = defaultRefNcFile
-else:
-  refNcFileName = args.refNcFile
-justMonth = args.month is not None
-if justMonth:
-  month = args.month
+#Try to parse a string to create a datatime object using a list of formats.
+#Returns the datetime object and format used.
+#If none of the formats match a ValueError exception is raised.
+def parseDateTimeString(dateString, formats, verbose=False):
+    dateString = dateString.strip();
+    
+    #formats = ["%d/%m/%Y", "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y%H:%M:%S", "%d/%m/%y", "%d/%m/%y %H:%M", "%d/%m/%y %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
+    #Try to parse the string with each format in turn.
+    for currentFormat in formats:
+        try:
+            return datetime.strptime(dateString, currentFormat), currentFormat;
+        except:
+            pass; #Try the next.
+            
+    #No format matched, so return None tuple.
+    raise ValueError("datetimeFormat: No matching format for dateString '"+dateString+"'.");
 
-#print 'ncFileName',ncFileName,'\nrefFileName',refNcFileName
 
-with Dataset(ncFileName, 'w', format='NETCDF3_CLASSIC') as ncFile, \
-    Dataset(refNcFileName) as refNcFile:
-  
-  # Create dimensions based on reference file
-  dimlist = []#Will be list of dimensions
-  for dim in refNcFile.dimensions.keys():
-      dimlist.append(str(dim))
-      ldim = refNcFile.dimensions[str(dim)].size
-      ncFile.createDimension(str(dim), ldim)#IGA How to get the dimension
+# Returns a tuple containing the (x, y) grid coordinate that corresponds to a given latitude and longitude
+#   latResolution: spatial resolution in latitude
+#   lonResolution: spatial resolution in longitude
+#   refLat: reference latitude at 0, 0 grid point
+#   refLon: reference longitude at 0, 0 grid point
+def get_grid_coordinates(latitude, longitude, latResolution, lonResolution, ref0Lat, ref0Lon):
+    #Difference in lat/long
+    #print "lat, lon:", latitude, longitude;
+    #print "ref, ref:", ref0Lat, ref0Lon;
+    dLatitude = latitude-ref0Lat;
+    #print "dLat: ", dLatitude;
+    dLongitude = longitude-ref0Lon;
+    #print "dLon: ", dLongitude;
+    if dLatitude < 0 or dLongitude < 0:
+        raise ValueError("difference between latitude or longitude and reference point was negative.");
+    
+    #bin coordinates to the correct grid point
+    x = int(dLatitude/latResolution);
+    y = int(dLongitude/lonResolution);
+    
+    return (x, y);
 
-  xdim = [str(x) for x in refNcFile.dimensions.keys() if 'lon' in str(x).lower() or 'x' in str(x).lower()]
-  ydim = [str(x) for x in refNcFile.dimensions.keys() if 'lat' in str(x).lower() or 'y' in str(x).lower()]
-  xdim = xdim[0]
-  ydim = ydim[0]
-#Assuming time dimension is called time
-  #print 'Dimensions read from input file -> ',dimlist
+#Calculates and returns the temporal coordinate (first dimension) diven a time, temporal resolution and reference data.
+#   dateTime: date and time to calculate for
+#   temporalResolution: temporal resolution
+#   refDateTime: reference date time which corresponds to an index/coordinate of 0.
+def get_temporal_coordinate(dateTime, temporalResolution, refDateTime):
+    if temporalResolution != "monthly":
+        diff = dateTime-refDateTime;
+        index = int(np.floor(diff.total_seconds() / temporalResolution.total_seconds()));
+        return index;
+    else: #monthly
+        yearDiff = dateTime.year - refDateTime.year;
+        monthDiff = dateTime.month - refDateTime.month;
+        index = (yearDiff*12) + monthDiff;
+        return index;
 
-  #Check to see if RGB is dimension in reference file. If not, make it
-  if 'RGB' not in refNcFile.dimensions.keys():
-      ncFile.createDimension('RGB', 3)
-      dimlist.append('RGB')
+#Calculates and sets standard deviations in outputArray. outputArray is written in place and no value is returned.
+#   allValues: array containing a list of each value for each grid point
+#   mask: boolean matrix indicating which grid points to calculate for
+#   outputArray: Array to write output to
+def calc_standard_deviation(allValues, mask, output):
+    for coords, vals in np.ndenumerate(allValues):
+        if mask[coords] == True:
+            #print "sd: ", np.std(vals);
+            output[coords] = np.nanstd(vals);
 
-  #Find the long and lat variables
-  latvarname = [str(x) for x in refNcFile.variables.keys() if 'lat' in str(x).lower()]
-  lonvarname = [str(x) for x in refNcFile.variables.keys() if 'lon' in str(x).lower()]
+#Calculates and sets the mean in outputArray. outputArray is written in place and no value is returned.
+#   allValues: array containing a list of each value for each grid point
+#   mask: boolean matrix indicating which grid points to calculate for
+#   outputArray: Array to write output to
+def calc_mean(allValues, mask, output):
+    for coords, vals in np.ndenumerate(allValues):
+        if mask[coords] == True:
+            output[coords] = np.nanmean(vals);
 
-  if not lonvarname or not latvarname:
-    print "data variable 'latitude' missing from reference netcdf input"
-    sys.exit(1)
-  
-  if len(lonvarname)>1 or len(latvarname)>1:
-    print "Unable to determine Latitude and/or longitude variables from reference netcdf input (other variables with lat or lon in their names?"
-    sys.exit(1)
-  
-  latvarname = latvarname[0]
-  lonvarname = lonvarname[0]
-
-  latitudeVar = refNcFile.variables[latvarname]
-  latitudeData = latitudeVar[:]
-  nlat = latitudeData.shape[0]
-  
-  longitudeVar = refNcFile.variables[lonvarname]
-  longitudeData = longitudeVar[:]
-  nlon = longitudeData.shape[0]
-
-  if len(latitudeData.shape)<2:
-     #Geographical data (lat-lon) are expressed as vectors
-     lat0 = latitudeData[0]
-     dlat = latitudeData[1] - lat0
-     lon0 = longitudeData[0]
-     dlon = longitudeData[1] - lon0
-  else:
-     nlon = longitudeData.shape[1]
-
-  try:
-    timeVar = refNcFile.variables['time']
-  except:
-    print "data variable 'time' missing from reference netcdf input"
-    sys.exit(1)
-  
-  myFormat = "%d/%m/%Y %H:%M:%S"
-  noTimes = True
-  if args.startTime is None:
-    startTime = datetime(1900,1,1)
-  else:
-    startTime, myFormat = datetimeFormat(args.startTime, myFormat)
-    if startTime is None:
-      print "Unable to parse start datetime ", args.startTime
-      sys.exit(1)
-  maxTime = startTime
-  if args.endTime is None:
-    endTime = datetime(2100,12,31)
-  else:
-    endTime, myFormat = datetimeFormat(args.endTime, myFormat)
-    if len(myFormat) == 8: # d/m/y
-      endTime += timedelta(1) # add a day, so if endTime=31/1, we include all times before 1/2 00:00
-    if endTime is None:
-      print "Unable to parse end datetime ", args.endTime
-      sys.exit(1)
-  minTime = endTime
-
-#Create variables
-  secs = ncFile.createVariable('time', 'd', ('time',))
-  secs.units = 'seconds since 1970-01-01 00:00:00'
-  secs.axis = "T"
-  secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
-  secs.standard_name = "time"
-  secs.valid_min = 0. 
-  secs.valid_max = 1.79769313486232e+308
-
-  print '\nDimensions in ncFile',ncFile.dimensions.keys()
-  print '\nx and y dims',xdim,ydim
-  if len(latitudeData.shape)<2:
-  #     #Geographical data (lat-lon) are expressed as a vector not a grid
-    lats = ncFile.createVariable('latitude','f',(ydim,))
-    lons = ncFile.createVariable('longitude','f',(xdim,))
-  else:
-    lats = ncFile.createVariable('latitude','f',(ydim,xdim))
-    lons = ncFile.createVariable('longitude','f',(ydim,xdim))
-  lats.units = 'degrees_north'
-  lats.axis = "Y"
-  lats.long_name = "Latitude North"
-  lats.standard_name = "latitude"
-  lats[:] = latitudeData
-  lats.valid_min = -90.
-  lats.valid_max = 90.
-
-  lons.units = 'degrees_east'
-  lons.axis = "X"
-  lons.long_name = "Longitude East"
-  lons.standard_name = "longitude"
-  lons[:] = longitudeData
-  lons.valid_min = -180.
-  lons.valid_max = 180.
-
-  countVar = ncFile.createVariable("fCO2_count", 'i4', ('time',ydim,xdim),
-    fill_value=0)
-  countVar.units = "count"
-  countVar.missing_value = 0
-  countVar.valid_min = 0
-  countVar.valid_max = 32767
-  countVar.standard_name = "observation count"
-  countVar.long_name = "Number of fCO2 observations per cell"
-  count = np.zeros([nlat, nlon], dtype = 'int')
-  print 'initial count size',count.shape
-
-  seasonVar = ncFile.createVariable("seasonal", 'i1', (ydim,xdim,'RGB'))
-  seasonVar.units = "seasonal"
-  seasonVar.missing_value = 0
-  seasonVar.valid_min = 0
-  seasonVar.valid_max = 32767
-  seasonVar.standard_name = "seasonal coverage"
-  seasonVar.long_name = "cumulative seasonal coverage (R=Nov-Feb,G=Mar-Jun,B=Jul-Oct)"
-  season = np.zeros([nlat, nlon, 3], dtype = 'byte')
-
-  fCO2Used = False
-  SSTUsed = False
-  N2OUsed = False
-  CH4Used = False
-  vco2Used = False
-  
-  for inFiles in args.inFiles:
-    for inFile in iglob(inFiles):
-      fCO2min = float('inf')
-      N2Omin = float('inf')
-      CH4min = float('inf')
-      vco2min = float('inf')
-      with open(inFile, 'U') as inUnit:
-        delimiterFound = False
-        for delimiter in delimiters:
-          if delimiter == 'None':
-            print "Unrecognised file delimiter"
-            exit(0)
-          reader=csv.reader(inUnit, delimiter=delimiter)
-          for header in reader: # keep going til we find a header line
-            lowHeader = [item.lower() for item in header]
-            latIndex = stringIndex(lowHeader, latNames)
-            lonIndex = stringIndex(lowHeader, lonNames)
-            if latIndex is None or lonIndex is None:
-              print 'lat or long not recognised'
-              continue # pre-header info
-            delimiterFound = True
-            fCO2Index = stringIndex(lowHeader, fCO2Names)
-            if fCO2Index is not None and not fCO2Used:
-              print 'fCO2 data read from ',fCO2Index#IGA
-              fCO2Used = True
-              fCO2s = ncFile.createVariable('fCO2_bin','f',('time',ydim,xdim))
-              fCO2s.units = 'uatm'
-              fCO2s.standard_name = "fCO2"
-              fCO2s.long_name = "Carbon dioxide fugacity"
-              fCO2s.valid_min = 0.
-              fCO2s.valid_max = 1e6
-              fCO2s.fill_value = -999.
-              fCO2 = np.zeros([nlat, nlon]) # sum fCO2
-              fCO2stds = ncFile.createVariable('fCO2_std','f',('time',ydim,xdim))
-              fCO2stds.units = 'uatm'
-              fCO2stds.standard_name = "fCO2"
-              fCO2stds.long_name = "Carbon dioxide fugacity"
-              fCO2stds.valid_min = 0.
-              fCO2stds.valid_max = 1e6
-              fCO2stds.fill_value = -999.
-              fCO2std = np.zeros([nlat, nlon]) # sum fCO2^2
-            SSTIndex = stringIndex(lowHeader, SSTNames)
-            if SSTIndex is not None and not SSTUsed:
-              print 'SST data read from ',SSTIndex#IGA
-              SSTUsed = True
-              SSTs = ncFile.createVariable('SST','f',('time',ydim,xdim))
-              SSTs.units = 'Kelvins'
-              SSTs.standard_name = "SST"
-              SSTs.long_name = "Sea surface temperature"
-              SSTs.valid_min = 273.15 - 1.8
-              SSTs.valid_max = 273.15 + 30.5
-              SSTs.fill_value = -999.
-              SST = np.zeros([nlat, nlon]) # sum SST
-            N2OIndex = stringIndex(lowHeader, pN2ONames)
-            if N2OIndex is not None and not N2OUsed:
-              print 'N2O data read from ',N2OIndex#IGA
-              N2OUsed = True
-              N2Os = ncFile.createVariable('N2O_bin','f',('time',ydim,xdim))
-              N2Os.units = 'uatm'
-              N2Os.standard_name = "N2O"
-              N2Os.long_name = "Partial presure Nitrous Oxide"
-              N2Os.valid_min = 0.
-              N2Os.valid_max = 1e6
-              N2Os.fill_value = -999.
-              N2O = np.zeros([nlat, nlon]) # sum N2O
-              N2Ostds = ncFile.createVariable('N2O_std','f',('time',ydim,xdim))
-              N2Ostds.units = 'uatm'
-              N2Ostds.standard_name = "N2O"
-              N2Ostds.long_name = "Partial presure Nitrous Oxide"
-              N2Ostds.valid_min = 0.
-              N2Ostds.valid_max = 1e6
-              N2Ostds.fill_value = -999.
-              N2Ostd = np.zeros([nlat, nlon]) # sum N2O^2
-            CH4Index = stringIndex(lowHeader, pCH4Names)
-            if CH4Index is not None and not CH4Used:
-              print 'CH4 data read from ',CH4Index#IGA
-              CH4Used = True
-              CH4s = ncFile.createVariable('CH4_bin','f',('time',ydim,xdim))
-              CH4s.units = 'uatm'
-              CH4s.standard_name = "CH4"
-              CH4s.long_name = "Partial pressure CH4"
-              CH4s.valid_min = 0.
-              CH4s.valid_max = 1e6
-              CH4s.fill_value = -999.
-              CH4 = np.zeros([nlat, nlon]) # sum CH4
-              CH4stds = ncFile.createVariable('CH4_std','f',('time',ydim,xdim))
-              CH4stds.units = 'uatm'
-              CH4stds.standard_name = "CH4"
-              CH4stds.long_name = "Partial pressure CH4"
-              CH4stds.valid_min = 0.
-              CH4stds.valid_max = 1e6
-              CH4stds.fill_value = -999.
-              CH4std = np.zeros([nlat, nlon]) # sum CH4^2
-            vco2Index = stringIndex(lowHeader, vco2Names)
-            if vco2Index is not None and not vco2Used:
-              print 'vCO2 data read from ',vco2Index#IGA
-              vco2Used = True
-              vco2s = ncFile.createVariable('vco2_bin','f',('time',ydim,xdim))
-              vco2s.units = 'uatm'
-              vco2s.standard_name = "vco2"
-              vco2s.long_name = "Partial pressure vco2"
-              vco2s.valid_min = 0.
-              vco2s.valid_max = 1e6
-              vco2s.fill_value = -999.
-              vco2 = np.zeros([nlat, nlon]) # sum vco2
-              vco2stds = ncFile.createVariable('vco2_std','f',('time',ydim,xdim))
-              vco2stds.units = 'uatm'
-              vco2stds.standard_name = "vco2"
-              vco2stds.long_name = "Partial pressure vco2"
-              vco2stds.valid_min = 0.
-              vco2stds.valid_max = 1e6
-              vco2stds.fill_value = -999.
-              vco2std = np.zeros([nlat, nlon]) # sum vco2^2
-            dateTimeIndex = stringIndex(lowHeader, dateTimeNames)
-            if dateTimeIndex is not None:
-              noTimes = False
-            else:
-              yearIndex = stringIndex(lowHeader, yearNames)
-              if yearIndex is not None:
-                noTimes = False
-              monthIndex = stringIndex(lowHeader, monthNames)
-              dayIndex = stringIndex(lowHeader, dayNames)
-              hourIndex = stringIndex(lowHeader, hourNames)
-              minuteIndex = stringIndex(lowHeader, minuteNames)
-            break
-          if delimiterFound:
-            break
-          else:
-            inUnit.seek(0)
-        for line in reader:
-          try:
-            lat, lon = float(line[latIndex]), float(line[lonIndex])
-          except:
-            invalidlatlon_count +=1
-            continue#IGA changed from system exit to allow for missing or invalid rows
-          if lat < -90. or lat > 90.:
-            invalidlatlon_count +=1
-            continue#IGA - changed from system exit to allow for missing or invalid rows
-          while lon <= -180.:
-            lon += 360.
-          while lon > 180.:
-            lon -= 360.
-          try:
-            if len(latitudeData.shape)>1:
-                #Geographical data (lat-lon) are expressed as a grid
-                deltapos = abs(lon-longitudeData)+abs(lat-latitudeData)#Identifying correct position in geographical grid
-                indx,indy = np.where(deltapos==deltapos.min())
-            else: #Geographical data (lat-lon) are expressed as vectors
-               indx = int((lat - lat0)/dlat+.5)
-               indy = int((lon - lon0)/dlon+.5)
-               # indx = indx[0]
-               # indy = indy[0]
-          except:
-              invalidlatlon_count +=1
-              continue
-          # if indx < 0 or indx >= nlat or indy < 0 or indy >= nlon:#IGA removed as not compatible with non-regular grids
-          #   print 'indx,indy,nlat,nlon',indx,indy,nlat,nlon
-          #   continue
-          if not noTimes:
-            if dateTimeIndex is not None:
-              dateTime, myFormat = datetimeFormat(line[dateTimeIndex], myFormat)
-            else:
-              dateTime = datetime(int(line[yearIndex]),int(line[monthIndex]),
-                int(line[dayIndex]),int(line[hourIndex]),int(line[minuteIndex]))
-            if dateTime < startTime or dateTime >= endTime:
-              continue
-            if justMonth and dateTime.month != month:
-              continue
-            if dateTime < minTime:
-              minTime = dateTime
-            if dateTime > maxTime:
-              maxTime = dateTime
-            if dateTime.month < 3 or dateTime.month > 10:
-              season[indx, indy, 0] = 255
-            elif dateTime.month < 7:
-              season[indx, indy, 1] = 255
-            else:
-              season[indx, indy, 2] = 255
-          else:
-            season[indx, indy, :] = 255
-          if count[indx, indy] == 32767:
-            continue
-          if fCO2Index is not None:
-            fCO2i = float(line[fCO2Index])
-            if fCO2i == MISSING:
-              continue
-            if fCO2i < fCO2min:
-              fCO2min = fCO2i
-            fCO2[indx, indy] += fCO2i
-            fCO2std[indx, indy] += fCO2i**2
-          #N2O
-          if N2OIndex is not None:
-            N2Oi = float(line[N2OIndex])
-            if N2Oi == MISSING:
-              continue
-            if N2Oi < N2Omin:
-              N2Omin = N2Oi
-            N2O[indx, indy] += N2Oi
-            N2Ostd[indx, indy] += N2Oi**2
-          #CH4
-          if CH4Index is not None:
+#Converts column indices to names, converts strings correct encoding. clArgs is modified in place.
+#   dataFrame: data frame containing the full dataset
+#   clArgs: parsed commandline arguments
+def process_cols(dataFrame, clArgs):
+    if clArgs.cols == None: #If no columns are specified, then add them all.
+        clArgs.cols = dataFrame.keys();
+    else: #Convert integers indexed to strings column names
+        for i, colName in enumerate(clArgs.cols):
             try:
-              CH4i = float(line[CH4Index])
+                colIndex = int(colName);
+                try:
+                    clArgs.cols[i] = dataFrame.keys()[colIndex];
+                except IndexError:
+                    print "WARNING: Invalid column number specified (%d) because there are not this many labels in the data's header. This will be ignored." % colIndex;
             except ValueError:
-              CH4i = float('NaN')
-            if CH4i == MISSING:
-              continue
-            if CH4i < CH4min:
-              CH4min = CH4i
-            CH4[indx, indy] += CH4i
-            CH4std[indx, indy] += CH4i**2
-          #vco2
-          if vco2Index is not None:
-            try:
-              vco2i = float(line[vco2Index])
-            except ValueError:
-              vco2i = float('NaN')
-            if vco2i == MISSING:
-              continue
-            if vco2i < vco2min:
-              vco2min = vco2i
-            vco2[indx, indy] += vco2i
-            vco2std[indx, indy] += vco2i**2
+                pass;
+    
+    #Check each colName matches a column name in the header
+    for colName in clArgs.cols:
+        if colName not in dataFrame.keys():
+            print "WARNING: Unrecognised column name specified (%s). Column names must exactly match the header of your data file. Column names are case sensitive, and must be surrounded by quotes if they include spaces." %colName;
+    
+    #Finally convert them to the correct encoding
+    for i, colName in enumerate(clArgs.cols):
+        if not isinstance(colName, unicode):
+            clArgs.cols[i] = unicode(colName, clArgs.encoding);
 
-          if SSTIndex is not None:
-            try:
-                SST[indx, indy] += 273.15 + float(line[SSTIndex])
-            except ValueError:
-                SST[indx, indy] += float('NaN')
-          count[indx, indy] += 1
-          # if count[indx, indy] == 32767: # average the first 32767 values#IGA removed as not sure why arbitrary 32767 limit
-          #   if fCO2Index is not None:
-          #     fCO2std[indx, indy] = np.sqrt((fCO2std[indx, indy] - fCO2[indx, indy] / count[indx, indy]) / count[indx, indy])
-          #     fCO2[indx, indy] /= count[indx, indy]
-          #   #N2O
-          #   if N2OIndex is not None:
-          #     N2Ostd[indx, indy] = np.sqrt((N2Ostd[indx, indy] - N2O[indx, indy] / count[indx, indy]) / count[indx, indy])
-          #     N2O[indx, indy] /= count[indx, indy]
-          #   #CH4
-          #   if CH4Index is not None:
-          #     CH4std[indx, indy] = np.sqrt((CH4std[indx, indy] - CH4[indx, indy] / count[indx, indy]) / count[indx, indy])
-          #     CH4[indx, indy] /= count[indx, indy]
-          #   #vco2
-          #   if vco2Index is not None:
-          #     vco2std[indx, indy] = np.sqrt((vco2std[indx, indy] - vco2[indx, indy] / count[indx, indy]) / count[indx, indy])
-          #     vco2[indx, indy] /= count[indx, indy]
-          #   if SSTIndex is not None:
-          #     SST[indx, indy] /= count[indx, indy]
-      if fCO2min < 250.:
-         print inFile, fCO2min
+#Create arrays to store and process data in.
+#   colNames: list of column names to use (mean, count, stddev and value matrices will be created for each column)
+#   temporalDimLength: length of the time dimension
+#   gridDimLengthX: length of the grid (latitude)
+#   gridDimLengthY: length of the grid (longitude)
+def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY):
+    allArrays = {}; #Store numpy arrays separately until we copy them over to the netCDF variable.
+    print "The following columns will be extracted:";
+    for colName in colNames:
+        print "\t", colName;
+        
+        #somewhere to store the mean, count and standard deviation of each grid cell
+        allArrays[colName+"_mean"] = np.full([temporalDimLength, gridDimLengthX, gridDimLengthY], 0.0, dtype='f');
+        allArrays[colName+"_count"] = np.zeros([temporalDimLength, gridDimLengthX, gridDimLengthY], dtype='i');
+        allArrays[colName+"_stddev"] = np.full([temporalDimLength, gridDimLengthX, gridDimLengthY], 0.0, dtype='f');
+        
+        #3D matrix of empty lists to store each value in.
+        allArrays[colName+"_vals"] = np.empty([temporalDimLength, gridDimLengthX, gridDimLengthY], dtype=object);
+        for coords, val in np.ndenumerate(allArrays[colName+"_vals"]):
+            allArrays[colName+"_vals"][coords] = [];
+    return allArrays;
 
-  filled = np.nonzero(count == 0)
-  valid = np.nonzero(np.logical_and(count > 0,count < 9999999999))#IGA altered from < 32767
-  if fCO2Used:
-    fCO2[filled] = -999.
-    fCO2std[filled] = -999.
-    fCO2std[valid] = np.sqrt((fCO2std[valid] - fCO2[valid] / count[valid]) / count[valid])
-    fCO2[valid] /= count[valid]
-    fCO2s[:] = fCO2
-    fCO2stds[:] = fCO2std
-  if SSTUsed:
-    SST[filled] = -999.
-    SST[valid] /= count[valid]
-    SSTs[:] = SST
-  if CH4Used:
-    CH4[filled] = -999.
-    CH4std[filled] = -999.
-    CH4std[valid] = np.sqrt((CH4std[valid] - CH4[valid] / count[valid]) / count[valid])
-    CH4[valid] /= count[valid]
-    CH4s[:] = CH4
-    CH4stds[:] = CH4std
-  if vco2Used:
-    vco2[filled] = -999.
-    vco2std[filled] = -999.
-    vco2std[valid] = np.sqrt((vco2std[valid] - vco2[valid] / count[valid]) / count[valid])
-    vco2[valid] /= count[valid]
-    vco2s[:] = vco2
-    vco2stds[:] = vco2std
-  if N2OUsed:
-    N2O[filled] = -999.
-    N2Ostd[filled] = -999.
-    N2Ostd[valid] = np.sqrt((N2Ostd[valid] - N2O[valid] / count[valid]) / count[valid])
-    N2O[valid] /= count[valid]
-    N2Os[:] = N2O
-    N2Ostds[:] = N2Ostd
 
-  countVar[:] = count
-  seasonVar[:] = season
+#Creates the required netCDF dimensions, and adds latitude and longitude data
+#   netCDFFile: the netCDF file to be written to
+#   latData: latitude data for the grid
+#   lonData: longitude data for the grid
+def create_netCDF_dimensions(netCDFFile, latData, lonData):
+    #Create dimensions for the output netCDF file
+    netCDFFile.createDimension(DIM_NAME_LAT, len(latData));
+    netCDFFile.createDimension(DIM_NAME_LON, len(lonData));
+    netCDFFile.createDimension(DIM_NAME_TIME, 1);
+    
+    #Create longitude and latitude variables
+    lats = netCDFFile.createVariable('latitude','f',(DIM_NAME_LAT,));
+    lats.units = 'degrees_north';
+    lats.axis = "Y";
+    lats.long_name = "Latitude North";
+    lats.standard_name = "latitude";
+    lats[:] = latData;
+    lats.valid_min = -90.0;
+    lats.valid_max = 90.0;
+    
+    lons = netCDFFile.createVariable('longitude','f',(DIM_NAME_LON,));
+    lons.units = 'degrees_east';
+    lons.axis = "X";
+    lons.long_name = "Longitude East";
+    lons.standard_name = "longitude";
+    lons[:] = lonData;
+    lons.valid_min = -180.0;
+    lons.valid_max = 180.0;
 
-  if noTimes:
-    if args.startTime is None or args.endTime is None:
-      secs[:] = timeVar[:]
-    else: # inner and outer brackets are timedeltas
-      secs[:] = (startTime + (endTime - startTime) / 2 -epoch).total_seconds()
-  else: # inner and outer brackets are timedeltas
-    secs[:] = (minTime + (maxTime - minTime) / 2 - epoch).total_seconds()
 
-   # set some global attributes
-  setattr(ncFile, 'Conventions', 'CF-1.0') 
-  setattr(ncFile, 'institutions', 'Plymouth Marine Laboratory Remote Sensing Group/University of Exeter Centre for Geog, Environment and Society') 
-  setattr(ncFile, 'contact1', 'email: rsghelp@pml.ac.uk') 
-  setattr(ncFile, 'contact2', 'email: iga202@ex.ac.uk') 
-  setattr(ncFile, 'RSG_areacode', 'a7')
-  setattr(ncFile, 'RSG_sensor', "NETCDF") 
+#Creates the required netCDF variables (mean, count, stddev) for each selected column and returns them
+#   netCDFFile: the netCDF file to be written to
+#   colNames: a list of column names (must match input data header)
+#   parseUnits: if true, units will be split from the column name and set correctly (assumes format is "col name [units]")
+def create_netCDF_variables(netCDFFile, colNames, parseUnits):
+    netCDFVariables = {};
+    for colName in colNames:
+        if parseUnits == True:
+            unitStr = colName[colName.find("[")+1 : colName.find("]")];
+            nameStr = colName.split("[")[0].strip();
+        else:
+            unitStr = "";
+            nameStr = colName;
+        
+        newVar = netCDFFile.createVariable(nameStr+"_mean", 'f', DIM_NAMES);
+        newVar.units = unitStr;
+        newVar.long_name = colName;
+        newVar.standard_name = colName;
+        newVar.fill_value = MISSING_VALUE;
+        netCDFVariables[colName+"_mean"] = newVar;
+        #newVar.valid_min = -100;
+        #newVar.valid_max = 1000;
+        
+        newVar = netCDFFile.createVariable(nameStr+"_count", 'i', DIM_NAMES);
+        newVar.units = "count";
+        newVar.long_name = colName;
+        newVar.standard_name = colName;
+        newVar.fill_value = MISSING_VALUE;
+        netCDFVariables[colName+"_count"] = newVar;
+        
+        newVar = netCDFFile.createVariable(nameStr+"_stddev", 'f', DIM_NAMES);
+        newVar.units = unitStr;
+        newVar.long_name = colName;
+        newVar.standard_name = colName;
+        newVar.fill_value = MISSING_VALUE;
+        netCDFVariables[colName+"_stddev"] = newVar;
+    return netCDFVariables;
 
-print invalidlatlon_count," data had invalid lat/lon co-ordinates"
-print "(text2ncdf, main) SUCCESS writing file %s" % ncFileName
+#Returns filePath with a timestamp appended to then end of the filename.
+#The timestamp will correspond to the start of the given timestep.
+#   filePath: path to append to
+#   startTime: start of the first timestep
+#   temporalResolution: length of each timestep (must be either deltatime object or the string "monthly")
+#   temporalIndex: current timestep
+def append_timestamp_to_filename(filePath, startTime, temporalResolution, temporalIndex):
+    if filePath.endswith(".nc") == False:
+        filePath += ".nc";
+    
+    if temporalResolution != "monthly":
+        timestamp = startTime + (temporalResolution*temporalIndex);
+        timestamp = datetime.strftime(timestamp, "%Y-%m-%d_%H-%M-%S");
+    else: #monthly temporal resolution
+        months = startTime.month-1 + temporalIndex;
+        newYear = startTime.year + (months // 12);
+        newMonth = (months % 12) + 1;
+        timestamp = datetime.strftime(datetime(newYear, newMonth, 1), "%Y-%m-%d");
+    
+    parts = filePath.rsplit('.', 1);
+    return parts[0]+"_"+timestamp+"."+parts[1];
+
+
+#parse command line arguments
+print "Parsing command line arguments."
+args = parse_cl_arguments();
+
+
+###Defining dimension data (lat, lon and time)
+#Define the number of cells in the rectangular grid based on the size and resolution.
+#Create all the lat/lon values for the axes of the grid.
+print "Calculating dimensions."
+latitudeData = np.arange(args.limits[0]+(args.latResolution/2.0), args.limits[1]+(args.latResolution/2.0), args.latResolution); #+latResolution so it uses an inclusive range
+longitudeData = np.arange(args.limits[2]+(args.lonResolution/2.0), args.limits[3]+(args.lonResolution/2.0), args.lonResolution); #+lonResolution so it uses an inclusive range
+gridDimLengthX = len(latitudeData);
+gridDimLengthY = len(longitudeData);
+southLimit = args.limits[0]; #min lat
+northLimit = args.limits[1]; #max lat
+westLimit = args.limits[2]; #min lon
+eastLimit = args.limits[3]; #max lon
+temporalDimLength = get_temporal_coordinate(args.endTime, args.temporalResolution, args.startTime)+1;
+
+
+###########
+# Read and process data
+###########
+#Read and process each input file
+allArrays = {};
+for i, inFile in enumerate(args.inFiles):
+    #Parse data from text file into a pandas dataframe
+    if len(args.numCommentLines) == 1:
+        rowsToSkip = args.numCommentLines[0];
+    else:
+        rowsToSkip = args.numCommentLines[i];
+    df = pd.read_table(inFile, sep=args.delim, skiprows=rowsToSkip, parse_dates=[args.dateIndex], encoding=args.encoding);
+    
+    #If this is the first input file to be read there are some additional things to setup
+    if i==0:
+        process_cols(df, args); #Process selected columns to ensure that they are valid column names/indices.
+        allArrays = initialise_data_storage(args.cols, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
+    
+    #Loop through each row in the current file and process data
+    print "Processing data in file", inFile;
+    missingValueRows = []; #Missing values
+    skippedRows = []; #Skipped due to being outside lon/lat limits
+    for i, row in df.iterrows():
+        #Check that the latitude and longitude are within limits
+        if (row[args.latProd] > northLimit or row[args.latProd] < southLimit) or (row[args.lonProd] > eastLimit or row[args.lonProd] < westLimit):
+            skippedRows.append( (inFile, i) );
+            continue;
+        #Check temporal limits
+        if (row[args.dateIndex] < args.startTime or row[args.dateIndex] > args.endTime):
+            skippedRows.append( (inFile, i) );
+            continue;
+        
+        #Calculate coordinates
+        xCoord, yCoord = get_grid_coordinates(row[args.latProd], row[args.lonProd], args.latResolution, args.lonResolution, southLimit, westLimit);
+        temporalCoord = get_temporal_coordinate(row[args.dateIndex], args.temporalResolution, args.startTime);
+        if temporalCoord < 0:
+            raise IndexError("Trying to use time index of %d. Time index cannot be negative. Are you specifying the correct startTime?"%temporalCoord);
+        
+        #Process data for each variable from the current row
+        for colName in args.cols:
+            curValue = row[colName];
+            if str(curValue) == args.missing_value:
+                missingValueRows.append( (inFile, i) );
+                continue;
+            
+            allArrays[colName+"_count"][temporalCoord, xCoord, yCoord] += 1;
+            allArrays[colName+"_vals"][temporalCoord, xCoord, yCoord].append(curValue);
+
+#Now that all the data files have been parsed, calculate the stuff we're interested in.
+#Final processing for each column: calculate mean, std. dev., and set missing values
+for colName in args.cols:
+    #Set missing values
+    validMask = allArrays[colName+"_count"][:] != 0;
+    allArrays[colName+"_mean"][validMask==False] = MISSING_VALUE;
+    allArrays[colName+"_stddev"][validMask==False] = MISSING_VALUE;
+    
+    #Calculation standard deviation
+    calc_standard_deviation(allArrays[colName+"_vals"], validMask, allArrays[colName+"_stddev"]);
+    
+    #Calculate mean
+    calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
+
+
+
+##############
+# Create and write output netCDF files
+##############
+#A seperate netCDF file will be created for each index in the time dimension.
+#Loop through the temporal index and create the netCDF files
+print "Writing output netCDF file(s)..."
+for temporalIndex in range(0, temporalDimLength):
+    if temporalDimLength == 1:
+        outFilePath = args.ncFilePath;
+    else: #must append the start timestamp of the current temporal step to the filename
+        outFilePath = append_timestamp_to_filename(args.ncOutPath, args.startTime, args.temporalResolution, temporalIndex);
+    #Create netCDF file
+    ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
+    
+    #Create dimensions set lat/lon data
+    create_netCDF_dimensions(ncOutput, latitudeData, longitudeData);
+    
+    #Create the required netCDF variables (mean, count, stddev)
+    allVariables = create_netCDF_variables(ncOutput, args.cols, args.parse_units);
+    
+    #Copy relevant time slice of each array to the netCDF
+    for colName in args.cols:
+        allVariables[colName+"_mean"][:] = allArrays[colName+"_mean"][temporalIndex,:,:];
+        allVariables[colName+"_stddev"][:] = allArrays[colName+"_stddev"][temporalIndex,:,:];
+        allVariables[colName+"_count"][:] = allArrays[colName+"_count"][temporalIndex,:,:];
+    
+    #Close netCDF file
+    ncOutput.close();
+
+
+############
+# Output summary
+############
+
+#Output some info to the user
+print "Finished converting text file to netCDF3. There were %d values which fell outside the specified lat/lon or start/stop time boundaries." % len(skippedRows)
+#if len(invalidRowIndices) != 0:
+#    print "Rows with invalid values:", invalidRowIndices;
+print "Number of missing values found:", len(missingValueRows);
+#if len(missingValueRows) != 0:
+#    print "Rows with missing values:", missingValueRows;
+
+

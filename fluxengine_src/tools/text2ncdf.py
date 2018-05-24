@@ -18,17 +18,6 @@ from datetime import datetime, timedelta;
 import pandas as pd;
 from glob import glob;
 
-##############
-# Global definitions
-##############
-MISSING_VALUE = np.nan;#-999.0 #Missing value to be used in output netCDF file
-CL_DATE_FORMATS = ["%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]; #Formats which can be used to specify start and end dates in the commandline arguments
-
-#Dimension names for the output netCDF will not change, so define them here. Use to create variables in the output file.
-DIM_NAME_TIME = "time";
-DIM_NAME_LAT = "latitude";
-DIM_NAME_LON = "longitude";
-DIM_NAMES = (DIM_NAME_TIME, DIM_NAME_LAT, DIM_NAME_LON);
 
 #############
 # Function definitions
@@ -45,9 +34,9 @@ def parse_cl_arguments():
     parser = argparse.ArgumentParser(description=description);
     parser.add_argument("inFiles", nargs="+", help="list of paths to input text file(s) containing the data you want to use. These must all have the same header configuration and column names. Standard Unix glob patterns are supported.");
     parser.add_argument("-n", "--ncOutPath", help="Path to the output netCDF file(s). Note that if more than one netCDF file will be created a date/time stamp will be appended to this filename indicating the start of this temporal 'bin'.");
-    parser.add_argument("-s", "--startTime", default="1900-01-01",
+    parser.add_argument("-s", "--startTime",
         help="start date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
-    parser.add_argument("-e", "--endTime", default="2100-01-01",
+    parser.add_argument("-e", "--endTime",
         help="end date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
     parser.add_argument("-t", "--temporalResolution", default="monthly",
         help="Temporal resolution to use. Defaults to monthly. Format required (days hours:minutes): D hh:mm")
@@ -326,130 +315,156 @@ def append_timestamp_to_filename(filePath, startTime, temporalResolution, tempor
     return parts[0]+"_"+timestamp+"."+parts[1];
 
 
-#parse command line arguments
-print "Parsing command line arguments."
-args = parse_cl_arguments();
+##############
+# Global definitions
+##############
+MISSING_VALUE = np.nan;#-999.0 #Missing value to be used in output netCDF file
+CL_DATE_FORMATS = ["%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]; #Formats which can be used to specify start and end dates in the commandline arguments
+
+#Dimension names for the output netCDF will not change, so define them here. Use to create variables in the output file.
+DIM_NAME_TIME = "time";
+DIM_NAME_LAT = "latitude";
+DIM_NAME_LON = "longitude";
+DIM_NAMES = (DIM_NAME_TIME, DIM_NAME_LAT, DIM_NAME_LON);
 
 
-###Defining dimension data (lat, lon and time)
-#Define the number of cells in the rectangular grid based on the size and resolution.
-#Create all the lat/lon values for the axes of the grid.
-print "Calculating dimensions."
-latitudeData = np.arange(args.limits[0]+(args.latResolution/2.0), args.limits[1]+(args.latResolution/2.0), args.latResolution); #+latResolution so it uses an inclusive range
-longitudeData = np.arange(args.limits[2]+(args.lonResolution/2.0), args.limits[3]+(args.lonResolution/2.0), args.lonResolution); #+lonResolution so it uses an inclusive range
-gridDimLengthX = len(latitudeData);
-gridDimLengthY = len(longitudeData);
-southLimit = args.limits[0]; #min lat
-northLimit = args.limits[1]; #max lat
-westLimit = args.limits[2]; #min lon
-eastLimit = args.limits[3]; #max lon
-temporalDimLength = get_temporal_coordinate(args.endTime, args.temporalResolution, args.startTime)+1;
 
-
-###########
-# Read and process data
-###########
-#Read and process each input file
-allArrays = {};
-for i, inFile in enumerate(args.inFiles):
-    #Parse data from text file into a pandas dataframe
-    if len(args.numCommentLines) == 1:
-        rowsToSkip = args.numCommentLines[0];
-    else:
-        rowsToSkip = args.numCommentLines[i];
-    df = pd.read_table(inFile, sep=args.delim, skiprows=rowsToSkip, parse_dates=[args.dateIndex], encoding=args.encoding);
+def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
+                           limits=[-90.0, 90.0, -180.0, 180], latResolution=1.0, lonResolution=1.0, temporalResolution="monthly",
+                           delim="\t", numCommentLines=0, encoding='utf-8', textFileMissingValue=np.nan,
+                           dateIndex=0, colNames=None, latProd="Latitude", lonProd="Longitude"):
+    ###Defining dimension data (lat, lon and time)
+    #Define the number of cells in the rectangular grid based on the size and resolution.
+    #Create all the lat/lon values for the axes of the grid.
+    print "Calculating dimensions."
+    latitudeData = np.arange(limits[0]+(latResolution/2.0), limits[1]+(latResolution/2.0), latResolution); #+latResolution so it uses an inclusive range
+    longitudeData = np.arange(limits[2]+(lonResolution/2.0), limits[3]+(lonResolution/2.0), lonResolution); #+lonResolution so it uses an inclusive range
+    gridDimLengthX = len(latitudeData);
+    gridDimLengthY = len(longitudeData);
+    southLimit = limits[0]; #min lat
+    northLimit = limits[1]; #max lat
+    westLimit = limits[2]; #min lon
+    eastLimit = limits[3]; #max lon
+    temporalDimLength = get_temporal_coordinate(endTime, temporalResolution, startTime)+1;
     
-    #If this is the first input file to be read there are some additional things to setup
-    if i==0:
-        process_cols(df, args); #Process selected columns to ensure that they are valid column names/indices.
-        allArrays = initialise_data_storage(args.cols, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
-    
-    #Loop through each row in the current file and process data
-    print "Processing data in file", inFile;
-    missingValueRows = []; #Missing values
-    skippedRows = []; #Skipped due to being outside lon/lat limits
-    for i, row in df.iterrows():
-        #Check that the latitude and longitude are within limits
-        if (row[args.latProd] > northLimit or row[args.latProd] < southLimit) or (row[args.lonProd] > eastLimit or row[args.lonProd] < westLimit):
-            skippedRows.append( (inFile, i) );
-            continue;
-        #Check temporal limits
-        if (row[args.dateIndex] < args.startTime or row[args.dateIndex] > args.endTime):
-            skippedRows.append( (inFile, i) );
-            continue;
+    ###########
+    # Read and process data
+    ###########
+    #Read and process each input file
+    allArrays = {};
+    for i, inFile in enumerate(inFiles):
+        #Parse data from text file into a pandas dataframe
+        if len(numCommentLines) == 1:
+            rowsToSkip = numCommentLines[0];
+        else:
+            rowsToSkip = numCommentLines[i];
+        df = pd.read_table(inFile, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
         
-        #Calculate coordinates
-        xCoord, yCoord = get_grid_coordinates(row[args.latProd], row[args.lonProd], args.latResolution, args.lonResolution, southLimit, westLimit);
-        temporalCoord = get_temporal_coordinate(row[args.dateIndex], args.temporalResolution, args.startTime);
-        if temporalCoord < 0:
-            raise IndexError("Trying to use time index of %d. Time index cannot be negative. Are you specifying the correct startTime?"%temporalCoord);
+        #If this is the first input file to be read there are some additional things to setup
+        if i==0:
+            process_cols(df, args); #Process selected columns to ensure that they are valid column names/indices.
+            allArrays = initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
         
-        #Process data for each variable from the current row
-        for colName in args.cols:
-            curValue = row[colName];
-            if str(curValue) == args.missing_value:
-                missingValueRows.append( (inFile, i) );
+        #Loop through each row in the current file and process data
+        print "Processing data in file", inFile;
+        missingValueRows = []; #Missing values
+        skippedRows = []; #Skipped due to being outside lon/lat limits
+        for i, row in df.iterrows():
+            #Check that the latitude and longitude are within limits
+            if (row[latProd] > northLimit or row[latProd] < southLimit) or (row[lonProd] > eastLimit or row[lonProd] < westLimit):
+                skippedRows.append( (inFile, i) );
+                continue;
+            #Check temporal limits
+            if (row[dateIndex] < startTime or row[dateIndex] > endTime):
+                skippedRows.append( (inFile, i) );
                 continue;
             
-            allArrays[colName+"_count"][temporalCoord, xCoord, yCoord] += 1;
-            allArrays[colName+"_vals"][temporalCoord, xCoord, yCoord].append(curValue);
-
-#Now that all the data files have been parsed, calculate the stuff we're interested in.
-#Final processing for each column: calculate mean, std. dev., and set missing values
-for colName in args.cols:
-    #Set missing values
-    validMask = allArrays[colName+"_count"][:] != 0;
-    allArrays[colName+"_mean"][validMask==False] = MISSING_VALUE;
-    allArrays[colName+"_stddev"][validMask==False] = MISSING_VALUE;
+            #Calculate coordinates
+            xCoord, yCoord = get_grid_coordinates(row[latProd], row[lonProd], latResolution, lonResolution, southLimit, westLimit);
+            temporalCoord = get_temporal_coordinate(row[dateIndex], temporalResolution, startTime);
+            if temporalCoord < 0:
+                raise IndexError("Trying to use time index of %d. Time index cannot be negative. Are you specifying the correct startTime?"%temporalCoord);
+            
+            #Process data for each variable from the current row
+            for colName in colNames:
+                curValue = row[colName];
+                if str(curValue) == textFileMissingValue:
+                    missingValueRows.append( (inFile, i) );
+                    continue;
+                
+                allArrays[colName+"_count"][temporalCoord, xCoord, yCoord] += 1;
+                allArrays[colName+"_vals"][temporalCoord, xCoord, yCoord].append(curValue);
     
-    #Calculation standard deviation
-    calc_standard_deviation(allArrays[colName+"_vals"], validMask, allArrays[colName+"_stddev"]);
+    #Now that all the data files have been parsed, calculate the stuff we're interested in.
+    #Final processing for each column: calculate mean, std. dev., and set missing values
+    for colName in colNames:
+        #Set missing values
+        validMask = allArrays[colName+"_count"][:] != 0;
+        allArrays[colName+"_mean"][validMask==False] = MISSING_VALUE;
+        allArrays[colName+"_stddev"][validMask==False] = MISSING_VALUE;
+        
+        #Calculation standard deviation
+        calc_standard_deviation(allArrays[colName+"_vals"], validMask, allArrays[colName+"_stddev"]);
+        
+        #Calculate mean
+        calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
     
-    #Calculate mean
-    calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
-
-
-
-##############
-# Create and write output netCDF files
-##############
-#A seperate netCDF file will be created for each index in the time dimension.
-#Loop through the temporal index and create the netCDF files
-print "Writing output netCDF file(s)..."
-for temporalIndex in range(0, temporalDimLength):
-    if temporalDimLength == 1:
-        outFilePath = args.ncFilePath;
-    else: #must append the start timestamp of the current temporal step to the filename
-        outFilePath = append_timestamp_to_filename(args.ncOutPath, args.startTime, args.temporalResolution, temporalIndex);
-    #Create netCDF file
-    ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
     
-    #Create dimensions set lat/lon data
-    create_netCDF_dimensions(ncOutput, latitudeData, longitudeData);
     
-    #Create the required netCDF variables (mean, count, stddev)
-    allVariables = create_netCDF_variables(ncOutput, args.cols, args.parse_units);
+    ##############
+    # Create and write output netCDF files
+    ##############
+    #A seperate netCDF file will be created for each index in the time dimension.
+    #Loop through the temporal index and create the netCDF files
+    print "Writing output netCDF file(s)..."
+    for temporalIndex in range(0, temporalDimLength):
+        if temporalDimLength == 1:
+            outFilePath = ncOutPath;
+        else: #must append the start timestamp of the current temporal step to the filename
+            outFilePath = append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
+        #Create netCDF file
+        ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
+        
+        #Create dimensions set lat/lon data
+        create_netCDF_dimensions(ncOutput, latitudeData, longitudeData);
+        
+        #Create the required netCDF variables (mean, count, stddev)
+        allVariables = create_netCDF_variables(ncOutput, colNames, args.parse_units);
+        
+        #Copy relevant time slice of each array to the netCDF
+        for colName in colNames:
+            allVariables[colName+"_mean"][:] = allArrays[colName+"_mean"][temporalIndex,:,:];
+            allVariables[colName+"_stddev"][:] = allArrays[colName+"_stddev"][temporalIndex,:,:];
+            allVariables[colName+"_count"][:] = allArrays[colName+"_count"][temporalIndex,:,:];
+        
+        #Close netCDF file
+        ncOutput.close();
     
-    #Copy relevant time slice of each array to the netCDF
-    for colName in args.cols:
-        allVariables[colName+"_mean"][:] = allArrays[colName+"_mean"][temporalIndex,:,:];
-        allVariables[colName+"_stddev"][:] = allArrays[colName+"_stddev"][temporalIndex,:,:];
-        allVariables[colName+"_count"][:] = allArrays[colName+"_count"][temporalIndex,:,:];
     
-    #Close netCDF file
-    ncOutput.close();
+    ############
+    # Output summary
+    ############
+    
+    #Output some info to the user
+    print "Finished converting text file to netCDF3. There were %d values which fell outside the specified lat/lon or start/stop time boundaries." % len(skippedRows)
+    #if len(invalidRowIndices) != 0:
+    #    print "Rows with invalid values:", invalidRowIndices;
+    print "Number of missing values found:", len(missingValueRows);
+    #if len(missingValueRows) != 0:
+    #    print "Rows with missing values:", missingValueRows;
+    
+    
+
+if __name__ == "__main__":
+    #parse command line arguments
+    print "Parsing command line arguments.";
+    args = parse_cl_arguments();
+    
+    convert_text_to_netcdf(args.inFiles, args.startTime, args.endTime, args.ncOutPath,
+                           limits=args.limits, latResolution=args.latResolution, lonResolution=args.lonResolution, temporalResolution=args.temporalResolution,
+                           delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding, textFileMissingValue=args.missing_value,
+                           dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd); 
 
 
-############
-# Output summary
-############
-
-#Output some info to the user
-print "Finished converting text file to netCDF3. There were %d values which fell outside the specified lat/lon or start/stop time boundaries." % len(skippedRows)
-#if len(invalidRowIndices) != 0:
-#    print "Rows with invalid values:", invalidRowIndices;
-print "Number of missing values found:", len(missingValueRows);
-#if len(missingValueRows) != 0:
-#    print "Rows with missing values:", missingValueRows;
 
 

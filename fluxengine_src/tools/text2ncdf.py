@@ -62,41 +62,6 @@ def parse_cl_arguments():
                         help="Coordinates which define the grid limits given in latitude and longitude: South North West East, e.g. -45 -30 -45 10 Defaults to -90 90 -180 180")
     clArgs = parser.parse_args();
     
-    #Convert YYYY start time to be last day of the year.
-    try:
-        intYear = int(clArgs.startTime);
-        clArgs.startTime = str(intYear)+"-12-31 23:59:59";
-    except ValueError:
-        pass; #It's not a YYYY year format, so no need to convert.
-        
-    #Parse start and end times and create datetime objects
-    try:
-        startTime, formatUsed = parseDateTimeString(clArgs.startTime, CL_DATE_FORMATS)
-        clArgs.startTime = startTime;
-    except ValueError as e:
-        print e.clArgs;
-        raise SystemExit("Unable to parse start datetime "+clArgs.startTime);
-    try:
-        endTime, formatUsed = parseDateTimeString(clArgs.endTime, CL_DATE_FORMATS);
-        clArgs.endTime = endTime;
-    except ValueError as e:
-        print e.args;
-        raise SystemExit("Unable to parse end datetime "+clArgs.endTime);
-    
-    #Parse temporalResolution
-    if clArgs.temporalResolution != "monthly":
-        days, time = clArgs.temporalResolution.split(" ");
-        hours, minutes = time.split(":");
-        clArgs.temporalResolution = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
-    
-    #Expand file globs
-    expandedGlobs = [];
-    for filepath in clArgs.inFiles:
-        expandedGlobs += glob(filepath);
-    clArgs.inFiles = expandedGlobs;
-    
-    print clArgs.inFiles;
-    
     return clArgs;
 
 
@@ -177,29 +142,29 @@ def calc_mean(allValues, mask, output):
 #Converts column indices to names, converts strings correct encoding. clArgs is modified in place.
 #   dataFrame: data frame containing the full dataset
 #   clArgs: parsed commandline arguments
-def process_cols(dataFrame, clArgs):
-    if clArgs.cols == None: #If no columns are specified, then add them all.
-        clArgs.cols = dataFrame.keys();
+def process_cols(dataFrame, columnNames, encoding):
+    if columnNames == None: #If no columns are specified, then add them all.
+        columnNames = dataFrame.keys();
     else: #Convert integers indexed to strings column names
-        for i, colName in enumerate(clArgs.cols):
+        for i, colName in enumerate(columnNames):
             try:
                 colIndex = int(colName);
                 try:
-                    clArgs.cols[i] = dataFrame.keys()[colIndex];
+                    columnNames[i] = dataFrame.keys()[colIndex];
                 except IndexError:
                     print "WARNING: Invalid column number specified (%d) because there are not this many labels in the data's header. This will be ignored." % colIndex;
             except ValueError:
                 pass;
     
     #Check each colName matches a column name in the header
-    for colName in clArgs.cols:
+    for colName in columnNames:
         if colName not in dataFrame.keys():
             print "WARNING: Unrecognised column name specified (%s). Column names must exactly match the header of your data file. Column names are case sensitive, and must be surrounded by quotes if they include spaces." %colName;
     
     #Finally convert them to the correct encoding
-    for i, colName in enumerate(clArgs.cols):
+    for i, colName in enumerate(columnNames):
         if not isinstance(colName, unicode):
-            clArgs.cols[i] = unicode(colName, clArgs.encoding);
+            columnNames[i] = unicode(colName, encoding);
 
 #Create arrays to store and process data in.
 #   colNames: list of column names to use (mean, count, stddev and value matrices will be created for each column)
@@ -228,7 +193,7 @@ def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDim
 #   netCDFFile: the netCDF file to be written to
 #   latData: latitude data for the grid
 #   lonData: longitude data for the grid
-def create_netCDF_dimensions(netCDFFile, latData, lonData):
+def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime):
     #Create dimensions for the output netCDF file
     netCDFFile.createDimension(DIM_NAME_LAT, len(latData));
     netCDFFile.createDimension(DIM_NAME_LON, len(lonData));
@@ -252,13 +217,23 @@ def create_netCDF_dimensions(netCDFFile, latData, lonData):
     lons[:] = lonData;
     lons.valid_min = -180.0;
     lons.valid_max = 180.0;
+    
+    secs = netCDFFile.createVariable('time', 'f', ('time',));
+    secs.units = 'seconds since 1970-01-01 00:00:00'
+    secs.axis = "T"
+    secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
+    secs.standard_name = "time"
+    secs[:] = (startTime - datetime.utcfromtimestamp(0)).total_seconds();
+    secs.valid_min = 0.0 
+    secs.valid_max = 1.79769313486232e+308
+    
 
 
 #Creates the required netCDF variables (mean, count, stddev) for each selected column and returns them
 #   netCDFFile: the netCDF file to be written to
 #   colNames: a list of column names (must match input data header)
 #   parseUnits: if true, units will be split from the column name and set correctly (assumes format is "col name [units]")
-def create_netCDF_variables(netCDFFile, colNames, parseUnits):
+def create_netCDF_variables(netCDFFile, colNames, parseUnits, DIM_NAMES, MISSING_VALUE):
     netCDFVariables = {};
     for colName in colNames:
         if parseUnits == True:
@@ -315,27 +290,66 @@ def append_timestamp_to_filename(filePath, startTime, temporalResolution, tempor
     return parts[0]+"_"+timestamp+"."+parts[1];
 
 
-##############
-# Global definitions
-##############
-MISSING_VALUE = np.nan;#-999.0 #Missing value to be used in output netCDF file
-CL_DATE_FORMATS = ["%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]; #Formats which can be used to specify start and end dates in the commandline arguments
-
-#Dimension names for the output netCDF will not change, so define them here. Use to create variables in the output file.
-DIM_NAME_TIME = "time";
-DIM_NAME_LAT = "latitude";
-DIM_NAME_LON = "longitude";
-DIM_NAMES = (DIM_NAME_TIME, DIM_NAME_LAT, DIM_NAME_LON);
-
-
-
 def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
                            limits=[-90.0, 90.0, -180.0, 180], latResolution=1.0, lonResolution=1.0, temporalResolution="monthly",
-                           delim="\t", numCommentLines=0, encoding='utf-8', textFileMissingValue=np.nan,
+                           delim="\t", numCommentLines=0, encoding='utf-8', parseUnits=True, textFileMissingValue=np.nan,
                            dateIndex=0, colNames=None, latProd="Latitude", lonProd="Longitude"):
-    ###Defining dimension data (lat, lon and time)
-    #Define the number of cells in the rectangular grid based on the size and resolution.
-    #Create all the lat/lon values for the axes of the grid.
+    ##############
+    # Constant definitions
+    ##############
+    MISSING_VALUE = np.nan;#-999.0 #Missing value to be used in output netCDF file
+    CL_DATE_FORMATS = ["%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]; #Formats which can be used to specify start and end dates in the commandline arguments
+    
+    #Dimension names for the output netCDF will not change, so define them here. Use to create variables in the output file.
+    DIM_NAME_TIME = "time";
+    DIM_NAME_LAT = "latitude";
+    DIM_NAME_LON = "longitude";
+    DIM_NAMES = (DIM_NAME_TIME, DIM_NAME_LAT, DIM_NAME_LON);
+    
+    ############
+    # Process arguments to ensure correct formatting etc.
+    ############
+    
+    #Convert YYYY start time to be last day of the year.
+    try:
+        intYear = int(startTime);
+        startTime = str(intYear)+"-12-31 23:59:59";
+    except ValueError:
+        pass; #It's not a YYYY year format, so no need to convert.
+        
+    #Parse start and end times and create datetime objects
+    try:
+        startTime, formatUsed = parseDateTimeString(startTime, CL_DATE_FORMATS)
+        startTime = startTime;
+    except ValueError as e:
+        print e.clArgs;
+        raise SystemExit("Unable to parse start datetime "+startTime);
+    try:
+        endTime, formatUsed = parseDateTimeString(endTime, CL_DATE_FORMATS);
+        endTime = endTime;
+    except ValueError as e:
+        print e.args;
+        raise SystemExit("Unable to parse end datetime "+endTime);
+    
+    #Parse temporalResolution
+    if temporalResolution != "monthly":
+        days, time = temporalResolution.split(" ");
+        hours, minutes = time.split(":");
+        temporalResolution = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
+    
+    #Expand file globs
+    expandedGlobs = [];
+    for filepath in inFiles:
+        expandedGlobs += glob(filepath);
+    inFiles = expandedGlobs;
+    
+    #numCommentLines should be a list
+    if isinstance(numCommentLines, list) == False:
+        numCommentLines = [numCommentLines];
+    
+    ###########
+    # Define dimension data (lat, lon and time), grid size and resolution
+    ###########
     print "Calculating dimensions."
     latitudeData = np.arange(limits[0]+(latResolution/2.0), limits[1]+(latResolution/2.0), latResolution); #+latResolution so it uses an inclusive range
     longitudeData = np.arange(limits[2]+(lonResolution/2.0), limits[3]+(lonResolution/2.0), lonResolution); #+lonResolution so it uses an inclusive range
@@ -362,7 +376,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         
         #If this is the first input file to be read there are some additional things to setup
         if i==0:
-            process_cols(df, args); #Process selected columns to ensure that they are valid column names/indices.
+            process_cols(df, colNames, encoding); #Process selected columns to ensure that they are valid column names/indices.
             allArrays = initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
         
         #Loop through each row in the current file and process data
@@ -409,8 +423,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         #Calculate mean
         calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
     
-    
-    
+
     ##############
     # Create and write output netCDF files
     ##############
@@ -426,10 +439,10 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
         
         #Create dimensions set lat/lon data
-        create_netCDF_dimensions(ncOutput, latitudeData, longitudeData);
+        create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime);
         
         #Create the required netCDF variables (mean, count, stddev)
-        allVariables = create_netCDF_variables(ncOutput, colNames, args.parse_units);
+        allVariables = create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);
         
         #Copy relevant time slice of each array to the netCDF
         for colName in colNames:
@@ -462,7 +475,8 @@ if __name__ == "__main__":
     
     convert_text_to_netcdf(args.inFiles, args.startTime, args.endTime, args.ncOutPath,
                            limits=args.limits, latResolution=args.latResolution, lonResolution=args.lonResolution, temporalResolution=args.temporalResolution,
-                           delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding, textFileMissingValue=args.missing_value,
+                           delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding,
+                           textFileMissingValue=args.missing_value, parseUnits=args.parse_units,
                            dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd); 
 
 

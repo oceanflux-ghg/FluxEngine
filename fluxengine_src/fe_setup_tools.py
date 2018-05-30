@@ -209,7 +209,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
     try:
         days, time = configVariables["temporal_resolution"].split(" ");
         hours, minutes = time.split(":");
-        configVariables["temporal_resolution"](days=int(days), hours=int(hours), minutes=int(minutes));
+        configVariables["temporal_resolution"] = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
         
         #tmpTime = datetime.strptime(configVariables["temporal_resolution"], "%d %H:%M");
         #configVariables["temporal_resolution"] = timedelta(days=tmpTime.day, hours=tmpTime.hour, minutes=tmpTime.minute);

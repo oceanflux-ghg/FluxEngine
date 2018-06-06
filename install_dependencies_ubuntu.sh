@@ -70,6 +70,24 @@ else
 	sudo pip install scipy
 fi
 
+#Install pandas
+echo "Installing python dependencies."
+if (python -c 'import pandas;'>/dev/null)
+then
+	echo "pandas is already installed."
+else
+	read -p "pandas will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
+	if ! command -v pip >/dev/null
+	then
+		read -p "pip must be installed first. Press <enter> to install pip or ctrl+c to cancel installation."
+		echo "Installing pip."
+		sudo apt-get update
+		sudo apt-get install python-pip -y
+	fi
+	echo "Installing pandas."
+	sudo pip install pandas
+fi
+
 echo "Dependencies are now installed. You should be good to go!"
 
 

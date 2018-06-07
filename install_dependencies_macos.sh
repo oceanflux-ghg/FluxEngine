@@ -53,7 +53,7 @@ then
 else
 	read -p "netCDF4 will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
 	echo "Installing netCDF4."
-	pip install netCDF4
+	pip install netCDF4==1.3.1
 fi
 
 #Install scipy
@@ -65,6 +65,19 @@ else
 	read -p "scipy will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
 	echo "Installing scipy."
 	pip install scipy
+fi
+
+echo "Dependencies are now installed. You should be good to go!"
+
+#Install pandas
+echo "Installing python dependencies."
+if (python -c 'import pandas;'>/dev/null 2>&1)
+then
+	echo "pandas is already installed."
+else
+	read -p "pandas will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
+	echo "Installing pandas."
+	pip install pandas
 fi
 
 echo "Dependencies are now installed. You should be good to go!"

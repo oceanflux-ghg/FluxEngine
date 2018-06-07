@@ -4,8 +4,7 @@
 import sys, glob, os, argparse, csv, numpy as np, netCDF4 as nc
 
  # checking arguments
-parser = argparse.ArgumentParser(description='Resample 1x1 degree netCDFs to '+
-   '4 lat x 5 lon (Takahashi)')
+parser = argparse.ArgumentParser(description='Resample 1x1 degree netCDFs to 4 lat x 5 lon (Takahashi)')
 parser.add_argument('infiles', nargs = '?',
     help='file or files (with wildcards) to resample')
 group = parser.add_mutually_exclusive_group()

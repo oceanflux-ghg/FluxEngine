@@ -29,7 +29,7 @@ def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, sc
       
     return kdwind_fdata
 
-def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata,  pco2_sw_fdata, scskin_fdata):
+def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata, pco2_sw_fdata, scskin_fdata):
    dataLength = len(sigma0_fdata);
     # determine the combined Goddijn-Murphy 2012 and Fangohr and Woolf parameterisation
    kinematic_fdata = array([DataLayer.missing_value] * dataLength)

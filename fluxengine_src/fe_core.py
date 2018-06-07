@@ -577,13 +577,14 @@ class FluxEngine:
     #preprocessing is an optional list of functions to transform the data before storing.
     #TODO: transposeData should now be added as a preprocessing function
     def add_data_layer(self, name, infile, prod, stddevProd=None, countProd=None, transposeData=False, preprocessing=None):
-        function = "(ofluxghg_flux_calc, FluxEngine.add_data_layer)";
+        function = "(fe_core, FluxEngine.add_data_layer)";
         
         try:
             self._add_single_data_layer(name, infile, prod, transposeData, preprocessing=preprocessing);
             
-        except KeyError:
+        except KeyError as e:
             print "\n%s: Data variable '%s' is missing from %s input (%s)" % (function, prod, name, infile);
+            print e, e.args;
             return False;
         except ValueError as e: #E.g. incorrect number of dimensions
             print "\n%s: %s" % (function, e.args);
@@ -734,7 +735,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            print "%s: Couldn't find longitude (%s%) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, self.runParams.sstskin_infile);
+            print "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, self.runParams.sstskin_infile);
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid

@@ -602,7 +602,8 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
 
 
 class k_Wanninkhof2014(KCalculationBase):
-    def __init__(self, kb_weighting, kd_weighting):
+    #def __init__(self, kb_weighting, kd_weighting):
+    def __init__(self):
         self.name = self.__class__.__name__;
     
     def input_names(self):

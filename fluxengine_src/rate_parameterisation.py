@@ -185,6 +185,7 @@ class rain_wet_deposition(KCalculationBase):
 
 
 #Ho et al., 2006
+#Ho, D.T., Law, C.S., Smith, M.J., Schlosser, P., Harvey, M. and Hill, P., 2006. Measurements of air‐sea gas exchange at high wind speeds in the Southern Ocean: Implications for global parameterizations. Geophysical Research Letters, 33(16).
 class k_Ho2006(KCalculationBase):
     def __init__(self):
         self.name = self.__class__.__name__;

@@ -222,6 +222,7 @@ class k_Ho2006(KCalculationBase):
         return True;
 
 
+#Nightingale, P. D., et al. 2000. In situ evaluation of air-sea gas exchange parameterizations using novel conserva-tive  and  volatile  tracers.  Global  Biogeochem.  Cycles14:373-387 [doi:10. 1029/ 1999GB900091].
 class k_Nightingale2000(KCalculationBase):
     def __init__(self):
         self.name = self.__class__.__name__;

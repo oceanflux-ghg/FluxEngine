@@ -598,7 +598,8 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
         return True;
 
 
-class k_Wanninkhof2013(KCalculationBase):
+
+class k_Wanninkhof2014(KCalculationBase):
     def __init__(self, kb_weighting, kd_weighting):
         self.name = self.__class__.__name__;
     
@@ -609,8 +610,9 @@ class k_Wanninkhof2013(KCalculationBase):
         return ["k"];
     
     def __call__(self, data):
-        # using OceanFlux GHG kt approach with kd based on Wanninkhof2013
-        function = "(rate_parameterisation.py: k_Wanninkhof2013.__call__)";
+        # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
+        # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
+        function = "(rate_parameterisation.py: k_Wanninkhof2014.__call__)";
         print "%s Using the Wanninkhof 2014 k parameterisation" % (function);
         
         try:
@@ -632,7 +634,7 @@ class k_Wanninkhof2013(KCalculationBase):
                self.k[i] = 0.251 * self.windu10_moment2[i]
                self.k[i] = self.k[i] * sqrt(660.0/self.scskin[i])
                
-               self.k[i] = self.k[i]# /36.0 # conversion from cm/h to 10^-4 m/s (100/3600) = 1/36
+               #self.k[i] = self.k[i]# /36.0 # conversion from cm/h to 10^-4 m/s (100/3600) = 1/36
             else:
                self.k[i] = DataLayer.missing_value
         return True;

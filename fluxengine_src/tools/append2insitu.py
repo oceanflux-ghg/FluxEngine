@@ -60,7 +60,7 @@ def parse_cl_arguments():
     return clArgs
 
 
-def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=[0], rowsToSkip=[], missingValue='nan', encoding='utf-8'):
+def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=0, rowsToSkip=[], missingValue='nan', encoding='utf-8'):
     
     #Keep track of failures.
     #failedFiles = []; #Files which could not be opened / processed.

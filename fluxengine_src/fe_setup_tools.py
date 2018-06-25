@@ -556,7 +556,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         configVariables["pco2_path"] = path.abspath(pco2DirOverride);
     if (outputDirOverride != None):
         configVariables["output_dir"] = path.abspath(outputDirOverride);
-        print "Using optional override for output directory, output_dir will be set to % (overriding the configuration file value)." % (outputDirOverride);
+        print "Using optional override for output directory, output_dir will be set to %s (overriding the configuration file value)." % (outputDirOverride);
     
     #Printing some feedback...
     if processLayersOff == True and verbose:

@@ -185,6 +185,7 @@ class rain_wet_deposition(KCalculationBase):
 
 
 #Ho et al., 2006
+#Ho, D.T., Law, C.S., Smith, M.J., Schlosser, P., Harvey, M. and Hill, P., 2006. Measurements of air‐sea gas exchange at high wind speeds in the Southern Ocean: Implications for global parameterizations. Geophysical Research Letters, 33(16).
 class k_Ho2006(KCalculationBase):
     def __init__(self):
         self.name = self.__class__.__name__;
@@ -222,6 +223,7 @@ class k_Ho2006(KCalculationBase):
         return True;
 
 
+#Nightingale, P. D., et al. 2000. In situ evaluation of air-sea gas exchange parameterizations using novel conserva-tive  and  volatile  tracers.  Global  Biogeochem.  Cycles14:373-387 [doi:10. 1029/ 1999GB900091].
 class k_Nightingale2000(KCalculationBase):
     def __init__(self):
         self.name = self.__class__.__name__;
@@ -598,8 +600,10 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
         return True;
 
 
-class k_Wanninkhof2013(KCalculationBase):
-    def __init__(self, kb_weighting, kd_weighting):
+
+class k_Wanninkhof2014(KCalculationBase):
+    #def __init__(self, kb_weighting, kd_weighting):
+    def __init__(self):
         self.name = self.__class__.__name__;
     
     def input_names(self):
@@ -609,8 +613,9 @@ class k_Wanninkhof2013(KCalculationBase):
         return ["k"];
     
     def __call__(self, data):
-        # using OceanFlux GHG kt approach with kd based on Wanninkhof2013
-        function = "(rate_parameterisation.py: k_Wanninkhof2013.__call__)";
+        # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
+        # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
+        function = "(rate_parameterisation.py: k_Wanninkhof2014.__call__)";
         print "%s Using the Wanninkhof 2014 k parameterisation" % (function);
         
         try:
@@ -632,7 +637,7 @@ class k_Wanninkhof2013(KCalculationBase):
                self.k[i] = 0.251 * self.windu10_moment2[i]
                self.k[i] = self.k[i] * sqrt(660.0/self.scskin[i])
                
-               self.k[i] = self.k[i]# /36.0 # conversion from cm/h to 10^-4 m/s (100/3600) = 1/36
+               #self.k[i] = self.k[i]# /36.0 # conversion from cm/h to 10^-4 m/s (100/3600) = 1/36
             else:
                self.k[i] = DataLayer.missing_value
         return True;

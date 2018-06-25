@@ -50,7 +50,7 @@ def parse_cl_arguments():
         help="delimiter token used to seperate data in the input text file. Default is a tab.")
     parser.add_argument("-d", "--dateIndex", type=int, default=0,
         help="The column number (starting from 0) which contains the date/time field in your input text file. Default is a 0.");
-    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[0],
+    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[],
         help="Number of comment lines before the header to be ignored). Default is a 0.");
     parser.add_argument("--cols", nargs="+", default=None,
         help="List of column names or numbers which will be added to the output netCDF file. Default will add all non-date/time columns.");

@@ -45,8 +45,8 @@ def parse_cl_arguments():
                         help="Name or column number (starting from 0) of the latitude column in the in situ input file. Default is a 'latitude'.");
     parser.add_argument("--lonCol", default="Longitude",
                         help="Name or column number (starting from 0) of the longitude column in the in situ input file. Default is 'longitude'.");
-    parser.add_argument("-c", "--commentChar", default="#",
-                        help="Character prefix which indicates a comment. Default is a '#'. Set to an empty string to turn comments off.");
+    #parser.add_argument("-c", "--commentChar", default="#",
+    #                    help="Character prefix which indicates a comment. Default is a '#'. Set to an empty string to turn comments off.");
     parser.add_argument("-m", "--missingValue", default="nan",
                         help="Value used to indicate a missing value in the input text file. Default is 'nan'.");
     parser.add_argument("--encoding", default="utf-8",
@@ -60,21 +60,7 @@ def parse_cl_arguments():
     return clArgs
 
 
-
-if __name__ == "__main__":
-    #Parse commandline arguments
-    clArgs = parse_cl_arguments();
-    feOutputPath = clArgs.feOutput;
-    insituDataPath = clArgs.insituData;
-    outputPath = clArgs.outPath;
-    varsToAppend = clArgs.varsToAppend;
-    delim = clArgs.delim;
-    dateIndex = clArgs.dateIndex;
-    rowsToSkip = clArgs.numCommentLines;
-    missingValue = clArgs.missingValue;
-    encoding = clArgs.encoding;
-    latCol = clArgs.latCol;
-    lonCol = clArgs.lonCol;
+def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=[0], rowsToSkip=[], missingValue='nan', encoding='utf-8'):
     
     #Keep track of failures.
     #failedFiles = []; #Files which could not be opened / processed.
@@ -121,6 +107,28 @@ if __name__ == "__main__":
         insituData[variable] = newVectors[variable];
     
     insituData.to_csv(outputPath, sep=delim, encoding=encoding, index=False);
+
+
+
+if __name__ == "__main__":
+    #Parse commandline arguments
+    clArgs = parse_cl_arguments();
+    feOutputPath = clArgs.feOutput;
+    insituDataPath = clArgs.insituData;
+    outputPath = clArgs.outPath;
+    varsToAppend = clArgs.varsToAppend;
+    delim = clArgs.delim;
+    dateIndex = clArgs.dateIndex;
+    rowsToSkip = clArgs.numCommentLines;
+    missingValue = clArgs.missingValue;
+    encoding = clArgs.encoding;
+    latCol = clArgs.latCol;
+    lonCol = clArgs.lonCol;
+    
+    #append selected variables as columns to the in situ data file
+    append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend, delim, latCol, lonCol, dateIndex, rowsToSkip, missingValue, encoding);
+
+
 
 
 

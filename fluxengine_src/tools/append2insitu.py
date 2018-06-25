@@ -104,7 +104,8 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     
     #Add new vectors to dataframe and export
     for variable in varsToAppend:
-        insituData[variable] = newVectors[variable];
+        colName = variable+" ["+ncFile.variables[variable].units+"]";
+        insituData[colName] = newVectors[variable];
     
     insituData.to_csv(outputPath, sep=delim, encoding=encoding, index=False);
 

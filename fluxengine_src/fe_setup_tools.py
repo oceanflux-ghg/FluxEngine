@@ -164,7 +164,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
         #Paths: Convert all paths to absolute paths.
         if metadata[varName]["type"] == "path" or metadata[varName]["type"] == "DataLayerPath":
             if path.isabs(configVariables[varName]) == False:
-                configVariables[varName] = path.abspath(configVariables[varName]);
+                configVariables[varName] = path.abspath(path.expanduser(configVariables[varName]));
         
         #Multioption: Check that the config value matches at least one option.
         #             Store string value with _name suffix overwrite original with integer value.
@@ -537,7 +537,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
                    takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     hostname = socket.gethostname();
-    rootPath = path.abspath(path.join(__file__, "../.."));
+    rootPath = path.abspath(path.expanduser(path.join(__file__, "../..")));
     if verbose:
         print "Hostname identified as: ", hostname;
         print "Working directory is: ", rootPath;
@@ -553,9 +553,9 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     #Substitute commandline override arguments (-pco2_dir_override, -output_dir_override)
     if (pco2DirOverride != None):
         print "Using optional override for pCO2w data directory. '%s' will be set to '%s' (ie overriding both directory of pco2 data and selection in the configuration file)." % (configVariables["pco2"], pco2DirOverride);
-        configVariables["pco2_path"] = path.abspath(pco2DirOverride);
+        configVariables["pco2_path"] = path.abspath(path.expanduser(pco2DirOverride));
     if (outputDirOverride != None):
-        configVariables["output_dir"] = path.abspath(outputDirOverride);
+        configVariables["output_dir"] = path.abspath(path.expanduser(outputDirOverride));
         print "Using optional override for output directory, output_dir will be set to %s (overriding the configuration file value)." % (outputDirOverride);
     
     #Printing some feedback...

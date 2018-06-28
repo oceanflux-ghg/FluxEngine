@@ -47,8 +47,8 @@ if __name__ == "__main__":
     clParser.add_argument("-verbose", "-v", help="verbose: increases the amount of information sent to stdout.",
                         action="store_true");
     #clParser.add_argument("-year_start", "-s", metavar='\b', help="first year to evaluate (default=2010)", type=int, default=2010);
-    clParser.add_argument("-start_date", "-s", metavar='\b', help="Flux calculation will be computed from this date (default = 01-01-2010 00:00).", type=str, default="01-01-2010 00:00");
-    clParser.add_argument("-end_date", "-e", metavar='\b', help="Flux calculation will be computed up to (and potentially including) this date (default = 31-12-2010 23:59).", type=str, default="31-12-2010 23:59");
+    clParser.add_argument("-start_date", "-s", metavar='\b', help="Flux calculation will be computed from this date (default = 01-01-2010 00:00).", type=str, default="2010-01-01 00:00");
+    clParser.add_argument("-end_date", "-e", metavar='\b', help="Flux calculation will be computed up to (and potentially including) this date (default = 31-12-2010 23:59).", type=str, default="2010-12-31 23:59");
     #clParser.add_argument("-list_k, help="...", action="store_true", default=False);
     #clParser.add_argument("-list_preprocessing", help="...", action="store_true", default=False);
     clParser.add_argument("-S1", help="only run a timepoint (e.g. a single month or single day depending on temporal resolution). This can be useful for testing.", action="store_true", default=False);

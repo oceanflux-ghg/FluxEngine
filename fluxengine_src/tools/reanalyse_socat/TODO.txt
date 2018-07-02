@@ -1,0 +1,4 @@
+List of things that need doing.
+
+1. Apply a fix to the divide by 365.0 in the extrapolation code so that it takes into account the leap days
+2. Need to check that the segregation into months is correct - especially check dates such as Jan 1st, Feb 1st, Feb29th, March 1st in leap years and non-leap years

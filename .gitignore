@@ -18,3 +18,6 @@ output/**
 
 ### Full validation suite files ###
 full_validation/**
+
+### reanalyse_socat tool's default output directory ###
+fluxengine_src/tools/reanalyse_socat/output/**

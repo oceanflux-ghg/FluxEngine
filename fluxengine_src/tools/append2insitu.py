@@ -60,7 +60,7 @@ def parse_cl_arguments():
     return clArgs
 
 
-def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=[0], rowsToSkip=[], missingValue='nan', encoding='utf-8'):
+def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=0, rowsToSkip=[], missingValue='nan', encoding='utf-8'):
     
     #Keep track of failures.
     #failedFiles = []; #Files which could not be opened / processed.
@@ -104,7 +104,8 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     
     #Add new vectors to dataframe and export
     for variable in varsToAppend:
-        insituData[variable] = newVectors[variable];
+        colName = variable+" ["+ncFile.variables[variable].units+"]";
+        insituData[colName] = newVectors[variable];
     
     insituData.to_csv(outputPath, sep=delim, encoding=encoding, index=False);
 

@@ -44,6 +44,7 @@ if __name__ == "__main__":
     
     argParseSettingsGroup = clParser.add_argument_group(title='Optional settings');
     argParseSettingsGroup.add_argument("-regions", metavar='<keyword_list>', type=str, nargs='*', help='A list of region codes to process (e.g. NA for North Atlantic).', default=None);
+    argParseSettingsGroup.add_argument('-withcoastal',dest='withcoastal',action='store_true',help="To use the coastal data.",default=False)
     argParseSettingsGroup.add_argument('-socatversion', type=int, dest='socatversion', help="The version of the SOCAT data files to read",default=2);
     argParseSettingsGroup.add_argument('-asciioutput', dest='asciioutput', action='store_true', help="To output data as ascii lists rather than gridded netcdf.", default=True);
     argParseSettingsGroup.add_argument('-useaatsr', action='store_true', help="To use the AATSR SST data.", default=False);

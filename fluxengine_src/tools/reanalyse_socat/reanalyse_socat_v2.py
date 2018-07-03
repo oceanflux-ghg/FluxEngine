@@ -22,7 +22,7 @@ import combine_xy
 import combine_nc_files
 import netcdf_helper
 
-#Returns a list of socat regions
+#Returns a list of socat regions (abbreviation:name map)
 def GetSocatRegions(socatversion, withcoastal):
     #Dictionary of regions and prefixs for the SOCATv2 data
     if socatversion == 2:

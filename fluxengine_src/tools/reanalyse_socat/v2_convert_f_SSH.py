@@ -5,14 +5,12 @@
 
 #Standard + 3rd Party libs
 import os
-import sys
 import numpy
 import numpy.lib.recfunctions
 import datetime
 import argparse
 import netCDF4
 import glob
-import errno
 import multiprocessing
 
 #Internal tool libs
@@ -81,6 +79,7 @@ def GetCommandline():
 
 #This wrapper function essentially does everything. If this script is used as a library
 #rather than run on the command line then this is the function to call
+#TMH: noConversion, if set to True, bypasses any reanalysis and instead writes raw SOCAT data to the output files.
 def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],prefix=cldefaults['prefix'],
                   outputdir=cldefaults['outputdir'],notperyear=cldefaults['notperyear'],sstdir=cldefaults['sstdir'],
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
@@ -151,7 +150,8 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
          data=numpy.lib.recfunctions.stack_arrays((data,coastaldata[all_indices_to_add]),asrecarray=True,usemask=False)
          #now remove these data from the coastaldata array
          coastaldata=numpy.delete(coastaldata,all_indices_to_add)
-
+   
+   #Data has now had relevant coastal points appended to it.
    #Run the following for each pair of years in the range to process
    total_number_of_data_points=0
    total_duplicates=[]
@@ -168,6 +168,7 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
          print dupe
 
    print "Total number of data points imported and used from file: %s : %d"%(inputfile,total_number_of_data_points)
+
 
 def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],prefix=cldefaults['prefix'],
                   outputdir=cldefaults['outputdir'],notperyear=cldefaults['notperyear'],sstdir=cldefaults['sstdir'],
@@ -229,6 +230,7 @@ def ReadInData(inputfile,delimiter='\t',version=2):
 
    #Read in the columns we want into a data array
    print "Reading in data from SOCAT file: %s"%inputfile
+   print "This can take a while for large data sets.\n";
    data=iter_loadtxt(filename=inputfile,delimiter=delimiter,skiprows=linestoskip,version=version)
 
    return data
@@ -246,17 +248,19 @@ def iter_loadtxt(filename,delimiter='\t',skiprows=0,version=2):
    SOCATv2_cols=[1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,20,22]
    #Use these for SOCAT v3
    SOCATv3_cols=[4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,23,25]
-   #SOCATv4 uses the same as v3
-   SOCATv4_cols=SOCATv3_cols
-   
+      
    if version==2:
       usecols=SOCATv2_cols
    elif version==3:
       usecols=SOCATv3_cols
-   elif version==4:
-      usecols=SOCATv4_cols
+   elif version==4: #SOCATv4, 5 and 6 use the same as v3.
+      usecols=SOCATv3_cols
+   elif version==5:
+      usecols=SOCATv3_cols
+   elif version==6:
+      usecols=SOCATv3_cols
    else:
-      raise Exception("Specified version %d cannot be loaded. Currently supports versions 2, 3 and 4."%version)
+      raise Exception("Specified version %d cannot be loaded. Currently supports versions 2, 3, 4, 5 and 6."%version)
 
    #Function to use in numpy.fromiter()
    def iter_func(columns,dtype,filename,skiprows,delimiter):
@@ -335,6 +339,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       ASCIIOUT - write out as ascii data
       withcoastal - True if using data from coastal file also
    """
+   
    data_subset=[]
    #subset the year(s) we want
    print "Subsetting data for year range: %d %d"%(year_range[0],year_range[1])
@@ -348,6 +353,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #remove rows thmonth_dataat fail quality checks
    #fco2 quality flag
    data_subset=data_subset[numpy.where(data_subset['fCO2rec_flag'] == 2)]
+   
    #check if fco2 is not nan
    data_subset=data_subset[numpy.where(numpy.isfinite(data_subset['fCO2rec_uatm']))]
 
@@ -382,6 +388,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
             duplicates.append(i)
             duplicate_data.append(data_subset[i])
       #now remove the duplicates
+      l = len(duplicates);
+      print "num duplicates is: ", l;
       if len(duplicates)>0:
          #get an array of all indices and then remove the ones marked as duplicates
          allindices=range(data_subset.size)
@@ -389,7 +397,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
             allindices.remove(dupe)
          data_subset=data_subset[allindices]
          jds=jds[allindices]
-
+   
    #Finally we can remove columns which were only required for quality checks
    #these are days,hours,mins,fCO2rec_flag
    names=list(data_subset.dtype.names)
@@ -433,7 +441,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    if conversion is None:
       #There were no good data to use
       return 0,[]
-
+   
    #Write out the data into gridded monthly netCDF files - this will be easier if we append all arrays and use numpy
    #First convert jd_y into month - write a lambda function to do this so we can use numpy arrays
    convert_to_month=numpy.vectorize(lambda x: datetime.datetime.fromordinal(x).month)
@@ -454,6 +462,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       outputfilepath=os.path.join(outputdir,"%02d"%m,outputfile)
       #get the data for this month
       month_data=conversion[numpy.where(conversion['month']==m)]
+
       #Also extract the expocodes for the same data points and append on month_data
       expocodes_month=expocodes[numpy.where(conversion['month']==m)]
       month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month,
@@ -538,6 +547,9 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
                  header=",".join(output_data.dtype.names),delimiter=',')
 
 def CreateBinnedData(month_data):
+   #import pandas as pd;
+   #allData = pd.DataFrame(month_data);
+   
    #grid information
    nlon = 360 # number of longitude pixels
    lon0 = -180. # start longitude

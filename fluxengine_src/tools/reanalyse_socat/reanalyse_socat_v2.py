@@ -10,7 +10,6 @@
 import subprocess
 import argparse
 import string
-import sys
 import os
 import glob
 import datetime
@@ -22,52 +21,31 @@ import combine_xy
 import combine_nc_files
 import netcdf_helper
 
-#Returns a list of socat regions (abbreviation:name map)
-def GetSocatRegions(socatversion, withcoastal):
-    #Dictionary of regions and prefixs for the SOCATv2 data
-    if socatversion == 2:
-        socatregions={'NP':'NorthPacific',
-                  'TP':'TropicalPacific',
-                  'NA':'NorthAtlantic',
-                  'TA':'TropicalAtlantic',
-                  'IO':'Indian',
-                  'SO':'SouthernOcean',
-                  'AR':'Arctic'};
+#Returns a dictionary mapping region codes (keys) to input file names
+def GenerateRegionFileMap(socatfiles, regions):
+    if len(socatfiles) == 1 and regions == None:
+        regionFileMap = {"GL":socatfiles[0]};
+        return regionFileMap;
     
-    #Dictionary of regions and prefixs for the SOCATv3 data
-    elif socatversion == 3:
-        socatregions={'NP':'NorthPacific',
-                  'TP':'TropicalPacific',
-                  'NA':'NorthAtlantic',
-                  'TA':'TropicalAtlantic',
-                  'IO':'Indian',
-                  'SO':'SouthernOceans',
-                  'AR':'Arctic',
-                  'FE':'FlagE'};
-    
-    #Dictionary of regions and prefixs for the SOCATv4 data
-    elif socatversion == 4:
-        socatregions={'NP':'NorthPacific',
-                  'TP':'TropicalPacific',
-                  'NA':'NorthAtlantic',
-                  'TA':'TropicalAtlantic',
-                  'IO':'Indian',
-                  'SO':'SouthernOceans',
-                  'AR':'Arctic'};
+    #Multiple regions defined
+    elif len(socatfiles) == len(regions):
+        regionFileMap = {regions[i]:socatfiles[i] for i in range(0, len(regions))};
+        if len(regionFileMap.keys()) != len(regions): #Checks we're not overwriting files by using the same region key more than once.
+            raise ValueError("More than one file per region is not currently supported. To get around this you can define additional regions or concatenate input files manually.");
+        if len(regions) > 1:
+            print "**********\nWarning using multiple regions: Region boundaries must be defined such that more than one region does not overlap a grid cell. If data from more than one region fall into one grid cell the values corresponding to this grid cell will be inaccurate. This constraint does not apply to regions which are specified as coastal using 'usecoastal'.";
+            raw_input("Press a key to continue...");
+        return regionFileMap;
+    #Not global and there are more files than regions or more regions than files.
     else:
-        print "unsupported SOCAT version.";
-        raise ValueError("Unsupported SOCAT version: "+str(socatversion)+"\nCurrently supported versions: 2, 3, 4.");
-    
-    if withcoastal is True:
-        socatregions.update({'CO':'Coastal'})
-    
-    return socatregions;
+        raise ValueError("GenerateRegionFileMap: number of region codes suppled do not match the number of input files.");
+        
 
 #Output directories for the various data: $dirname will be replaced with the output directory 
 #at a later point in the processing
-outputdirectory={'socat' : string.Template('$dirname/reanalysed_socat'),
-                 'socatmonth' : string.Template('$dirname/reanalysed_socat/%02d'),
-                 'socatmonthpercruise' : string.Template('$dirname/reanalysed_socat/%02d/per_cruise'),
+outputdirectory={'socat' : string.Template('$dirname/reanalysed_data'),
+                 'socatmonth' : string.Template('$dirname/reanalysed_data/%02d'),
+                 'socatmonthpercruise' : string.Template('$dirname/reanalysed_data/%02d/per_cruise'),
                  'joined' : string.Template('$dirname/joined'),
                  'combined' : string.Template('$dirname/combined'),
                  'fpred' : string.Template('$dirname/interpolated/fCO2/predictions'),
@@ -80,8 +58,8 @@ outputdirectory={'socat' : string.Template('$dirname/reanalysed_socat'),
                 }
 
 #Template for the SOCAT string filename
-SOCATinfile='SOCATv%d_%s.tsv'
-output_global_monthly_file='OCF-CO2-GLO-M1-100-SOCAT-CONV.nc'
+#SOCATinfile='SOCATv%d_%s.tsv'
+#output_global_monthly_file='OCF-CO2-GLO-M1-100-SOCAT-CONV.nc'
 
 #Location of GSTAT executable - would be better in the path?
 GSTATEXE='/home/cercache/project/oceanflux-shared/software/gstat-2.4.0/gstat'
@@ -109,7 +87,9 @@ def GetCommandline():
    arg_datalocationgroup.add_argument('--vco2dir', metavar='<path>',help ='Location of the directory containing the vCO2 data files',
                         type=str,default=None)
    arg_datalocationgroup.add_argument('--socatdir', metavar='<path>',help ='Location of the directory containing the SOCAT data files',
-                        type=str,default="/home/cercache/project/oceanflux-shared/workspace/lgoddijn/SOCATv2")
+                        type=str,default=None)
+   arg_datalocationgroup.add_argument('--socatfiles', nargs='*', help='List of files containing data',
+                        type=str,default=None);
    parser.add_argument('--output', metavar='<path>',help ='Location of the top level directory to write output - this will be created so should not already exist.',
                         type=str,default="./output")
    parser.add_argument('--startyr', metavar='<year>',type=int,help ='The year to start importing SOCAT data for.',default="1991")
@@ -126,7 +106,7 @@ def GetCommandline():
    arg_convertgroup.add_argument('--extrapolatetoyear',type=int,dest='extrapolatetoyear',help="Use this flag to extrapolate to a given year (using the Takahashi trend).",default=None)
    arg_convertgroup.add_argument('--socatversion',type=int,dest='socatversion',help="The version of the SOCAT data files to read",default=2)
    arg_convertgroup.add_argument('--asciioutput',dest='asciioutput',action='store_true',help="To output data as ascii lists rather than gridded netcdf.",default=v2_convert_f_SSH.cldefaults['asciioutput'])
-   arg_convertgroup.add_argument('--withcoastal',dest='withcoastal',action='store_true',help="To use the coastal data.",default=False)
+   arg_convertgroup.add_argument('--withcoastal',dest='withcoastal',type=str,help="The region code (defined using --regions) which corresponds to coastal data. Coastal data is appended to other regions where gridcells overlap and any remaining data is analysed seperately. Do not specify if no coastal data is used. Default is None (no coastal data used).",default=None)
    arg_convertgroup.add_argument('--useaatsr',dest='useaatsr',action='store_true',help="To use the AATSR SST data.",default=False)
    arg_convertgroup.add_argument('--usereynolds',dest='usereynolds',action='store_true',help="To use the Reynolds SST data.",default=False)
    arg_convertgroup.add_argument('--keepduplicates',dest='keepduplicates',action='store_true',help="To use duplicate data.",default=False)
@@ -222,13 +202,14 @@ def InterpolateWithDiva(inputfilename,destinationpath,variable,divaparamdefault)
    fout.close()
 
 #For argument descriptions, see GetCommandLine function in this file.
-def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010, endyr=2010, regions=None,
-                      methodused=None, diva=False, gstatcmds=None, notperyear=v2_convert_f_SSH.cldefaults['notperyear'],
-                      extrapolatetoyear=None, socatversion=2, asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'],
-                      withcoastal=False, useaatsr=False, usereynolds=False, keepduplicates=False):
+def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010,
+                      endyr=2010, regions=None,  methodused=None, diva=False, gstatcmds=None,
+                      notperyear=v2_convert_f_SSH.cldefaults['notperyear'], extrapolatetoyear=None, socatversion=2,
+                      asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, useaatsr=False, usereynolds=False,
+                      keepduplicates=False):
    
    #Dictionary mapping region codes with names.
-   socatregions=GetSocatRegions(socatversion, withcoastal);
+   regionFileMap=GenerateRegionFileMap(socatfiles, regions);
    
    ###Check for valid parameters
    if useaatsr and usereynolds:
@@ -238,21 +219,13 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
 
    if usereynolds:
       print
-      print "ATTENTION: selected to use Reynolds SST. I assume that the --sstdir points to the Reynolds data (if not you need to change it)."
+      print "ATTENTION: selected to use Reynolds SST. This assumes that the sstdir points to the Reynolds data (if not you need to change it)."
       print
    if useaatsr:
       print
-      print "ATTENTION: selected to use AATSR SST. I assume that the --sstdir points to the AATSR data (if not you need to change it)."
+      print "ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it)."
       print
-    
-   if regions is None: #If no regions specified then use all regions
-      regions = socatregions.keys();
-   else:
-      #Check if given regions are acceptable
-      for region in regions:
-         if region not in socatregions.keys():
-            print "Unknown region: %s" % region
-            return 1;
+   
 
    if methodused is not None and (diva==True or gstatcmds is not None):
       print "Can only select one of --methodused, --diva or --gstatcmds."
@@ -282,10 +255,10 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
                return 2;
    
    
-   
+   #######
    ###Start main logic
-   
-   
+   #######
+
    #Create a new variable as part to specify whether we exit at the interpolation stage or not
    exitatinterpolation=False;
    if methodused is None and diva==False and gstatcmds is None:
@@ -294,7 +267,6 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
       print "No interpolation option specified so will exit at interpolation stage.";
    
    #Get command line variables
-   #cl,socatregions=GetCommandline()
    interpmethod=methodused
    #Create the output directory tree (if methodused is false)
    if methodused is None:
@@ -308,8 +280,8 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
    #This bit is a little experimental ...
    #only do this if methodused has not been specified
    if methodused is None:
-      if withcoastal is True:
-         coastalfile=os.path.join(socatdir,SOCATinfile%(socatversion,socatregions['CO']))
+      if withcoastal != None:
+         coastalfile=os.path.join(socatdir, regionFileMap[withcoastal]);
       else:
          coastalfile=None
       #Run the conversion of the SOCAT ascii files to netCDF
@@ -321,7 +293,7 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
             if not asciioutput:
                continue
 
-         v2_convert_f_SSH.DoConversion(os.path.join(socatdir, SOCATinfile%(socatversion,socatregions[region])),
+         v2_convert_f_SSH.DoConversion(os.path.join(socatdir, regionFileMap[region]),
                                                  startyr,
                                                  endyr,
                                                  region,
@@ -338,10 +310,10 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
                                                  usereynolds,
                                                  removeduplicates)
 
-      if withcoastal:
+      if withcoastal != None:
          v2_convert_f_SSH.FinalCoastalConversion(startyr,
                                                  endyr,
-                                                 region,
+                                                 "CO",#region, #TMH: otherwise overwrites last region used.
                                                  outputdirectory['socat'],
                                                  notperyear,
                                                  sstdir,
@@ -350,7 +322,6 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
                                                  socatversion,
                                                  asciioutput,
                                                  outputdirectory['socatmonthpercruise'],
-                                                 ####TMH: TODO: What about coastal file? Do we need to pass None / defaul here?
                                                  useaatsr,
                                                  usereynolds,
                                                  removeduplicates)
@@ -433,7 +404,7 @@ def RunReanalyseSocat(socatdir=None, sstdir=None, ssttail=None, vco2dir=None, ou
             InterpolateWithDiva(filename,destdir,FCO2,divaparamdefault)
             destdir=outputdirectory['ppred']
             InterpolateWithDiva(filename,destdir,PCO2,divaparamdefault)
-
+   
    #We do the following after interpolation
    #Now do the combining of files 
    if extrapolatetoyear is not None:

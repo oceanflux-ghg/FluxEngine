@@ -74,11 +74,14 @@ def v2_f_conversion(jds, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, 
         fCO2_Tym - fCO2 recomputed for Tcl_C (uatm)
         qf - quality flag?"""
 
+   
    #Because this function changes the values of the sal_woas array we should copy it and change the copy instead
    sal_woas=sal_woas1.copy()
    # only use records where SST_Cs, fCO2_recs and Tcls are valid 
-   goodpoints=np.where((np.isfinite(SST_Cs)) & (np.isfinite(fCO2_recs)) & (Tcls > 0) & (Tcls < 1000) & (np.isfinite(Peq_cls)))# some Tcl data = 9.96921e+36 were found for ATS-ARC
-   badpoints=np.where(~(np.isfinite(SST_Cs)) | ~(np.isfinite(fCO2_recs)) | (Tcls > 1000) | ~(np.isfinite(Peq_cls)))
+   goodpoints=np.where((np.isfinite(SST_Cs)) & (np.isfinite(fCO2_recs)) & (Tcls >= 0) & (Tcls < 1000) & (np.isfinite(Peq_cls)))# some Tcl data = 9.96921e+36 were found for ATS-ARC
+   badpoints=np.where(~(np.isfinite(SST_Cs)) | ~(np.isfinite(fCO2_recs)) | (Tcls <0) | (Tcls >= 1000) | ~(np.isfinite(Peq_cls))) #TMH: updated so that good and bad points are mutually exclusive and the whole domain
+
+   
    if badpoints[0].size != 0:
       fileout=tempfile.mkstemp(prefix="%s/ignored_points_"%tempdir)[1]
       print "Writing ignored points to temp file: %s"%fileout

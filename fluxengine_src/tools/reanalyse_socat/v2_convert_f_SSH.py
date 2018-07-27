@@ -230,7 +230,7 @@ def ReadInData(inputfile,delimiter='\t',version=2):
 
    #Read in the columns we want into a data array
    print "Reading in data from SOCAT file: %s"%inputfile
-   print "This can take a while for large data sets.\n";
+   print "This can take a while for large datasets.\n";
    data=iter_loadtxt(filename=inputfile,delimiter=delimiter,skiprows=linestoskip,version=version)
 
    return data

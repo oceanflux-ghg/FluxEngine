@@ -36,6 +36,12 @@ import shutil; ##move desired output from reanalyse_socat to the specified outpu
 #SOCATv6 gridded, 2016:
 #   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2016 -endyr 2016 -keepduplicates -keeptempfiles
 
+#Whole global SOCATv6 reanalysis (gridded)
+#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles
+#Whole global SOCATv6 reanalysis (ASCII)
+#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles -asciioutput
+
+
 import reanalyse_socat.reanalyse_socat_v2 as rs;
 
 
@@ -105,12 +111,12 @@ if __name__ == "__main__":
         outputDir = path.abspath(path.expanduser(clArgs.output_dir));
         
         #Create output directory
-        #if path.exists(outputDir) == False:
-        #    makedirs(outputDir);
+        if path.exists(outputDir) == False:
+            makedirs(outputDir);
         try:
             #copy relevant reanalyse_socat output files
-            #shutil.move(path.join(temporaryOutputPath, "reanalysed_data"), outputDir);
-            shutil.copytree(path.join(temporaryOutputPath, "reanalysed_data"), outputDir);
+            shutil.move(path.join(temporaryOutputPath), outputDir);
+            #shutil.copytree(path.join(temporaryOutputPath), outputDir);
             
             #remove irrelevant reanalyse_socat output files
             if clArgs.keeptempfiles == False:
@@ -125,11 +131,6 @@ if __name__ == "__main__":
                 raise e;
         
         
-        
-
-shutil.copytree(temporaryOutputPath, path.expanduser("~/Desktop/test/directory/output/folder"))
-
-
 
 
 

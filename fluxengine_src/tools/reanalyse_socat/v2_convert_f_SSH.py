@@ -401,12 +401,12 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Finally we can remove columns which were only required for quality checks
    #these are days,hours,mins,fCO2rec_flag
    names=list(data_subset.dtype.names)
-   [names.remove(x) for x in ['day','mm','hh','ss','fCO2rec_flag']]
+   [names.remove(x) for x in ['fCO2rec_flag']] #'day','mm','hh','ss',
    data_subset=data_subset[names]
 
    #Optionally update names to be more sensible - could do this at data import instead
    #Note this ASSUMES the order of the column naming - FIXME: should do this more robustly
-   newnames=['year','month','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
+   newnames=['yr','mon','day','mm','hh','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
    data_subset.dtype.names=newnames
    #keep track of the number of data points that are used (for output info only)
    number_of_data_points=data_subset.shape
@@ -414,7 +414,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Get temperature from SST climatology
    if useaatsr and not usereynolds:
       #Use the AATSR data to get the SST
-      Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['lon'], 
+      Tcls = get_sst.GetAATSRSST(data_subset['yr'], data_subset['mon'], data_subset['lon'], 
                               data_subset['lat'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print "All Temperature data are no-data-values - skipping for this year."
@@ -423,7 +423,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       Tcls += 0.17
    elif usereynolds and not useaatsr:
       #Use the Reynolds data to get the SST
-      Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['lon'], 
+      Tcls = get_sst.GetReynoldsSST(data_subset['yr'], data_subset['mon'], data_subset['lon'], 
                               data_subset['lat'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print "All Temperature data are no-data-values - skipping for this year/month combination."
@@ -444,12 +444,13 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    
    #Write out the data into gridded monthly netCDF files - this will be easier if we append all arrays and use numpy
    #First convert jd_y into month - write a lambda function to do this so we can use numpy arrays
-   convert_to_month=numpy.vectorize(lambda x: datetime.datetime.fromordinal(x).month)
+   ##convert_to_month=numpy.vectorize(lambda x: datetime.datetime.fromordinal(x).month)
    #apply function to jd_y (as integer)
-   months=convert_to_month((conversion['jd']).astype(numpy.int))
+   ##months=convert_to_month((conversion['jd']).astype(numpy.int))
+   #months = conversion['mon'];
    #now concatenate arrays into one single array for easier/efficient splicing
-   conversion=numpy.lib.recfunctions.append_fields(conversion, 'month', months,
-                                                         dtypes=months.dtype, usemask=False, asrecarray=True)
+   #conversion=numpy.lib.recfunctions.append_fields(conversion, 'month', months,
+   #                                                      dtypes=months.dtype, usemask=False, asrecarray=True)
 
    #Update the file prefix to contain year info
    if extrapolatetoyear is not None:
@@ -461,10 +462,10 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       outputfile=prefix+'_from_%s_to_%s_%02d_v%d.nc'%(year_range[0],year_range[1],m,version)
       outputfilepath=os.path.join(outputdir,"%02d"%m,outputfile)
       #get the data for this month
-      month_data=conversion[numpy.where(conversion['month']==m)]
+      month_data=conversion[numpy.where(conversion['mon']==m)]
 
       #Also extract the expocodes for the same data points and append on month_data
-      expocodes_month=expocodes[numpy.where(conversion['month']==m)]
+      expocodes_month=expocodes[numpy.where(conversion['mon']==m)]
       month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month,
                                                    dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
       #Get this month into a datetime object - use the average of year to get a centre point
@@ -543,7 +544,10 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
 
    if output_data.size > 0:
       print "Writing to: %s"%outputfile
-      numpy.savetxt(outputfile,output_data,fmt="%.7f,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%s",
+      print output_data.shape;
+      print output_data.dtype.names;
+      raw_input("sldkjf...");
+      numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
                  header=",".join(output_data.dtype.names),delimiter=',')
 
 def CreateBinnedData(month_data):

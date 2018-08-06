@@ -406,7 +406,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
 
    #Optionally update names to be more sensible - could do this at data import instead
    #Note this ASSUMES the order of the column naming - FIXME: should do this more robustly
-   newnames=['yr','mon','day','mm','hh','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
+   newnames=['yr','mon','day','hh','mm','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
    data_subset.dtype.names=newnames
    #keep track of the number of data points that are used (for output info only)
    number_of_data_points=data_subset.shape

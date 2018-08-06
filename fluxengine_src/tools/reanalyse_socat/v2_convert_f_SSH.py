@@ -544,9 +544,6 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
 
    if output_data.size > 0:
       print "Writing to: %s"%outputfile
-      print output_data.shape;
-      print output_data.dtype.names;
-      raw_input("sldkjf...");
       numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
                  header=",".join(output_data.dtype.names),delimiter=',')
 

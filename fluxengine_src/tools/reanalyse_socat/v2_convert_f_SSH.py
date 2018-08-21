@@ -249,9 +249,9 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
                else:
                    break;
            #Extract the header
-           header = preline.strip().split(delimiter);
+           header = [s.strip() for s in preline.strip().split(delimiter)];
        else: #Using insitu, assume header is first line.
-           header = FILE.readline().split(delimiter);
+           header = [s.strip() for s in FILE.readline().split(delimiter)];
     
 
     columnInfoToExtract = [info for info in columnInfo if info[2] != None]; #These will be extracted from the datafile

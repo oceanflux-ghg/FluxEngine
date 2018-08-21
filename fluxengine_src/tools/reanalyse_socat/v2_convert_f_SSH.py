@@ -12,6 +12,7 @@ import argparse
 import netCDF4
 import glob
 import multiprocessing
+import pandas as pd;
 
 #Internal tool libs
 import get_sst
@@ -80,10 +81,10 @@ def GetCommandline():
 #This wrapper function essentially does everything. If this script is used as a library
 #rather than run on the command line then this is the function to call
 #TMH: noConversion, if set to True, bypasses any reanalysis and instead writes raw SOCAT data to the output files.
-def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],prefix=cldefaults['prefix'],
+def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefaults['end'],prefix=cldefaults['prefix'],
                   outputdir=cldefaults['outputdir'],notperyear=cldefaults['notperyear'],sstdir=cldefaults['sstdir'],
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
-                  version=cldefaults['socatversion'],ASCIIOUT=cldefaults['asciioutput'],
+                  ASCIIOUT=cldefaults['asciioutput'], socatversion=6,
                   percruisedir=cldefaults['asciioutput'],coastalfile=cldefaults['coastalfile'],
                   useaatsr=cldefaults['useaatsr'],usereynolds=cldefaults['usereynolds'],
                   removeduplicates=not cldefaults['keepduplicates']):
@@ -105,13 +106,13 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
    """
    year_ranges_to_process=GetYearsToProcess(startyr,endyr,notperyear)
    #Read in the data (including coastal if requested)
-   data=ReadInData(inputfile=inputfile,version=version)
+   data=ReadInData(inputfile=inputfile,columnInfo=columnInfo, socatversion=socatversion)
    #read in the coastal data but use a global variable to
    #store the data so that this is only done once and not 
    #per run of function
    global coastaldata
    if coastalfile is not None and coastaldata is None:
-      coastaldata=ReadInData(inputfile=coastalfile,version=version)
+      coastaldata=ReadInData(inputfile=coastalfile,columnInfo=columnInfo, socatversion=socatversion)
 
    #The coastal data needs to be handled differently to other data
    if coastaldata is not None:
@@ -120,10 +121,10 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
       #But only for cruises that exist in the data array and only for data that fall in a cell already occupied
       #These cruise data then need to be removed from the coastal data so that they are not added twice.
       #Get the lats and lons from the coastaldata and data and floor to ints
-      clons=numpy.floor(coastaldata['longitude_decdegE'])
-      clats=numpy.floor(coastaldata['latitude_decdegN'])
-      dlons=numpy.floor(data['longitude_decdegE'])
-      dlats=numpy.floor(data['latitude_decdegN'])
+      clons=numpy.floor(coastaldata['longitude'])
+      clats=numpy.floor(coastaldata['latitude'])
+      dlons=numpy.floor(data['longitude'])
+      dlats=numpy.floor(data['latitude'])
       data_to_add=[]
       #For each cruise in the data array
       for cr in list(set(data['expocode'])):
@@ -140,8 +141,8 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
          for pair in cllpairs:
             if pair in dllpairs:
                dllpairs.remove(pair)
-               indices_to_move=numpy.where((numpy.floor(coastaldata[cindices]['longitude_decdegE'])==pair[0])&
-                                   (numpy.floor(coastaldata[cindices]['latitude_decdegN'])==pair[1]))
+               indices_to_move=numpy.where((numpy.floor(coastaldata[cindices]['longitude'])==pair[0])&
+                                   (numpy.floor(coastaldata[cindices]['latitude'])==pair[1]))
                if len(indices_to_move)!=0:
                   data_to_add.append(cindices[0][indices_to_move[0]])
       #If data have been found in the coastaldata then add these onto the data array
@@ -157,7 +158,7 @@ def DoConversion(inputfile,startyr=cldefaults['start'],endyr=cldefaults['end'],p
    total_duplicates=[]
    for year_range in year_ranges_to_process:
       number_of_data_points,duplicates=ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,
-                                                extrapolatetoyear,version=version,ASCIIOUT=ASCIIOUT,
+                                                extrapolatetoyear,version=socatversion,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
                                                 useaatsr=useaatsr,usereynolds=usereynolds)
       total_number_of_data_points+=number_of_data_points
@@ -213,117 +214,201 @@ def GetYearsToProcess(start,end,notperyear):
 
    return year_ranges
 
-def ReadInData(inputfile,delimiter='\t',version=2):
-   """
-   Reads in the data from the SOCAT v2 or v3 files
-      inputfile - the input SOCAT ascii csv file
-      delimiter - the delimiter in the file (default to tabs)
-   """
-   #Find how many lines we want to skip in the input SOCAT file by searching for 2 column headings
-   with open(inputfile) as SOCAT:
-      linestoskip=0
-      for preline in SOCAT:
-         if 'Expocode' not in preline or 'yr' not in preline:
-            linestoskip+=1
-         else:
-            break
+def convert_column_id_to_index(header, columnIdentifier):
+    if columnIdentifier == None:
+        return None;
+    else:
+        try:
+            if int(columnIdentifier) < len(header):
+                index = int(columnIdentifier);
+            else:
+                raise IndexError("Index (%d) is out of range for header length of %d." % (int(columnIdentifier), len(header)));
+        except ValueError:
+            try:
+                index = header.index(columnIdentifier);
+            except ValueError:
+                raise ValueError("column index '%s' could not be determined in header %s" % (columnIdentifier, str(header)));
+    return index;
 
-   #Read in the columns we want into a data array
-   print "Reading in data from SOCAT file: %s"%inputfile
-   print "This can take a while for large datasets.\n";
-   data=iter_loadtxt(filename=inputfile,delimiter=delimiter,skiprows=linestoskip,version=version)
+#columnInfo countains tuples for each column (standardName, dtype, identifier), where identifier is a string column name or int index corresponding
+#   to the input files's header
+#   set socatversion to None if using insitu
+def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
+    """
+    Reads in the data from the SOCAT v2 or v3 files
+       inputfile - the input SOCAT ascii csv file
+       delimiter - the delimiter in the file (default to tabs)
+    """
+    with open(inputfile) as FILE:
+       linestoskip=0;
+       #Find how many lines we want to skip in the input SOCAT file by searching for 2 column headings
+       if socatversion != None:
+           for preline in FILE:
+               if 'Expocode' not in preline or 'yr' not in preline:
+                   linestoskip+=1
+               else:
+                   break;
+           #Extract the header
+           header = preline.strip().split(delimiter);
+       else: #Using insitu, assume header is first line.
+           header = FILE.readline().split(delimiter);
+    
 
-   return data
+    columnInfoToExtract = [info for info in columnInfo if info[2] != None]; #These will be extracted from the datafile
+    
+    #Convert columns into indices
+    indicesToExtract = [convert_column_id_to_index(header, info[2]) for info in columnInfoToExtract];
+    namesOfExtracted = [info[0] for info in columnInfoToExtract];
+    #dtypesOfExtracted = [info[1] for info in columnInfoToExtract];
 
-def iter_loadtxt(filename,delimiter='\t',skiprows=0,version=2):
-   """
-   Function to read in the data from the csv into numpy array
+    #Read in the columns we want into a data array
+    print "Reading in data from SOCAT file: %s"%inputfile
+    print "This can take a while for large datasets.\n";
+    #data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
+    data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
+    
+    #Now insert additional columns filled with nan
+    colNamesToInsert = [info[0] for info in columnInfo if info[2] == None];
+    toInsert = numpy.full((len(data), len(colNamesToInsert)), numpy.nan);
+    toInsert = pd.DataFrame(toInsert, columns=colNamesToInsert);
+    data = data.join(toInsert);
+    
+    #Reorder columns
+    orderedColNames = [info[0] for info in columnInfo];
+    data = data[orderedColNames];
 
-   """
-   #This function is to replace the numpy.genfromtxt since that uses too much RAM
-   #for the machines we need to run on. This method uses less but is more complex
+    #data.columnInfo = columnInfo; #attach metadata to the data
+    data = data.to_records(index=False);
+    data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
+                     ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
+                    ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
+                    ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8')]);
+    
+    return data;
 
-   #Which columns do we want from the file - note 0 is the first column index
-   #Use these for SOCAT v2
-   SOCATv2_cols=[1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,20,22]
-   #Use these for SOCAT v3
-   SOCATv3_cols=[4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,23,25]
-      
-   if version==2:
-      usecols=SOCATv2_cols
-   elif version==3:
-      usecols=SOCATv3_cols
-   elif version==4: #SOCATv4, 5 and 6 use the same as v3.
-      usecols=SOCATv3_cols
-   elif version==5:
-      usecols=SOCATv3_cols
-   elif version==6:
-      usecols=SOCATv3_cols
-   else:
-      raise Exception("Specified version %d cannot be loaded. Currently supports versions 2, 3, 4, 5 and 6."%version)
+#def ReadInData(inputfile, columns, delimiter='\t'):
+#   """
+#   Reads in the data from the SOCAT v2 or v3 files
+#      inputfile - the input SOCAT ascii csv file
+#      delimiter - the delimiter in the file (default to tabs)
+#   """
+#   #Find how many lines we want to skip in the input SOCAT file by searching for 2 column headings
+#   with open(inputfile) as SOCAT:
+#      linestoskip=0
+#      for preline in SOCAT:
+#         if 'Expocode' not in preline or 'yr' not in preline:
+#            linestoskip+=1
+#         else:
+#            break
+#
+#   #Read in the columns we want into a data array
+#   print "Reading in data from SOCAT file: %s"%inputfile
+#   print "This can take a while for large datasets.\n";
+#   data=iter_loadtxt(filename=inputfile, columns=columns, delimiter=delimiter, skiprows=linestoskip)
+#
+#   return data
 
-   #Function to use in numpy.fromiter()
-   def iter_func(columns,dtype,filename,skiprows,delimiter):
-      with open(filename) as SOCAT:
-         for _ in range(skiprows+1):#+1 to skip the column names also
-            next(SOCAT)
-
-         #start reading data from here
-         for line in SOCAT:
-            newline=[]
-            #strip off whitespace and split the line into delimited columns
-            line=line.rstrip().split(delimiter)
-            #for each column in the usecols list, extract that value into the newline
-            for column in columns:
-               newline.append(line[column])
-            #for each item in the newline convert to a float
-            for item in newline:
-               try:
-                  yield dtype(item)
-               except Exception, e:
-                  raise Exception("Data value found in column of SOCAT data cannot be converted to float: %s"%(item)+str(e))
-      iter_loadtxt.rowlength=len(newline)
-
-   #Create a numpy array using the above function
-   data=numpy.fromiter(iter_func(columns=usecols,dtype=float,filename=filename,skiprows=skiprows,delimiter=delimiter),dtype=float)
-   #Reshape it
-   data=data.reshape((-1,iter_loadtxt.rowlength))
-   #Convert to a record array to be consistent with the genfromtxt result
-   data=data.view(numpy.recarray)
-   #Also get the expocode in case user wants to write to ascii list rather than grid
-   expocode=numpy.fromiter(iter_func([0],dtype=str,filename=filename,skiprows=skiprows,delimiter=delimiter),dtype='S16')
-   #now we need to add the field names - read from file
-   with open(filename) as SOCAT:
-      for _ in range(skiprows):
-         next(SOCAT)
-      #Now read in the column names removing the first one 
-      #as we don't keep that column in the data array below
-      names=next(SOCAT).rstrip().split(delimiter)
-
-   #Tidy up the names to match those generated from genfromtxt
-   #remove spaces,commas,brackets etc
-   names=[x.replace(" ","_").replace('[','').replace(']','').replace('.','').replace('/','') for x in names]
-   new_names=[]
-   for column in usecols:
-      new_names.append(names[column])
-   names=new_names
-
-   #Create a new dtype for the recarray - use all as float here for simplicity
-   dtype_list=[(x,float) for x in names]
-   dtype_list = numpy.dtype(dtype_list); #TMH: newer versions of numpy do not automatically do this conversion.
-   data.dtype=dtype_list
-
-   #Had to hard code here - this is not ideal. Could instead update the
-   #rest of the code to expect floats for all columns of data.
-   #Convert the datatypes to what genfromtxt would give 
-   data=data.astype([('yr','<i8'), ('mon','<i8'), ('day','<i8'), ('hh','<i8'), ('mm','<i8'), ('ss','<i8'),
-                     ('longitude_decdegE','<f8'), ('latitude_decdegN','<f8'), ('sal', '<f8'),
-                    ('SST_degC', '<f8'), ('Tequ_degC', '<f8'), ('PPPP_hPa', '<f8'), ('Pequ_hPa', '<f8'),
-                    ('WOA_SSS', '<f8'), ('NCEP_SLP_hPa', '<f8'), ('fCO2rec_uatm', '<f8'), ('fCO2rec_flag', '<i8')])
-   data=numpy.lib.recfunctions.append_fields(data, 'expocode', expocode,
-                                             dtypes=expocode.dtype, usemask=False, asrecarray=True)
-
-   return data
+#def iter_loadtxt(filename, columns, delimiter='\t', skiprows=0):
+#   """
+#   Function to read in the data from the csv into numpy array
+#
+#   """
+#   #This function is to replace the numpy.genfromtxt since that uses too much RAM
+#   #for the machines we need to run on. This method uses less but is more complex
+#
+##   #Which columns do we want from the file - note 0 is the first column index
+##   #Use these for SOCAT v2
+##   SOCATv2_cols=[1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,20,22]
+##   #Use these for SOCAT v3
+##   SOCATv3_cols=[4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,23,25]
+##      
+##   if version==2:
+##      usecols=SOCATv2_cols
+##   elif version==3:
+##      usecols=SOCATv3_cols
+##   elif version==4: #SOCATv4, 5 and 6 use the same as v3.
+##      usecols=SOCATv3_cols
+##   elif version==5:
+##      usecols=SOCATv3_cols
+##   elif version==6:
+##      usecols=SOCATv3_cols
+##   else:
+##      raise Exception("Specified version %d cannot be loaded. Currently supports versions 2, 3, 4, 5 and 6."%version)
+#
+#   #Function to use in numpy.fromiter()
+#   def iter_func(cols,dtype,filename,skiprows,delimiter):
+#      with open(filename) as SOCAT:
+#         for _ in range(skiprows):#+1 to skip the column names also
+#            next(SOCAT)
+#         
+#         #extract header and interpret columns as either indices or colnames.
+#         iter_loadtxt.header = next(SOCAT).split("\t");
+#         iter_loadtxt.colIndices = [];
+#         for col in cols:
+#             try:
+#                 iter_loadtxt.colIndices.append(int(col));
+#             except ValueError:
+#                 try:
+#                     iter_loadtxt.colIndices.append(iter_loadtxt.header.index(col));
+#                 except ValueError:
+#                     raise ValueError("column index '%s' could not be determined in file %s" % (col, filename));
+#         
+#         #start reading data from here
+#         for line in SOCAT:
+#            newline=[]
+#            #strip off whitespace and split the line into delimited columns
+#            line=line.rstrip().split(delimiter)
+#            #for each column in the usecols list, extract that value into the newline
+#            for colIndex in iter_loadtxt.colIndices:
+#               newline.append(line[colIndex])
+#            #for each item in the newline convert to a float
+#            for item in newline:
+#               try:
+#                  yield dtype(item)
+#               except Exception, e:
+#                  raise Exception("Data value found in column of SOCAT data cannot be converted to float: %s"%(item)+str(e))
+#      iter_loadtxt.rowlength=len(newline)
+#   
+#   #Create a numpy array using the above function
+#   data=numpy.fromiter(iter_func(cols=columns,dtype=float,filename=filename,skiprows=skiprows,delimiter=delimiter),dtype=float)
+#   #Reshape it
+#   data=data.reshape((-1,iter_loadtxt.rowlength))
+#   #Convert to a record array to be consistent with the genfromtxt result
+#   data=data.view(numpy.recarray)
+#   #Also get the expocode in case user wants to write to ascii list rather than grid
+#   expocode=numpy.fromiter(iter_func([0],dtype=str,filename=filename,skiprows=skiprows,delimiter=delimiter),dtype='S24') #TMH: was S16 but some Expocodes are now longer than this
+#   #now we need to add the field names - read from file
+#   with open(filename) as SOCAT:
+#      for _ in range(skiprows):
+#         next(SOCAT)
+#      #Now read in the column names removing the first one 
+#      #as we don't keep that column in the data array below
+#      names=next(SOCAT).rstrip().split(delimiter)
+#
+#   #Tidy up the names to match those generated from genfromtxt
+#   #remove spaces,commas,brackets etc
+#   names=[x.replace(" ","_").replace('[','').replace(']','').replace('.','').replace('/','') for x in names]
+#   new_names=[]
+#   for column in iter_loadtxt.colIndices:
+#      new_names.append(names[column])
+#   names=new_names
+#
+#   #Create a new dtype for the recarray - use all as float here for simplicity
+#   dtype_list=[(x,float) for x in names]
+#   dtype_list = numpy.dtype(dtype_list); #TMH: newer versions of numpy do not automatically do this conversion.
+#   data.dtype=dtype_list
+#
+#   #Had to hard code here - this is not ideal. Could instead update the
+#   #rest of the code to expect floats for all columns of data.
+#   #Convert the datatypes to what genfromtxt would give 
+#   data=data.astype([('yr','<i8'), ('mon','<i8'), ('day','<i8'), ('hh','<i8'), ('mm','<i8'), ('ss','<i8'),
+#                     ('longitude_decdegE','<f8'), ('latitude_decdegN','<f8'), ('sal', '<f8'),
+#                    ('SST_degC', '<f8'), ('Tequ_degC', '<f8'), ('PPPP_hPa', '<f8'), ('Pequ_hPa', '<f8'),
+#                    ('WOA_SSS', '<f8'), ('NCEP_SLP_hPa', '<f8'), ('fCO2rec_uatm', '<f8'), ('fCO2rec_flag', '<i8')])
+#   data=numpy.lib.recfunctions.append_fields(data, 'expocode', expocode,
+#                                             dtypes=expocode.dtype, usemask=False, asrecarray=True)
+#
+#   return data
 
 def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoyear,version,
                  percruisedir=None,ASCIIOUT=False,removeduplicates=True,useaatsr=False,usereynolds=False):
@@ -343,29 +428,32 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    data_subset=[]
    #subset the year(s) we want
    print "Subsetting data for year range: %d %d"%(year_range[0],year_range[1])
-   data_subset=data[numpy.where((data['yr'] >= year_range[0]) & (data['yr'] <= year_range[1] ))]
+   print len(data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]);
+   data_subset=data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]
+   
 
    #Test if there are any data - if not then return
    if data_subset.size==0:
       print 'No data available for these years: %d %d'%(year_range[0],year_range[1])
       return 0,[]
 
-   #remove rows thmonth_dataat fail quality checks
-   #fco2 quality flag
-   data_subset=data_subset[numpy.where(data_subset['fCO2rec_flag'] == 2)]
+   #remove rows that fail quality checks
+   #fco2 quality flag (if a SOCAT fCO2 quality control flag is present, use it to remove data that failed the check)
+   if numpy.all(numpy.isnan(data_subset['fCO2_qc_flag'])) == False:
+       data_subset=data_subset[numpy.where(data_subset['fCO2_qc_flag'] == 2)]
    
    #check if fco2 is not nan
-   data_subset=data_subset[numpy.where(numpy.isfinite(data_subset['fCO2rec_uatm']))]
+   data_subset=data_subset[numpy.where(numpy.isfinite(data_subset['fCO2']))]
 
    #Now do some data conversion
    #we want lon in range [-180,180) so -360 from longitudes greater or equal to 180
-   data_subset['longitude_decdegE']=numpy.where(data_subset['longitude_decdegE']>=180,
-                                                data_subset['longitude_decdegE']-360,data_subset['longitude_decdegE'])
+   data_subset['longitude']=numpy.where(data_subset['longitude']>=180,
+                                                data_subset['longitude']-360,data_subset['longitude'])
    #Make an array of all the dates julian days
-   jds=datenum.datenum_array(data_subset['yr'], data_subset['mon'], data_subset['day'], data_subset['hh'], data_subset['mm'], 0)
+   jds=datenum.datenum_array(data_subset['year'], data_subset['month'], data_subset['day'], data_subset['hour'], data_subset['minute'], 0)
 
    #Sort the data to aid in removing duplicates
-   sortedindices=numpy.argsort(data_subset,order=['expocode','yr','mon','day','hh','mm','ss','longitude_decdegE','latitude_decdegN'])
+   sortedindices=numpy.argsort(data_subset,order=['expocode','year','month','day','hour','minute','second','longitude','latitude'])
    data_subset=data_subset[sortedindices]
    #Also sort the jds array too
    jds=jds[sortedindices]
@@ -401,12 +489,14 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Finally we can remove columns which were only required for quality checks
    #these are days,hours,mins,fCO2rec_flag
    names=list(data_subset.dtype.names)
-   [names.remove(x) for x in ['fCO2rec_flag']] #'day','mm','hh','ss',
+   [names.remove(x) for x in ['fCO2_qc_flag']] #'day','mm','hh','ss',
+   names = [str(x) for x in names]; #Unicode strings can't be used to index, but are returned as column names. Weird.
    data_subset=data_subset[names]
 
    #Optionally update names to be more sensible - could do this at data import instead
-   #Note this ASSUMES the order of the column naming - FIXME: should do this more robustly
-   newnames=['yr','mon','day','hh','mm','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
+   #Note this ASSUMES the order of the column naming - FIXME: should do this more robustly #TMH: Fixed: Order is now determined by the columnInfo object after parsing command line args.
+   #newnames=['yr','mon','day','hh','mm','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
+   newnames=["expocode", "year", "month", "day", "hour", "minute", "second", "longitude", "latitude", "salinity", "sst", "T_equ", "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2"];
    data_subset.dtype.names=newnames
    #keep track of the number of data points that are used (for output info only)
    number_of_data_points=data_subset.shape
@@ -414,8 +504,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Get temperature from SST climatology
    if useaatsr and not usereynolds:
       #Use the AATSR data to get the SST
-      Tcls = get_sst.GetAATSRSST(data_subset['yr'], data_subset['mon'], data_subset['lon'], 
-                              data_subset['lat'],sstdir, ssttail)
+      Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
+                              data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print "All Temperature data are no-data-values - skipping for this year."
          return 0,[]
@@ -423,8 +513,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       Tcls += 0.17
    elif usereynolds and not useaatsr:
       #Use the Reynolds data to get the SST
-      Tcls = get_sst.GetReynoldsSST(data_subset['yr'], data_subset['mon'], data_subset['lon'], 
-                              data_subset['lat'],sstdir, ssttail)
+      Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
+                              data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print "All Temperature data are no-data-values - skipping for this year/month combination."
          return 0,[]
@@ -433,7 +523,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       raise Exception("No SST data specified. Currently must be one (and only one) of either AATSR or Reynolds.")
 
    #Update the pressure?
-   Peq_cls = data_subset['P_ncep'] + 3.
+   Peq_cls = data_subset['air_pressure_sub'] + 3.
    #Extract the expocodes here as they get removed in the conversion
    expocodes=data_subset['expocode']
    #Recalculate the fugacity and partial pressure
@@ -459,15 +549,21 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #For every month in turn
    for m in range(1,13): #i.e. for m 1-12 inclusive
       #create an output file for this months data
-      outputfile=prefix+'_from_%s_to_%s_%02d_v%d.nc'%(year_range[0],year_range[1],m,version)
+      if version != None:
+          outputfile=prefix+'_from_%s_to_%s_%02d_v%d.nc'%(year_range[0],year_range[1],m,version)
+      else:
+          outputfile=prefix+'_from_%s_to_%s_%02d_custom_insitu.nc'%(year_range[0],year_range[1],m)
       outputfilepath=os.path.join(outputdir,"%02d"%m,outputfile)
       #get the data for this month
       month_data=conversion[numpy.where(conversion['mon']==m)]
 
       #Also extract the expocodes for the same data points and append on month_data
       expocodes_month=expocodes[numpy.where(conversion['mon']==m)]
-      month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month,
-                                                   dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
+#      month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month,
+#                                                   dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
+      month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month, dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
+      
+      
       #Get this month into a datetime object - use the average of year to get a centre point
       #Note in most usual cases the year range is a single year so averaging does nothing strange
       if m!=12:
@@ -526,26 +622,27 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    return number_of_data_points[0],duplicate_data
 
 def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
-   #Calculate differences of data for this month
-   #Difference in temperature
-   dT=month_data['Tcl_C'] - month_data['SST_C']
-   #Difference in fugacity
-   dF=month_data['fCO2_Tym'] - month_data['fCO2_SST']
-   #Difference in partial pressure
-   dP=month_data['pCO2_Tym'] - month_data['pCO2_SST']
 
-   outputfile=outputfile.replace('.nc','.txt')
-   #Write out the data into a netCDF file
-   #Test directory exists
-   if not os.path.exists(os.path.dirname(outputfile)):
-      raise Exception("Directory to write file to does not exist: %s"%(os.path.dirname(outputfile)))
+    #Calculate differences of data for this month
+    #Difference in temperature
+    dT=month_data['Tcl_C'] - month_data['SST_C']
+    #Difference in fugacity
+    dF=month_data['fCO2_Tym'] - month_data['fCO2_SST']
+    #Difference in partial pressure
+    dP=month_data['pCO2_Tym'] - month_data['pCO2_SST']
+    
+    outputfile=outputfile.replace('.nc','.txt')
+    #Write out the data into a netCDF file
+    #Test directory exists
+    if not os.path.exists(os.path.dirname(outputfile)):
+        raise Exception("Directory to write file to does not exist: %s"%(os.path.dirname(outputfile)))
+    
+    output_data=month_data
 
-   output_data=month_data
-
-   if output_data.size > 0:
-      print "Writing to: %s"%outputfile
-      numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
-                 header=",".join(output_data.dtype.names),delimiter=',')
+    if output_data.size > 0:
+        print "Writing to: %s"%outputfile
+        numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
+                      header=",".join(output_data.dtype.names),delimiter=',')
 
 def CreateBinnedData(month_data):
    #import pandas as pd;

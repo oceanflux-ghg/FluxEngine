@@ -18,10 +18,10 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None):
     Also returns result as a structured array.
    """
    #Run the conversion function
-   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['yr'],data_array['mon'],data_array['day'],data_array['hh'],data_array['mm'],data_array['ss'],
-                                                      data_array['lon'], data_array['lat'], data_array['SST_C'],data_array['sal'], data_array['Teq_C'], 
-                                                      data_array['P'], data_array['Peq'], data_array['sal_woa'],data_array['P_ncep'], 
-                                                      data_array['fCO2_rec'], Tcls, Peq_cls,extrapolatetoyear);
+   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
+                                                      data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'], 
+                                                      data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'], 
+                                                      data_array['fCO2'], Tcls, Peq_cls,extrapolatetoyear);
 
    if jd is None:
       #this is only if there were no usable data after the validity checks
@@ -154,12 +154,25 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    B = -1636.75 + SST * (12.0408 + SST * (-3.27957E-02 + 3.16528E-05*SST)) # cm^3/mol
    pCO2_SST = fCO2_SST.copy() # initial first guess of pCO2_SST
    dT = SST_C - Teq_C
-   y = 0
+   y = [0]
    while np.any(np.absolute(pCO2_SST - y) > EPS * pCO2_SST):
+#      print "y:", y[0];
+#      print "DT:", dT[0];
+#      print "pCO2_SST", pCO2_SST[0];
+#      print "Peq:", Peq[0];
+#      print "fCO2_SST:", fCO2_SST[0];
+#      print "SST:", SST[0];
+#      print "B", B[0];
+#      print "delta:", delta[0];
+#      print "R:", R; # cm^3 atm/(mol K)
+      
+      
       y = pCO2_SST
       pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
       XCO2_Teq = pCO2_Teq / Peq # wet XCO2_Teq
       pCO2_SST = fCO2_SST * np.exp(-(B + 2 * delta * (1 - XCO2_Teq) ** 2) * Peq / (R * SST))
+      
+#      raw_input("modified...");
 
    pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
    # Recalculation to climatological values

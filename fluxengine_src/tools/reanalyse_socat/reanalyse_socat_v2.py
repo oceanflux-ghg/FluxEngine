@@ -57,6 +57,23 @@ outputdirectory={'socat' : string.Template('$dirname/reanalysed_data'),
                  'reanalysedglobalmonth' : string.Template('$dirname/reanalysed_global/%02d'),
                 }
 
+#Use of global means we need to explicitly reset this between calls. TODO: Refactor code to that outputdirectory is not global.
+def reset_outputdirectory():
+    global outputdirectory;
+    outputdirectory={'socat' : string.Template('$dirname/reanalysed_data'),
+                 'socatmonth' : string.Template('$dirname/reanalysed_data/%02d'),
+                 'socatmonthpercruise' : string.Template('$dirname/reanalysed_data/%02d/per_cruise'),
+                 'joined' : string.Template('$dirname/joined'),
+                 'combined' : string.Template('$dirname/combined'),
+                 'fpred' : string.Template('$dirname/interpolated/fCO2/predictions'),
+                 'ppred' : string.Template('$dirname/interpolated/pCO2/predictions'),
+                 'fvar' : string.Template('$dirname/interpolated/fCO2/variances'),
+                 'pvar' : string.Template('$dirname/interpolated/pCO2/variances'),
+                 'temp' : string.Template('$dirname/temp_workspaces'),
+                 'reanalysedglobal' : string.Template('$dirname/reanalysed_global'),
+                 'reanalysedglobalmonth' : string.Template('$dirname/reanalysed_global/%02d'),
+                };
+
 #Template for the SOCAT string filename
 #SOCATinfile='SOCATv%d_%s.tsv'
 #output_global_monthly_file='OCF-CO2-GLO-M1-100-SOCAT-CONV.nc'
@@ -127,7 +144,8 @@ def CreateOutputTree(topdir,continuing=False):
 
    #For ease in later functions update the output directory variables to include topdir
    for key in outputdirectory.keys():
-      outputdirectory[key]=outputdirectory[key].safe_substitute(dirname=topdir)
+      #if os.path.isabs(outputdirectory[key]) == False: #TMH: when using insitu data this isn't already appended.
+          outputdirectory[key]=outputdirectory[key].safe_substitute(dirname=topdir)
 
    #If not continuing then we want to create a new output directory
    #else if continuing is True then we already have output directory tree existing
@@ -202,7 +220,7 @@ def InterpolateWithDiva(inputfilename,destinationpath,variable,divaparamdefault)
    fout.close()
 
 
-#Returns standard column names, dtypes and columns as string names or string column numbers
+#Returns standard column names, dtypes and columns as string names or string column numbers   
 def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
                                    fCO2_col, expocode_col, socatversion, notsocatformat):
@@ -213,7 +231,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
     
     if notsocatformat: #Specify the columns as given by the command line parameters.
         colIdentifiers = [expocode_col, year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
-                                   salinity_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, salinity_sub_col, air_pressure_equ_col, \
+                                   salinity_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_equ_col, salinity_sub_col, air_pressure_sub_col, \
                                    fCO2_col, None];
     else: #using socat so use socatversion to determine correct columns
         if socatversion == 2:
@@ -263,7 +281,6 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
         columnInfo.append( (stndColNames[i], colDTypes[i], colIdentifiers[i]) );
     return columnInfo;
 
-
 #For argument descriptions, see GetCommandLine function in this file.
 def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010,
                       endyr=2010, regions=None,  methodused=None, diva=False, gstatcmds=None,
@@ -289,6 +306,10 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                       fCO2_col=None,
                       expocode_col=None
                       ):
+   #Dodgy use of global means we need to explicitly reset 'outputdirectory'this between calls.
+   reset_outputdirectory();
+   
+   
    columnInfo = construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
                                    fCO2_col, expocode_col, socatversion, notsocatformat);

@@ -259,12 +259,15 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
     #Convert columns into indices
     indicesToExtract = [convert_column_id_to_index(header, info[2]) for info in columnInfoToExtract];
     namesOfExtracted = [info[0] for info in columnInfoToExtract];
+    order = numpy.argsort(indicesToExtract); #pandas ignores the column order so we need to rearrange the column names accordingly
+    namesOfExtracted = [namesOfExtracted[i] for i in order];
+    
     #dtypesOfExtracted = [info[1] for info in columnInfoToExtract];
 
     #Read in the columns we want into a data array
     print "Reading in data from SOCAT file: %s"%inputfile
     print "This can take a while for large datasets.\n";
-    #data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
+
     data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
     
     #Now insert additional columns filled with nan
@@ -279,10 +282,16 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 
     #data.columnInfo = columnInfo; #attach metadata to the data
     data = data.to_records(index=False);
-    data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
+    if "fCO2_qc_flag" in colNamesToInsert: #nan values must be float type, fCO2_qc_flag is usually int, so have to split here.
+        data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
                      ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
                     ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
-                    ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8')]);
+                    ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<f8')]);
+    else: #fCO2_qc_flag was provided by the data file, so set type as int.
+        data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
+                         ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
+                        ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
+                        ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8')]);
     
     return data;
 
@@ -467,7 +476,16 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
          #because the data are ordered we only need to check if consequetive records are the same
          #we will check if every column is identical - ignoring nans as they are not identical (undefined)
          for name in list(data_subset.dtype.names):
-            if data_subset[i][name]!=data_subset[i-1][name] and not numpy.isnan(data_subset[i][name]):
+            #if data_subset[i][name]!=data_subset[i-1][name] and not numpy.isnan(data_subset[i][name]):
+            if data_subset[i][name].dtype == float or data_subset[i][name].dtype == int: #Only float values can be nan (and things that can be cast to float)
+               if data_subset[i][name]!=data_subset[i-1][name] and not numpy.isnan(data_subset[i][name]):
+                    duplicate=False;
+                    break;
+            else: #not float
+               if data_subset[i][name]!=data_subset[i-1][name]:
+                   duplicate=False;
+                   break;
+                  
                #there is a difference so these cannot be duplicates - exit the loop
                duplicate=False
                break

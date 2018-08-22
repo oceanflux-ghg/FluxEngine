@@ -99,7 +99,11 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    # only use records where SST_Cs, fCO2_recs and Tcls are valid 
    goodpoints=np.where((np.isfinite(SST_Cs)) & (np.isfinite(fCO2_recs)) & (Tcls >= 0) & (Tcls < 1000) & (np.isfinite(Peq_cls)))# some Tcl data = 9.96921e+36 were found for ATS-ARC
    badpoints=np.where(~(np.isfinite(SST_Cs)) | ~(np.isfinite(fCO2_recs)) | (Tcls <0) | (Tcls >= 1000) | ~(np.isfinite(Peq_cls))) #TMH: updated so that good and bad points are mutually exclusive and the whole domain
-
+#   aa = len(np.where(~(np.isfinite(SST_Cs)))[0]);
+#   bb = len(np.where(~(np.isfinite(fCO2_recs)))[0]);
+#   cc = len(np.where((Tcls <0) | (Tcls >= 1000) )[0]);
+#   dd = len(np.where(~(np.isfinite(Peq_cls)) )[0]);
+   
    
    if badpoints[0].size != 0:
       fileout=tempfile.mkstemp(prefix="%s/ignored_points_"%tempdir)[1]
@@ -156,6 +160,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    dT = SST_C - Teq_C
    y = [0]
    while np.any(np.absolute(pCO2_SST - y) > EPS * pCO2_SST):
+#      print "mean(y)", np.mean(y);
 #      print "y:", y[0];
 #      print "DT:", dT[0];
 #      print "pCO2_SST", pCO2_SST[0];

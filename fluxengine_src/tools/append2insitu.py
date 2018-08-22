@@ -72,10 +72,7 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     insituData = pd.read_table(insituDataPath, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
     
     #Read feOutput file
-    try:
-        ncFile = Dataset(feOutputPath, 'r');
-    except IOError:
-        print "Failed to open", feOutputPath;
+    ncFile = Dataset(feOutputPath, 'r');
     
     #Create empty vectors for each netCDF variable
     newVectors = {};

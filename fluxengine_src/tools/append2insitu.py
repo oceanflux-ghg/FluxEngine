@@ -66,7 +66,8 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     #failedFiles = []; #Files which could not be opened / processed.
     
     #Process each input netCDF file and produce a text file
-    print "Combining files at ", feOutputPath, "and", insituDataPath;
+    if verbose:
+        print "Combining files at ", feOutputPath, "and", insituDataPath;
     
     #Read in situ data file
     insituData = pd.read_table(insituDataPath, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);

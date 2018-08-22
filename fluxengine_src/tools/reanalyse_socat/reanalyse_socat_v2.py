@@ -201,12 +201,98 @@ def InterpolateWithDiva(inputfilename,destinationpath,variable,divaparamdefault)
    fout.writelines(stdout+stderr)
    fout.close()
 
+
+#Returns standard column names, dtypes and columns as string names or string column numbers
+def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
+                                   salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
+                                   fCO2_col, expocode_col, socatversion, notsocatformat):
+    stndColNames = ["expocode", "year", "month", "day", "hour", "minute", "second", "longitude", "latitude", "salinity", "sst", "T_equ", \
+                    "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2", "fCO2_qc_flag"];
+    colDTypes = ['U24', '<i8', '<i8', '<i8', '<i8', '<i8', '<i8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<i8'];
+    #colDTypes = [str, int, int, int, int, int, int, float, float, float, float, float, float, float, float, float, float, int];
+    
+    if notsocatformat: #Specify the columns as given by the command line parameters.
+        colIdentifiers = [expocode_col, year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
+                                   salinity_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, salinity_sub_col, air_pressure_equ_col, \
+                                   fCO2_col, None];
+    else: #using socat so use socatversion to determine correct columns
+        if socatversion == 2:
+            colIdentifiers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '10', '11', '12', '13', '14', '15', '16', '20', '22'];
+#            return ['SOCAT_DOI',
+#             'QC_ID',
+#             'yr',
+#             'mon',
+#             'day',
+#             'hh',
+#             'mm',
+#             'ss',
+#             'latitude [dec.deg.N]',
+#             'sample_depth [m]',
+#             'sal',
+#             'SST [deg.C]',
+#             'Tequ [deg.C]',
+#             'PPPP [hPa]',
+#             'Pequ [hPa]',
+#             'd2l [km]',
+#             'fCO2rec [uatm]'];
+        elif socatversion in [3, 4, 5, 6]:
+            colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '23', '25'];
+            #colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '18', '14', '15', '16', '19', '17', '23', '25'];
+#            return ['yr',
+#             'mon',
+#             'day',
+#             'hh',
+#             'mm',
+#             'ss',
+#             'longitude [dec.deg.E]',
+#             'latitude [dec.deg.N]',
+#             'sal',
+#             'SST [deg.C]',
+#             'Tequ [deg.C]',
+#             'PPPP [hPa]',
+#             'Pequ [hPa]',
+#             'WOA_SSS',
+#             'NCEP_SLP [hPa]',
+#             'fCO2rec [uatm]',
+#             'fCO2rec_flag']
+        else:
+            raise ValueError("No value columns could be generated. Only socat version 2, 3, 4, 5, and 6 are supported.");
+        
+    columnInfo = [];
+    for i in range(len(colIdentifiers)):
+        columnInfo.append( (stndColNames[i], colDTypes[i], colIdentifiers[i]) );
+    return columnInfo;
+
+
 #For argument descriptions, see GetCommandLine function in this file.
 def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010,
                       endyr=2010, regions=None,  methodused=None, diva=False, gstatcmds=None,
-                      notperyear=v2_convert_f_SSH.cldefaults['notperyear'], extrapolatetoyear=None, socatversion=2,
+                      notperyear=v2_convert_f_SSH.cldefaults['notperyear'], extrapolatetoyear=None, keepduplicates=False,
                       asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, useaatsr=False, usereynolds=False,
-                      keepduplicates=False):
+                      socatversion=6,
+                      notsocatformat=False,
+                      year_col=None,
+                      month_col=None,
+                      day_col=None,
+                      hour_col=None,
+                      minute_col=None,
+                      second_col=None,
+                      longitude_col=None,
+                      latitude_col=None,
+                      salinity_col=None,
+                      salinity_sub_col=None,
+                      SST_C_col=None,
+                      Tequ_col=None,
+                      air_pressure_col=None,
+                      air_pressure_sub_col=None,
+                      air_pressure_equ_col=None,
+                      fCO2_col=None,
+                      expocode_col=None
+                      ):
+   columnInfo = construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
+                                   salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
+                                   fCO2_col, expocode_col, socatversion, notsocatformat);
+   
    
    #Dictionary mapping region codes with names.
    regionFileMap=GenerateRegionFileMap(socatfiles, regions);
@@ -294,6 +380,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                continue
 
          v2_convert_f_SSH.DoConversion(os.path.join(socatdir, regionFileMap[region]),
+                                                 columnInfo,
                                                  startyr,
                                                  endyr,
                                                  region,
@@ -302,8 +389,8 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  sstdir,
                                                  ssttail,
                                                  extrapolatetoyear,
-                                                 socatversion,
                                                  asciioutput,
+                                                 socatversion,
                                                  outputdirectory['socatmonthpercruise'],
                                                  coastalfile,
                                                  useaatsr,
@@ -319,7 +406,6 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  sstdir,
                                                  ssttail,
                                                  extrapolatetoyear,
-                                                 socatversion,
                                                  asciioutput,
                                                  outputdirectory['socatmonthpercruise'],
                                                  useaatsr,

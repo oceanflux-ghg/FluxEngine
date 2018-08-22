@@ -126,3 +126,4 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
          Tcl[indices[bad]]=-999
 
    return Tcl
+

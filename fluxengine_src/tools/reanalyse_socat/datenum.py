@@ -11,3 +11,19 @@ def datenum(y,m,d,h=0,mn=0,s=0):
 
 #Make the datenum function work with numpy arrays
 datenum_array=numpy.frompyfunc(datenum,6,1)
+
+
+
+#from datetime import timedelta;
+##reverses the datenum function
+#def undatenum(jds):
+#    baseline = datetime(1,1,1);
+#    dt = timedelta(days=jds-1);
+#    
+#    return baseline+dt;
+#
+#j = datenum(2010, 5, 11, 6, 0, 0);
+#d = undatenum(j);
+#
+#print j
+#print d

@@ -18,20 +18,39 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None):
     Also returns result as a structured array.
    """
    #Run the conversion function
-   jd, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds,data_array['lon'],
-            data_array['lat'], data_array['SST_C'],data_array['sal'], data_array['Teq_C'], 
-            data_array['P'], data_array['Peq'], data_array['sal_woa'],data_array['P_ncep'], 
-            data_array['fCO2_rec'], Tcls, Peq_cls,extrapolatetoyear)
+   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
+                                                      data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'], 
+                                                      data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'], 
+                                                      data_array['fCO2'], Tcls, Peq_cls,extrapolatetoyear);
 
    if jd is None:
       #this is only if there were no usable data after the validity checks
       return None
    else:
       #concatenate arrays into single, structured array for return
-      result=np.recarray((jd.size,),dtype=[('jd',np.float),('lat',np.float),('lon',np.float),
-                                    ('SST_C',np.float),('Tcl_C',np.float),('fCO2_SST',np.float),
-                                    ('fCO2_Tym',np.float),('pCO2_SST',np.float),('pCO2_Tym',np.float),('qf',np.int)])
+      result=np.recarray((jd.size,),dtype=[('jd',np.float),
+                                           ('yr',np.int32),
+                                           ('mon',np.int32),
+                                           ('day', np.int32),
+                                           ('hh', np.int32),
+                                           ('mm', np.int32),
+                                           ('ss', np.int32),
+                                           ('lat',np.float),
+                                           ('lon',np.float),
+                                           ('SST_C',np.float),
+                                           ('Tcl_C',np.float),
+                                           ('fCO2_SST',np.float),
+                                           ('fCO2_Tym',np.float),
+                                           ('pCO2_SST',np.float),
+                                           ('pCO2_Tym',np.float),
+                                           ('qf',np.int)]);
       result['jd']=jd
+      result['yr']=yr;
+      result['mon']=mon;
+      result['day']=day;
+      result['hh']=hh;
+      result['mm']=mm;
+      result['ss']=ss;
       result['lat']=lat
       result['lon']=lon
       result['SST_C']=SST_C
@@ -45,7 +64,7 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None):
    return result
 
 
-def v2_f_conversion(jds, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, \
+def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, \
    P_nceps, fCO2_recs, Tcls, Peq_cls,extrapolatetoyear):
    """Recalculates CO2 flux from the ocean:
       Arguments (all numpy arrays):
@@ -93,9 +112,10 @@ def v2_f_conversion(jds, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, 
       #there are no records with valid  Tcls, fCO2_recs and SST_cs
       #raise Exception("No data records with valid Tcls, fCO2_recs and SST_Cs. Cannot reanalyse these data.")
       #return a list of Nones of the length that needs to be unpacked
-      return [None,None,None,None,None,None,None,None,None,None]
+      return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None];
 
    jd, lon, lat, SST_C, sal = jds[goodpoints], lons[goodpoints], lats[goodpoints], SST_Cs[goodpoints], sals[goodpoints]
+   yr, mon, day, hh, mm, ss = yrs[goodpoints], mons[goodpoints], days[goodpoints], hhs[goodpoints], mms[goodpoints], sss[goodpoints];
    Teq_C, P, Peq, sal_woa = Teq_Cs[goodpoints], Ps[goodpoints], Peqs[goodpoints], sal_woas[goodpoints]
    P_ncep, fCO2_rec, Tcl, Peq_cl = P_nceps[goodpoints], fCO2_recs[goodpoints], Tcls[goodpoints], Peq_cls[goodpoints]
    n = np.size(jd)
@@ -134,12 +154,25 @@ def v2_f_conversion(jds, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, 
    B = -1636.75 + SST * (12.0408 + SST * (-3.27957E-02 + 3.16528E-05*SST)) # cm^3/mol
    pCO2_SST = fCO2_SST.copy() # initial first guess of pCO2_SST
    dT = SST_C - Teq_C
-   y = 0
+   y = [0]
    while np.any(np.absolute(pCO2_SST - y) > EPS * pCO2_SST):
+#      print "y:", y[0];
+#      print "DT:", dT[0];
+#      print "pCO2_SST", pCO2_SST[0];
+#      print "Peq:", Peq[0];
+#      print "fCO2_SST:", fCO2_SST[0];
+#      print "SST:", SST[0];
+#      print "B", B[0];
+#      print "delta:", delta[0];
+#      print "R:", R; # cm^3 atm/(mol K)
+      
+      
       y = pCO2_SST
       pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
       XCO2_Teq = pCO2_Teq / Peq # wet XCO2_Teq
       pCO2_SST = fCO2_SST * np.exp(-(B + 2 * delta * (1 - XCO2_Teq) ** 2) * Peq / (R * SST))
+      
+#      raw_input("modified...");
 
    pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
    # Recalculation to climatological values
@@ -168,5 +201,5 @@ def v2_f_conversion(jds, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, 
    fCO2_SST *= 1E+06 # uatm (this is the same as fCO2_rec)
    pCO2_SST *= 1E+06 # uatm
 
-   return [jd, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf]
+   return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf];
 

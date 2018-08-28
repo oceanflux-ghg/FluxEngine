@@ -293,6 +293,8 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, processTim
     #Copy over misc. parameters
     #runParams["year"] = 2000 if clArgs.use_takahashi_validation==True else runParams["year"] = year;
     runParams["year"] = curTimePoint.year;
+    runParams["month"] = curTimePoint.month;
+    runParams["day"] = curTimePoint.day;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
     runParams["src_home"] = configVariables["src_home"];

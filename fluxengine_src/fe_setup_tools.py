@@ -250,6 +250,7 @@ def substitute_tokens(inputStr, curDatetime):
     outputStr = outputStr.replace("<YYYY>", str(year));
     outputStr = outputStr.replace("<YY>", str(year)[-2:]);
     outputStr = outputStr.replace("<MM>", "%02d"%(month));
+    outputStr = outputStr.replace("<M>", str(month)); #numeric month with no 0 padding
     outputStr = outputStr.replace("<MMM>", calendar.month_abbr[month].upper());
     outputStr = outputStr.replace("<Mmm>", calendar.month_abbr[month]);
     outputStr = outputStr.replace("<mmm>", calendar.month_abbr[month].lower());

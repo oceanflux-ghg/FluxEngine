@@ -7,7 +7,7 @@ The FluxEngine open source atmosphere-ocean gas flux data processing tools. The 
 Please reference the publication linked below when using this toolbox and presenting its output in any publications.
 A journal paper describing the toolbox has been published here: http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1
 Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exeter.ac.uk
-The FluxEngine software was developed by The European Space Agency OceanFlux Greenhouse Gases Evolution project team.
+The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
 
 v2.0 (July 2016)
 ----
@@ -36,6 +36,7 @@ Changes include:
     •   Metadata and default options specified in an xml file (settings.xml)
     •   Automatic validation scripts for SOCATv4 and Takahashi09
 
+These updates were partyly funded by European Union projects, Ringo and Integral which are preparatory projects for the European Integrated Carbon Observing System (ICOS).
 
 Publications which use FluxEngine and/or FluxEngine outputs:
 ----

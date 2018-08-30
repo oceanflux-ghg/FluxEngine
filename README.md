@@ -36,7 +36,7 @@ Changes include:
     •   Metadata and default options specified in an xml file (settings.xml)
     •   Automatic validation scripts for SOCATv4 and Takahashi09
 
-These updates were partyly funded by European Union projects, Ringo and Integral which are preparatory projects for the European Integrated Carbon Observing System (ICOS).
+These updates were funded by two European Union research projects, Ringo and Integral, which are preparatory projects for the European Integrated Carbon Observing System (ICOS).
 
 Publications which use FluxEngine and/or FluxEngine outputs:
 ----

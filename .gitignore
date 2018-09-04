@@ -21,3 +21,7 @@ full_validation/**
 
 ### reanalyse_socat tool's default output directory ###
 fluxengine_src/tools/reanalyse_socat/output/**
+
+### test execution script and configuration file ###
+test_execution.py
+configs/test_execution.conf

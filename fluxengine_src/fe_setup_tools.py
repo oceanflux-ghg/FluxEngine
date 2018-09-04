@@ -310,6 +310,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
     runParams["hour"] = curTimePoint.hour;
     runParams["minute"] = curTimePoint.minute;
     runParams["second"] = curTimePoint.second;
+    runParams["run_count"] = executionCount;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
     runParams["src_home"] = configVariables["src_home"];
@@ -375,7 +376,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
 
     #Output file/path
     outputChunk = executionCount%runParams["output_temporal_chunking"];
-    runParams["output_chunk"] = int(outputChunk); #if 0 a new file will be created, otherwise it will be append to previous chunk
+    #runParams["output_chunk"] = int(outputChunk); #if 0 a new file will be created, otherwise it will be append to previous chunk
     
     if outputChunk == 0: #Will need to create a new file
         outputRoot = configVariables["output_dir"];

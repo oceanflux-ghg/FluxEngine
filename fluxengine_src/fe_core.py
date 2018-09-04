@@ -106,16 +106,19 @@ class RunParameters:
 #
 # writing the final netcdf output
 def write_netcdf(fluxEngineObject, verbose=False):
-    fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", fluxEngineObject.runParams.output_chunk);
     
-    if int(fluxEngineObject.runParams.output_chunk) == 0: #Create a new file and write output to it.
-        latitudeData = fluxEngineObject.latitude_data;
-        longitudeData = fluxEngineObject.longitude_data;
-        timeData = fluxEngineObject.time_data;
+    timeData = fluxEngineObject.time_data;
+    dataLayers = fluxEngineObject.data;
+    runParams = fluxEngineObject.runParams;
+
+    outputChunk = int(runParams.run_count % runParams.output_temporal_chunking);
+    fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", outputChunk);
+    
+    if outputChunk == 0: #Create a new file and write output to it.
         nx = fluxEngineObject.nx;
         ny = fluxEngineObject.ny;
-        dataLayers = fluxEngineObject.data;
-        runParams = fluxEngineObject.runParams;
+        latitudeData = fluxEngineObject.latitude_data;
+        longitudeData = fluxEngineObject.longitude_data;
         latitudeGrid = fluxEngineObject.latitude_grid;
         longitudeGrid = fluxEngineObject.longitude_grid;
         
@@ -147,7 +150,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         secs.axis = "T"
         secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
         secs.standard_name = "time"
-        secs[int(runParams.output_chunk)] = timeData;
+        secs[outputChunk] = timeData;
         secs.valid_min = 0.0 
         secs.valid_max = 1.79769313486232e+308
     
@@ -213,7 +216,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
                 data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
-                variable[int(runParams.output_chunk), :, :] = data;
+                variable[outputChunk, :, :] = data;
             except AttributeError:
                 print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
             except RuntimeError as e:
@@ -275,7 +278,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 
                 setattr(ncfile, paramName, paramValue);
         
-        if int(fluxEngineObject.runParams.output_temporal_chunking) != 0:
+        if int(fluxEngineObject.runParams.output_temporal_chunking) != 1:
             setattr(ncfile, "start_year", fluxEngineObject.runParams.year);
             setattr(ncfile, "start_month", fluxEngineObject.runParams.month);
             setattr(ncfile, "start_day", fluxEngineObject.runParams.day);
@@ -289,10 +292,9 @@ def write_netcdf(fluxEngineObject, verbose=False):
         ncfile = Dataset(fluxEngineObject.runParams.output_path, 'r+');
         
         #Write time
-        ncfile.variables["time"][int(fluxEngineObject.runParams.output_chunk)] = fluxEngineObject.time_data;
+        ncfile.variables["time"][outputChunk] = fluxEngineObject.time_data;
                 
         #Update data layers
-        t = int(fluxEngineObject.runParams.output_chunk); #Temporal dimension
         dataLayers = fluxEngineObject.data;
         for dataLayerName in dataLayers:
             try:
@@ -301,7 +303,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 #variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
                 data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
-                ncfile.variables[dataLayers[dataLayerName].netCDFName][t,:,:] = data;
+                ncfile.variables[dataLayers[dataLayerName].netCDFName][outputChunk,:,:] = data;
             except AttributeError:
                 print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
         
@@ -741,10 +743,6 @@ class FluxEngine:
             raise ValueError("%s: Trying to add 'None' process indicator layer component." % function);
 
     def run(self):
-        #for key in vars(self.runParams).keys():
-        #    print key;
-        
-        #function = "(ofluxghg_flux_calc, FluxEngine.run)";
         status = self._check_datalayers(); #Check for consistency of datalayers (e.g. dimensions all match one another).
         if status == True:
             return self._run_fluxengine(self.runParams);
@@ -818,7 +816,6 @@ class FluxEngine:
 
     def _run_fluxengine(self, runParams):
         function = "(ofluxghg_flux_calc, FluxEngine._run_fluxengine_)";
-        #return 0;
         
         #Set up logging object
         try:
@@ -827,11 +824,11 @@ class FluxEngine:
             hdlr = logging.FileHandler(runParams.LOG_PATH);
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s');
             hdlr.setFormatter(formatter);
-            logger.addHandler(hdlr);
+            self.logger.addHandler(hdlr);
             if DEBUG_LOGGING == True:
-                logger.setLevel(logging.DEBUG);
+                self.logger.setLevel(logging.DEBUG);
             else:
-                logger.setLevel(logging.DEBUG);
+                self.logger.setLevel(logging.DEBUG);
         except:
             print "\n%s Couldn't initialise logger at path %s" % (function, runParams.LOG_PATH);
         

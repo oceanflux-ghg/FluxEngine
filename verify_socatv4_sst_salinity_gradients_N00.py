@@ -27,7 +27,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if verbose:
         print "Running FluxEngine for year 2010...";
     configFilePath = path.join(feRoot, "configs/socatv4_sst_salinity_gradients-N00.conf");
-    runStatus = run_fluxengine(configFilePath, 2010, 2010, processLayersOff=True, verbose=False);
+    runStatus, fe = run_fluxengine(configFilePath, 2010, 2010, processLayersOff=True, verbose=False);
     
     
     #run net budgets

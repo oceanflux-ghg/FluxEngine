@@ -629,10 +629,12 @@ class FluxEngine:
         except KeyError as e:
             print "\n%s: Data variable '%s' is missing from %s input (%s)" % (function, prod, name, infile);
             print e, e.args;
-            return False;
+            raise e;
+           # return False;
         except ValueError as e: #E.g. incorrect number of dimensions
             print "\n%s: %s" % (function, e.args);
-            return False;
+            raise e;
+            #return False;
         
         #TODO: stddev and count should be turned into separate datalayers in the config file processing stage, rather
         #      than testing for _prods and adding them here. Then _add_single_data_layer can be merged with this function.
@@ -674,7 +676,9 @@ class FluxEngine:
         metaData = self._extract_data_layer_meta_data(name);
         
         try:
-            dl = DataLayer.create_from_file(name, infile, prod, metaData, transposeData=transposeData, preprocessing=preprocessing);
+            inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
+            timeIndex = inputChunk * metaData.temporalSkipInterval;
+            dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData, preprocessing=preprocessing);
             self.data[name] = dl;
             
             #If this is the first datalayer to be added, use this to set the nx and ny dimensions
@@ -688,7 +692,6 @@ class FluxEngine:
         except IOError as e:
             print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
             print e.args;
-            return False;
     
     #Creates a DataLayer which is filled (by default) with DataLayer.missing_value.
     #The DataLayer will be added to self.data and is accessable by it's 'name', e.g. self.data["new_datalayer"].
@@ -721,7 +724,10 @@ class FluxEngine:
         for attribute in vars(metaData):
             if attribute != name:
                 if name+"_"+attribute in vars(self.runParams):
-                    setattr(metaData, attribute, getattr(self.runParams, name+"_"+attribute));
+                    if attribute in ["temporalChunking", "temporalSkipInterval"]: #Integers
+                        setattr(metaData, attribute, int(getattr(self.runParams, name+"_"+attribute))); #TODO: should be handled in setup_tools::create_run_parameters really.
+                    else: #floats
+                        setattr(metaData, attribute, getattr(self.runParams, name+"_"+attribute));
         
         return metaData;
     

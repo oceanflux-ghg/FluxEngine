@@ -32,6 +32,10 @@ class DataLayerMetaData:
         except ValueError:
             print "%s: Invalid maximum value supplied (%s) for DataLayer %s, defaulting to None." % (function, maxBound, self.name);
             self.maxBound = None;
+        
+        self.temporalChunking = 1;
+        self.temporalSkipInterval = 0;
+        self.timeDimensionName = "time";
 
 
 #Encapsulates of an input data layer, and manages checking it for integrity etc.
@@ -56,7 +60,7 @@ class DataLayer:
     #Throws ValueError if an unexpected number of dimensions are found
     #TODO: transposeData should be handled as a preprocessing function
     @classmethod
-    def create_from_file(cls, name, infile, prod, metadata, transposeData=False, preprocessing=None):
+    def create_from_file(cls, name, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
         function = "(DataLayer.create_from_file)"
         
         #Open netCDF file
@@ -68,7 +72,17 @@ class DataLayer:
         #Open netCDF file and check variable exists.
         dataset = Dataset(infile);
         ncVariable = dataset.variables[prod];
-        data = ncVariable[:];
+        
+        #Find the right time dimension index and slice/copy the data appropriately
+        dims = ncVariable.dimensions;
+        if dims.index(metadata.timeDimensionName) == 0:
+            data = ncVariable[timeIndex, :, :];
+        elif dims.index(metadata.timeDimensionName) == 2:
+            data = ncVariable[:, :, timeIndex];
+        elif dims.index(metadata.timeDimensionName) == 1:
+            data = ncVariable[:, timeIndex, :];
+        else:
+            raise RuntimeError("Invalid time dimension index when reading %s datalayer from %s"%(name, infile));
         
         #TODO: APPLY PREPROCESSING HERE instead of later.
         

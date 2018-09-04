@@ -123,6 +123,16 @@ def read_config_metadata(settingsPath, verbose=False):
                         varMetadata[element.attrib["name"]+"_longName"] = {"name": element.attrib["name"],
                                                                        "required": "false",
                                                                        "type": "string"}
+                        
+                        varMetadata[element.attrib["name"]+"_temporalChunking"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "integer"}
+                        varMetadata[element.attrib["name"]+"_temporalSkipInterval"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "integer"}
+                        varMetadata[element.attrib["name"]+"_timeDimensionName"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "string"}
                     else: #just a straightforward variable, so add it.
                         varMetadata[element.attrib["name"]] = element.attrib;
             except ValueError as e:

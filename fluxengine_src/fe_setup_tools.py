@@ -293,7 +293,12 @@ def match_filenames(givenPath, glob):
 #Converts between inconsistencies in the config file naming convention and FluxEngine nameing convention, e.g.:
 #   path -> infile
 #   appending _switch to bool variables
-def create_run_parameters(configVariables, varMetadata, curTimePoint, processTimeStr, configFile, processIndicatorLayersOff):
+#Arguments:
+#   configVariables:    Parsed .conf file
+#   varMetadata:        Metadata for configuration files
+#   curTimePoint:       Current datetime of the time point to run
+#   executionCount:     Number of previous executions in this set (used to group output files temporally).
+def create_run_parameters(configVariables, varMetadata, curTimePoint, executionCount, processTimeStr, configFile, processIndicatorLayersOff, previousRunParams):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     
     runParams = {};
@@ -302,6 +307,9 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, processTim
     runParams["year"] = curTimePoint.year;
     runParams["month"] = curTimePoint.month;
     runParams["day"] = curTimePoint.day;
+    runParams["hour"] = curTimePoint.hour;
+    runParams["minute"] = curTimePoint.minute;
+    runParams["second"] = curTimePoint.second;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
     runParams["src_home"] = configVariables["src_home"];
@@ -366,13 +374,19 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, processTim
             
 
     #Output file/path
-    outputRoot = configVariables["output_dir"];
-    outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
-    outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
-
-    runParams["output_dir"] = path.join(outputRoot, outputStructure); #root output directory
-    runParams["output_path"] = path.join(outputRoot, outputStructure, outputFile);
+    outputChunk = executionCount%runParams["output_temporal_chunking"];
+    runParams["output_chunk"] = int(outputChunk); #if 0 a new file will be created, otherwise it will be append to previous chunk
     
+    if outputChunk == 0: #Will need to create a new file
+        outputRoot = configVariables["output_dir"];
+        outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
+        outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
+    
+        runParams["output_dir"] = path.join(outputRoot, outputStructure); #root output directory
+        runParams["output_path"] = path.join(outputRoot, outputStructure, outputFile);
+    else: #Output will be appended to previous file
+        runParams["output_dir"] = previousRunParams["output_dir"];
+        runParams["output_path"] = previousRunParams["output_path"];
     
     return runParams;
 
@@ -595,11 +609,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     timePoints = generate_datetime_points(startDate, endDate, deltaTime=configVariables["temporal_resolution"], singleDate=singleRun);
     #print "num timepoints:", len(timePoints);
     #input("key to continue...");
-    for timePoint in timePoints:
+    for i, timePoint in enumerate(timePoints):
         #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
         #So these must be generated on a per-month/year basis.
         try:
-            runParameters = create_run_parameters(configVariables, metadata, timePoint, processTimeStr, configFilePath, processLayersOff);
+            if i==0: runParameters = None; #TODO: tidy this and the create_run_parameters function
+            runParameters = create_run_parameters(configVariables, metadata, timePoint, i, processTimeStr, configFilePath, processLayersOff, runParameters);
             
             #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
             if takahashiDriver == True:

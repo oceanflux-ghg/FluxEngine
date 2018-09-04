@@ -460,8 +460,8 @@
 
 		<Variable name="output_structure" required="true" type="string" default="&lt;YYYY&gt;/&lt;MM&gt;"></Variable>
 		<Variable name="output_file" required="true" type="string" default="OceanFluxGHG-month&lt;MM&gt;-&lt;mmm&gt;-&lt;YYYY&gt;-v0.nc"></Variable>
-		<Variable name="output_temporal_chunking" required="true" type="integer" default="1"></Variable>
-		
+		<Variable name="output_temporal_chunking" required="true" type="integer" default="1"> </Variable>
+
 	</ConfigParameters>
 </Settings>
 

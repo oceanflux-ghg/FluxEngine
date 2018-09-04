@@ -106,174 +106,216 @@ class RunParameters:
 #
 # writing the final netcdf output
 def write_netcdf(fluxEngineObject, verbose=False):
-    latitudeData = fluxEngineObject.latitude_data;
-    longitudeData = fluxEngineObject.longitude_data;
-    timeData = fluxEngineObject.time_data;
-    nx = fluxEngineObject.nx;
-    ny = fluxEngineObject.ny;
-    dataLayers = fluxEngineObject.data;
-    runParams = fluxEngineObject.runParams;
-    latitudeGrid = fluxEngineObject.latitude_grid;
-    longitudeGrid = fluxEngineObject.longitude_grid;
+    fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", fluxEngineObject.runParams.output_chunk);
     
-
-    function="write_netcdf";
+    if int(fluxEngineObject.runParams.output_chunk) == 0: #Create a new file and write output to it.
+        latitudeData = fluxEngineObject.latitude_data;
+        longitudeData = fluxEngineObject.longitude_data;
+        timeData = fluxEngineObject.time_data;
+        nx = fluxEngineObject.nx;
+        ny = fluxEngineObject.ny;
+        dataLayers = fluxEngineObject.data;
+        runParams = fluxEngineObject.runParams;
+        latitudeGrid = fluxEngineObject.latitude_grid;
+        longitudeGrid = fluxEngineObject.longitude_grid;
+        
     
-    #open a new netCDF file for writing.
-    #need to set format type, defaults to NetCDF4
-    ncfile = Dataset(runParams.output_path,'w',format='NETCDF3_CLASSIC');
-
-    #Assign units attributes to coordinate var data. This attaches a
-    #text attribute to each of the coordinate variables, containing the
-    #units.
-
-    #create the lat and lon dimensions.
-    if len(latitudeData.shape)<2:#IGA - If the initial latitude data was a vector, make latitude and longitude as dimensions
-        ncfile.createDimension('latitude',ny)
-        ncfile.createDimension('longitude',nx)
-        ncfile.createDimension('time',1)
-        dims = tuple(('time','latitude','longitude'))
-    else:
-        ncfile.createDimension('y',ny)
-        ncfile.createDimension('x',nx)
-        ncfile.createDimension('time',1)
-        dims = tuple(('time','y','x'))
-
-    secs = ncfile.createVariable('time',dtype('float64').char,('time',))
-    secs.units = 'seconds since 1970-01-01 00:00:00'
-    secs.axis = "T"
-    secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
-    secs.standard_name = "time"
-    secs[:] = timeData
-    secs.valid_min = 0.0 
-    secs.valid_max = 1.79769313486232e+308
-
-    # Define the coordinate variables. They will hold the coordinate
-    # information, that is, the latitudes and longitudes.
-    if len(latitudeData.shape)<2:#IGA - If the initial latitude data was a vector, write data as vectors
-
-        lats2 = ncfile.createVariable('latitude',dtype('float64').char,('latitude'))
-        lons2 = ncfile.createVariable('longitude',dtype('float64').char,('longitude'))
-        # Assign units attributes to coordinate var data. This attaches a
-        # text attribute to each of the coordinate variables, containing the
-        # units.
-        lats2.units = 'degrees_north'
-        lats2.axis = "Y"
-        lats2.long_name = "Latitude North"
-        lats2.standard_name = "latitude"
-
-        lons2.units = 'degrees_east'
-        lons2.axis = "X"
-        lons2.long_name = "Longitude East"
-        lons2.standard_name = "longitude"
-       
-        lats2[:] = latitudeData
-        lons2[:] = longitudeData
-
-        lats2.valid_min = -90.0
-        lats2.valid_max = 90.0
-
-        lons2.valid_min = -180.0
-        lons2.valid_max = 180.0
-    else:# if the input lat/long was a grid, write output only as a grid.
-        lats = ncfile.createVariable('latitude', dtype('float64').char, dims);
-        lons = ncfile.createVariable('longitude', dtype('float64').char, dims);
-        # Assign units attributes to coordinate var data. This attaches a
-        # text attribute to each of the coordinate variables, containing the
-        # units.
-        lats.units = 'degrees_north'
-        lats.axis = "Y"
-        lats.long_name = "Latitude North"
-        lats.standard_name = "latitude"
-
-        lons.units = 'degrees_east'
-        lons.axis = "X"
-        lons.long_name = "Longitude East"
-        lons.standard_name = "longitude"
-       
-        lats[:] = latitudeGrid
-        lons[:] = longitudeGrid
-
-        lats.valid_min = -90.0
-        lats.valid_max = 90.0
-
-        lons.valid_min = -180.0
-        lons.valid_max = 180.0
-
-    #
-    #data layers
-    #
-    for dataLayerName in dataLayers:
-        try:
-            if verbose:
-                print "Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName;
-            variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
-            data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
-            data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
-            variable[:] = data;
-        except AttributeError:
-            print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
-        except RuntimeError as e:
-            print "\n%s: Error when writing datalayer '%s' the netCDF variable ('%s') couldn't be created because it already exists. Check for netCDFName clashes." % (function, dataLayerName, dataLayers[dataLayerName].netCDFName);
-            print e.args;
-        except ValueError as e:
-            print "%s: Cannot reside datalayer '%s'" % (function, dataLayers[dataLayerName].name);
-            print type(e), e.args;
+        function="write_netcdf";
         
-        variable.missing_value = missing_value;
-        variable.scale_factor = 1.0;
-        variable.add_offset = 0.0;
-        
-        try:
-            if dataLayers[dataLayerName].units != None:
-                variable.units = dataLayers[dataLayerName].units;
-        except AttributeError:
-            print "%s: No units found for datalayer named '%s'." % (function, dataLayerName);
-        
-        try:
-            if dataLayers[dataLayerName].minBound != None:
-                variable.valid_min = dataLayers[dataLayerName].minBound;
-        except AttributeError:
-            print "%s: No minBound found for datalayer named '%s'." % (function, dataLayerName);
-        
-        try:
-            if dataLayers[dataLayerName].maxBound != None:
-                variable.valid_max = dataLayers[dataLayerName].maxBound;
-        except AttributeError:
-            print "%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName);
-        
-        try:
-            if dataLayers[dataLayerName].standardName != None:
-                variable.standard_name = dataLayers[dataLayerName].standardName;
-        except AttributeError:
-            print "%s: No standardName found for datalayer named '%s'." % (function, dataLayerName);
-        
-        try:
-            if dataLayers[dataLayerName].longName != None:
-                variable.long_name = dataLayers[dataLayerName].longName;
-        except AttributeError:
-            print "%s: No longName found for datalayer named '%s'." % (function, dataLayerName);
+        #open a new netCDF file for writing.
+        #need to set format type, defaults to NetCDF4
+        ncfile = Dataset(runParams.output_path,'w',format='NETCDF3_CLASSIC');
     
-    #set some global attributes
-    setattr(ncfile, 'Conventions', 'CF-1.6') 
-    setattr(ncfile, 'Institution', 'Originally developed by the partners of the ESA OceanFlux GHG and OceanFlux GHG Evolution projects. Now continued by the CarbonLab team at the University of Exeter.') 
-    setattr(ncfile, 'Contact', 'email: j.d.shutler@exeter.ac.uk')
+        #Assign units attributes to coordinate var data. This attaches a
+        #text attribute to each of the coordinate variables, containing the
+        #units.
     
-    #Output all the parameters used in this run.
-    for paramName in vars(runParams).keys():
-        paramValue = getattr(runParams, paramName);
-        if paramValue is not None:
-            if type(paramValue) is bool: #netCDF does not support bool types.
-                paramValue = int(paramValue);
-            elif isinstance(paramValue, timedelta): #netCDF does not support object instances.
-                paramValue = str(paramValue);
-            elif paramValue == None: #netCDF does not support None type.
-                paramValue = "None";
+        #create the lat and lon dimensions.
+        if len(latitudeData.shape)<2:#IGA - If the initial latitude data was a vector, make latitude and longitude as dimensions
+            ncfile.createDimension('latitude',ny)
+            ncfile.createDimension('longitude',nx)
+            ncfile.createDimension('time',int(fluxEngineObject.runParams.output_temporal_chunking));
+            dims = tuple(('time','latitude','longitude'))
+        else:
+            ncfile.createDimension('y',ny)
+            ncfile.createDimension('x',nx)
+            ncfile.createDimension('time',)
+            dims = tuple(('time','y','x'))
+    
+        secs = ncfile.createVariable('time',dtype('float64').char,('time',))
+        secs.units = 'seconds since 1970-01-01 00:00:00'
+        secs.axis = "T"
+        secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
+        secs.standard_name = "time"
+        secs[int(runParams.output_chunk)] = timeData;
+        secs.valid_min = 0.0 
+        secs.valid_max = 1.79769313486232e+308
+    
+        # Define the coordinate variables. They will hold the coordinate
+        # information, that is, the latitudes and longitudes.
+        if len(latitudeData.shape)<2:#IGA - If the initial latitude data was a vector, write data as vectors
+    
+            lats2 = ncfile.createVariable('latitude',dtype('float64').char,('latitude'))
+            lons2 = ncfile.createVariable('longitude',dtype('float64').char,('longitude'))
+            # Assign units attributes to coordinate var data. This attaches a
+            # text attribute to each of the coordinate variables, containing the
+            # units.
+            lats2.units = 'degrees_north'
+            lats2.axis = "Y"
+            lats2.long_name = "Latitude North"
+            lats2.standard_name = "latitude"
+    
+            lons2.units = 'degrees_east'
+            lons2.axis = "X"
+            lons2.long_name = "Longitude East"
+            lons2.standard_name = "longitude"
+           
+            lats2[:] = latitudeData
+            lons2[:] = longitudeData
+    
+            lats2.valid_min = -90.0
+            lats2.valid_max = 90.0
+    
+            lons2.valid_min = -180.0
+            lons2.valid_max = 180.0
+        else:# if the input lat/long was a grid, write output only as a grid.
+            lats = ncfile.createVariable('latitude', dtype('float64').char, dims);
+            lons = ncfile.createVariable('longitude', dtype('float64').char, dims);
+            # Assign units attributes to coordinate var data. This attaches a
+            # text attribute to each of the coordinate variables, containing the
+            # units.
+            lats.units = 'degrees_north'
+            lats.axis = "Y"
+            lats.long_name = "Latitude North"
+            lats.standard_name = "latitude"
+    
+            lons.units = 'degrees_east'
+            lons.axis = "X"
+            lons.long_name = "Longitude East"
+            lons.standard_name = "longitude"
+           
+            lats[:] = latitudeGrid
+            lons[:] = longitudeGrid
+    
+            lats.valid_min = -90.0
+            lats.valid_max = 90.0
+    
+            lons.valid_min = -180.0
+            lons.valid_max = 180.0
+    
+        #
+        #data layers
+        #
+        for dataLayerName in dataLayers:
+            try:
+                if verbose:
+                    print "Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName;
+                variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
+                data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
+                data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
+                variable[int(runParams.output_chunk), :, :] = data;
+            except AttributeError:
+                print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
+            except RuntimeError as e:
+                print "\n%s: Error when writing datalayer '%s' the netCDF variable ('%s') couldn't be created because it already exists. Check for netCDFName clashes." % (function, dataLayerName, dataLayers[dataLayerName].netCDFName);
+                print e.args;
+            except ValueError as e:
+                print "%s: Cannot reside datalayer '%s'" % (function, dataLayers[dataLayerName].name);
+                print type(e), e.args;
             
-            setattr(ncfile, paramName, paramValue);
- 
-    ncfile.close();
- 
+            variable.missing_value = missing_value;
+            variable.scale_factor = 1.0;
+            variable.add_offset = 0.0;
+            
+            try:
+                if dataLayers[dataLayerName].units != None:
+                    variable.units = dataLayers[dataLayerName].units;
+            except AttributeError:
+                print "%s: No units found for datalayer named '%s'." % (function, dataLayerName);
+            
+            try:
+                if dataLayers[dataLayerName].minBound != None:
+                    variable.valid_min = dataLayers[dataLayerName].minBound;
+            except AttributeError:
+                print "%s: No minBound found for datalayer named '%s'." % (function, dataLayerName);
+            
+            try:
+                if dataLayers[dataLayerName].maxBound != None:
+                    variable.valid_max = dataLayers[dataLayerName].maxBound;
+            except AttributeError:
+                print "%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName);
+            
+            try:
+                if dataLayers[dataLayerName].standardName != None:
+                    variable.standard_name = dataLayers[dataLayerName].standardName;
+            except AttributeError:
+                print "%s: No standardName found for datalayer named '%s'." % (function, dataLayerName);
+            
+            try:
+                if dataLayers[dataLayerName].longName != None:
+                    variable.long_name = dataLayers[dataLayerName].longName;
+            except AttributeError:
+                print "%s: No longName found for datalayer named '%s'." % (function, dataLayerName);
+        
+        #set some global attributes
+        setattr(ncfile, 'Conventions', 'CF-1.6') 
+        setattr(ncfile, 'Institution', 'Originally developed by the partners of the ESA OceanFlux GHG and OceanFlux GHG Evolution projects. Now continued by the CarbonLab team at the University of Exeter.') 
+        setattr(ncfile, 'Contact', 'email: j.d.shutler@exeter.ac.uk')
+        
+        #Output all the parameters used in this run.
+        for paramName in vars(runParams).keys():
+            paramValue = getattr(runParams, paramName);
+            if paramValue is not None:
+                if type(paramValue) is bool: #netCDF does not support bool types.
+                    paramValue = int(paramValue);
+                elif isinstance(paramValue, timedelta): #netCDF does not support object instances.
+                    paramValue = str(paramValue);
+                elif paramValue == None: #netCDF does not support None type.
+                    paramValue = "None";
+                
+                setattr(ncfile, paramName, paramValue);
+        
+        if int(fluxEngineObject.runParams.output_temporal_chunking) != 0:
+            setattr(ncfile, "start_year", fluxEngineObject.runParams.year);
+            setattr(ncfile, "start_month", fluxEngineObject.runParams.month);
+            setattr(ncfile, "start_day", fluxEngineObject.runParams.day);
+            setattr(ncfile, "start_hour", fluxEngineObject.runParams.hour);
+            setattr(ncfile, "start_minute", fluxEngineObject.runParams.minute);
+            setattr(ncfile, "start_second", fluxEngineObject.runParams.second);
+     
+        ncfile.close();
+    
+    else: #Not the first temporal point, so open existing file and write to it
+        ncfile = Dataset(fluxEngineObject.runParams.output_path, 'r+');
+        
+        #Write time
+        ncfile.variables["time"][int(fluxEngineObject.runParams.output_chunk)] = fluxEngineObject.time_data;
+                
+        #Update data layers
+        t = int(fluxEngineObject.runParams.output_chunk); #Temporal dimension
+        dataLayers = fluxEngineObject.data;
+        for dataLayerName in dataLayers:
+            try:
+                if verbose:
+                    print "Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName;
+                #variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
+                data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
+                data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
+                ncfile.variables[dataLayers[dataLayerName].netCDFName][t,:,:] = data;
+            except AttributeError:
+                print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
+        
+        #Update data range
+        setattr(ncfile, "end_year", fluxEngineObject.runParams.year);
+        setattr(ncfile, "end_month", fluxEngineObject.runParams.month);
+        setattr(ncfile, "end_day", fluxEngineObject.runParams.day);
+        setattr(ncfile, "end_hour", fluxEngineObject.runParams.hour);
+        setattr(ncfile, "end_minute", fluxEngineObject.runParams.minute);
+        setattr(ncfile, "end_second", fluxEngineObject.runParams.second);
+        
+        
+        ncfile.close();
+                
     return 0;
 
 
@@ -780,7 +822,7 @@ class FluxEngine:
         
         #Set up logging object
         try:
-            logger = logging.getLogger('FluxEngine_debug_log');
+            self.logger = logging.getLogger('FluxEngine_debug_log');
             #hdlr = logging.FileHandler(os.path.join(workingDirectory, runParams.LOG_PATH), filemode='w')
             hdlr = logging.FileHandler(runParams.LOG_PATH);
             formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s');
@@ -1247,16 +1289,6 @@ class FluxEngine:
                 self.data["pH2O"].fdata[i] = missing_value
                 self.data["pco2_air_cor"].fdata[i] = missing_value
                 self.data["pco2_sw_cor"].fdata[i] = missing_value
-        
-#        logger.debug("*** New month ***");
-#        logger.debug("salskin: %d", salskin_fc);
-#        logger.debug("sstskinK: %d", sstskinK_fc);
-#        logger.debug("pres: %d", pres_fc);
-#        logger.debug("vco2_air: %d", vco2_air_fc);
-#        logger.debug("sstfndK: %d", sstfndK_fc);
-#        logger.debug("pco2_sst: %d", sstpco2_fc);
-#        logger.debug("pco2_sw: %d", pco2_sw_fc);
-#        logger.debug("sstskinK0: %d", sstskinK_fc0);
 
         ########################################
         # Calculating gas transfer velocity k

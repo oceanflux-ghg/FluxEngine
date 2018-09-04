@@ -191,6 +191,13 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             except ValueError:
                 print "%s: Config variable '%s' requires a decimal / floating point number. Got %s instead." % (function, varName, configVariables[varName]);
         
+        #Int: string to int
+        elif metadata[varName]["type"] == "integer":
+            try:
+                configVariables[varName] = float(configVariables[varName]);
+            except ValueError:
+                print "%s: Config variable '%s' requires a whole / integer number. Got %s instead." % (function, varName, configVariables[varName]);
+        
         #Strings: Do nothing, strings are just strings.
         elif metadata[varName]["type"] == "string":
             pass;

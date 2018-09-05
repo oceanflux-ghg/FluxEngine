@@ -562,7 +562,6 @@ def average_pixels(data, nx, ny, missing_value):
     
     if datany%ny != 0 and datanx%nx != 0:
         print datanx, datany
-        print "here:", datanx%nx, datany%ny
         raise ValueError("%s: Cannot rescale data layer because global data layer dimensions are not a whole multiple of the data layer's dimensions." % function);
     n = (datanx/nx);
     n2 = (datany/ny);
@@ -675,23 +674,10 @@ class FluxEngine:
         
         metaData = self._extract_data_layer_meta_data(name);
         
-        try:
-            inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
-            timeIndex = inputChunk * metaData.temporalSkipInterval;
-            dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData, preprocessing=preprocessing);
-            self.data[name] = dl;
-            
-            #If this is the first datalayer to be added, use this to set the nx and ny dimensions
-            #   (all other datalayers will be checked against this to ensure conformity)
-            #if len(self.data) == 1:
-            #if name == "sstskin":
-            #    self.nx = dl.nx;
-            #    self.ny = dl.ny;
-            #    print "Using %s to infer grid dimensions (%d, %d)." % (name, self.ny, self.nx);
-            
-        except IOError as e:
-            print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
-            print e.args;
+        inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
+        timeIndex = inputChunk * metaData.temporalSkipInterval;
+        dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData, preprocessing=preprocessing);
+        self.data[name] = dl;
     
     #Creates a DataLayer which is filled (by default) with DataLayer.missing_value.
     #The DataLayer will be added to self.data and is accessable by it's 'name', e.g. self.data["new_datalayer"].

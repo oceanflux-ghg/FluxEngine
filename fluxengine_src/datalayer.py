@@ -64,7 +64,11 @@ class DataLayer:
         function = "(DataLayer.create_from_file)"
         
         #Open netCDF file
-        dataset = Dataset(infile);
+        try:
+            dataset = Dataset(infile);
+        except IOError as e:
+            print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
+            print e.args;
         
         #Check netCDF file: Prints some info when in DEBUG mode.
         check_input(infile, prod, DataLayer.DEBUG);

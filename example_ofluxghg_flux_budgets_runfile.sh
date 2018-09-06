@@ -4,7 +4,7 @@
 
 set RESULTS=/Your filepath
 set LOGS=$RESULTS/logs/
-set LAND_FILE=/Your fliepath/onedeg_land.nc
+set LAND_FILE=/Your filepath/onedeg_land.nc
 set MASK_FILE=/Your Filepath/World_Seas-final-complete.nc
 
 

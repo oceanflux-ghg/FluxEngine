@@ -10,7 +10,7 @@ IGA ??/??/2016 Updated variable names to include CH4 and N20
 IGA 5/5/2016 Updated filenames to allow for Arctic (or other) grid
 IGA 11/5/2016 Updated to include vCO2_air data as req'd in FE
 TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0
-TMH 2018/09/04: Updated to support use of temporal dimension in output files (temporal chunking)'''
+TMH 2018/09/04: Updated to support use of temporal dimension in output files'''
 
 
 import numpy as np, argparse;

@@ -35,6 +35,8 @@ Changes include:
     •   A more modularised structure to the code including modular k parameterisation and data pre-processing to facilitate easy extension
     •   Metadata and default options specified in an xml file (settings.xml)
     •   Automatic validation scripts for SOCATv4 and Takahashi09
+    •   Tools for simplifying analysis of in situ data (possible data sources include: resaerch cruises, drifting buoys, fixed stations)
+    •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format)
 
 These updates were funded by two European Union research projects, Ringo and Integral, which are preparatory projects for the European Integrated Carbon Observing System (ICOS).
 

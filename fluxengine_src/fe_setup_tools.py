@@ -650,6 +650,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         #Create fluxengine object to use runParameters
         fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
         
+        
         #Run fluxengine            
         if fe != None:
             returnCode = fe.run();
@@ -661,8 +662,8 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
             return (returnCode, fe);
         else:
             print "Flux engine exited with exit code:", returnCode;
-            print "%d02"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "completed successfully.\n";
-    
+            print "%02d"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "%02d:%02d:%02d completed successfully.\n"%(timePoint.hour, timePoint.minute, timePoint.second);
+
     return (returnCode, fe); #return code, FluxEngine object.
 
 

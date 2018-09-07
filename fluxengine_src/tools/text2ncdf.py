@@ -439,11 +439,11 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     for temporalIndex in range(0, temporalDimLength):
         #Create netCDF file if required
         if currentChunk == 0:
-            if temporalDimLength == 1 or temporalDimLength == temporalChunking: #if only one file
+            if temporalDimLength == 1 or temporalDimLength >= temporalChunking: #if only one file
                 outFilePath = ncOutPath;
             else: #must append the start timestamp of the current temporal step to the filename
                 outFilePath = append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
-            ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
+            ncOutput = Dataset(outFilePath, 'w');
         
             #Create dimensions set lat/lon data
             create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, endTime, temporalChunking);

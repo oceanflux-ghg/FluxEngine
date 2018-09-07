@@ -110,7 +110,7 @@ class DataLayer:
         if ma.isMaskedArray(data) and (npall(data.mask) == True):
               data.mask = False; #Remove the mask...
                 
-        #If necessary flip the data
+        #If necessary flip the data #TODO: remove this as this should be handled in the pre-processing functions by the user
         data, flipped = flip_data(dataset, data, name); #If different from takahashi orientation, flip data.
 
         #Extract fill value from netCDF if it exists. Note that this will overwrite fill default or config specified fill value.
@@ -149,7 +149,12 @@ class DataLayer:
             for preprocessingFunction in preprocessing:
                 preprocessingFunction(self); #Modifies in place
 
-        #TODO: Should recalculate_fdata after preprocessing in case of bad preprocessing function? Or force preprocessing functions to modify 'data' not 'fdata' and calculate fdata after.
+        #Should we recalculate_fdata after preprocessing to guard against badly written custom preprocessing functions. 
+        #self.calculate_fdata(); WARNING: cannot do both this and propagate_fdata_to_data()
+        
+        #required in case of automatic resampling of large datalayers (which adjusts data)
+        #self.propagate_fdata_to_data();
+        
         
         #Replace anything outside of the valid range with missing_value
         validate_range(self.fdata, self.minBound, self.maxBound, self.missing_value);
@@ -159,6 +164,9 @@ class DataLayer:
         self.fdata = ravel(self.data);
         if ma.is_masked(self.fdata):
             self.fdata.unshare_mask(); #TMH: masked array behaviour is changing in future versions of numpy. This avoids ambiguity between current and future behaviour.
+    
+    #def propagate_fdata_to_data():
+    #   pass;
 
 
 #Replaces elements in a matrix who's values are outside the specified range [minBound, maxBound] with missing value.

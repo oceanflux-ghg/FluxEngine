@@ -36,7 +36,7 @@ from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
 from debug_tools import calc_mean; #calculate mean ignoring missing values.
 
-from datetime import timedelta;
+from datetime import timedelta, datetime;
 
  # debug mode switches
 DEBUG = False
@@ -112,7 +112,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
     runParams = fluxEngineObject.runParams;
 
     outputChunk = int(runParams.run_count % runParams.output_temporal_chunking);
-    fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", outputChunk);
+    #fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", outputChunk);
     
     if outputChunk == 0: #Create a new file and write output to it.
         nx = fluxEngineObject.nx;
@@ -127,7 +127,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         
         #open a new netCDF file for writing.
         #need to set format type, defaults to NetCDF4
-        ncfile = Dataset(runParams.output_path,'w',format='NETCDF3_CLASSIC');
+        ncfile = Dataset(runParams.output_path,'w');#,format='NETCDF3_CLASSIC');
     
         #Assign units attributes to coordinate var data. This attaches a
         #text attribute to each of the coordinate variables, containing the
@@ -217,14 +217,13 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
                 variable[outputChunk, :, :] = data;
-            except AttributeError:
+            except AttributeError as e:
                 print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
-            except RuntimeError as e:
-                print "\n%s: Error when writing datalayer '%s' the netCDF variable ('%s') couldn't be created because it already exists. Check for netCDFName clashes." % (function, dataLayerName, dataLayers[dataLayerName].netCDFName);
-                print e.args;
+                raise e;
             except ValueError as e:
                 print "%s: Cannot reside datalayer '%s'" % (function, dataLayers[dataLayerName].name);
                 print type(e), e.args;
+                raise e;
             
             variable.missing_value = missing_value;
             variable.scale_factor = 1.0;
@@ -542,13 +541,17 @@ def check_output_dataset(datalayer, failed_quality_fdata):
                     failed_quality_fdata[i] += 1;
 
 
-#data is a matrix, nx and ny are the output dimensions (must be a factor of the matrix dimensions).
-def average_pixels(data, nx, ny, missing_value):
+#datalayer is a DataLayer object, nx and ny are the output dimensions (must be a factor of the matrix dimensions).
+def average_pixels(datalayer, nx, ny, missing_value):
     '''averages arr into superpixels each consisting of the mean of a n x n
     window in arr. Seems to be intended to go from a 0.5 x 0.5 degree grid to a
     1 x 1 degree grid, in which case n must be set to 2. Checks for and ignores
     values equal to missing_value.'''
     function = "(average_pixels, main)"
+    
+    #copy fdata, because data may be out of data if not a view.
+    data = datalayer.fdata;
+    data.shape = datalayer.data.shape; #Reshape to resemble fdata.
     
     #determin n
     if len(data.shape) == 2:
@@ -569,7 +572,7 @@ def average_pixels(data, nx, ny, missing_value):
         raise ValueError("%s: Scaling data layers by irregular scaling factors is not supported (e.g. %d != %d)." % (function, n, n2));
     
     
-    print "%s Averaging sstgrad_fdata into 1x1 degree grid (N=%d)" % (function, n)
+    #print "%s Averaging sstgrad_fdata into 1x1 degree grid (N=%d)" % (function, n)
     nj0, ni0 = data.shape
     nj, ni = [nj0 / n, ni0 / n]
     if nj * n != nj0 or ni * n != ni0:
@@ -584,7 +587,9 @@ def average_pixels(data, nx, ny, missing_value):
           w = nonzero(a != missing_value)
           if size(w) > 0:
              out[j, i] = mean(a[w])
-    #print out;
+    
+    datalayer.data = data;
+    datalayer.calculate_fdata(); #Resampled data, so now we must recalculate fdata.
     return out
 
 #Returns false if dataLayer dimensions do not match the reference dimensions.
@@ -599,7 +604,7 @@ def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
       return False;
 
 
-class FluxEngine: 
+class FluxEngine:
     def __init__(self, parameterDict):
         self.runParams = RunParameters();
         self.runParams.set_parameters(parameterDict);
@@ -675,7 +680,7 @@ class FluxEngine:
         metaData = self._extract_data_layer_meta_data(name);
         
         inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
-        timeIndex = inputChunk * metaData.temporalSkipInterval;
+        timeIndex = inputChunk * (metaData.temporalSkipInterval+1);
         dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData, preprocessing=preprocessing);
         self.data[name] = dl;
     
@@ -767,7 +772,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            print "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, self.runParams.sstskin_infile);
+            print "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile);
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid
@@ -777,9 +782,11 @@ class FluxEngine:
             self.latitude_grid = self.latitude_data;
             self.longitude_grid = self.longitude_data;
             
-        #read time
+        #set time (since 1st Jan 1970)
         try:
-            self.time_data = dataset.variables[self.runParams.time_prod][:];
+            curDatetime = datetime(self.runParams.year, self.runParams.month, self.runParams.day, self.runParams.hour, self.runParams.minute, self.runParams.second);
+            self.time_data = (curDatetime - datetime(1970, 1, 1)).total_seconds();
+            #self.time_data = dataset.variables[self.runParams.time_prod][:];
         except KeyError as e:
             print "%s: Couldn't find time (%s%) variables in %s." % (function, self.runParams.time_prod, self.runParams.sstskin_infile);
 
@@ -796,10 +803,11 @@ class FluxEngine:
             if check_dimensions(self.data[key], self.nx, self.ny, DEBUG) == False:
                 #Dimensions don't match, so try to rescale it.
                 try:
-                    print "Attempting to rescale.";
-                    self.data[key].data = average_pixels(self.data[key].data, self.nx, self.ny, DataLayer.missing_value);
+                    print "Attempting to rescale datalayer '%s'."%key;
+                    self.data[key].data = average_pixels(self.data[key], self.nx, self.ny, DataLayer.missing_value);
                     self.data[key].ny, self.data[key].nx = self.data[key].data.shape;
                     self.data[key].calculate_fdata();
+                    print "Successfully rescaled datalayer '%s' to"%key, self.data[key].data.shape;
                 except ValueError as e:
                     print e.args;
                     return False;
@@ -830,13 +838,17 @@ class FluxEngine:
 
         ### Adding empty data layers for data that are computed later.
         #If there isn't any sstfnd data create empty arrays to fill later. (i.e. sstfnd = sstskin + runParams.cool_skin_difference);
+        #Temporarily add stddev and count data for any sst which is missing these values.
         if ("sstfnd" not in self.data) and (runParams.use_sstfnd_switch == 0):
             self.add_empty_data_layer("sstfnd");
             self.add_empty_data_layer("sstfnd_stddev");
             self.add_empty_data_layer("sstfnd_count");
-        if "sstskin_stddev" not in self.data and "sstskin_stdfnd" not in self.data: #Remove this, stddev and count aren't used except when they are!
+        if "sstskin_stddev" not in self.data and "sstskin_count" not in self.data: #Remove this, stddev and count aren't used except when they are!
             self.add_empty_data_layer("sstskin_stddev");
             self.add_empty_data_layer("sstskin_count");
+        if "sstfnd_stddev" not in self.data and "sstfnd_count" not in self.data: #Remove this, stddev and count aren't used except when they are!
+            self.add_empty_data_layer("sstfnd_stddev");
+            self.add_empty_data_layer("sstfnd_count");
 
         
         if runParams.TAKAHASHI_DRIVER == True:
@@ -1133,6 +1145,8 @@ class FluxEngine:
         self.data["scfnd"].fdata = schmidt(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
         
          # calculating the skin solubility, using skin sst and salinity
+        import numpy as np;
+        
         self.data["solubility_skin"].fdata = solubility(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True)
         
          # calculating the interfacial solubility

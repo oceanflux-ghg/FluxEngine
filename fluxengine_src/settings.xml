@@ -208,6 +208,11 @@
 			longName="salinity in sea water">
 		</DataLayer>
 
+		<DataLayer name="salinity_skin" netCDFName="salinity_skin" units="count" minBound="15.0" maxBound="40.0"
+			standardName="sea_water_skin_salinity"
+			longName="salinity in sea water at the skin layer">
+		</DataLayer>
+
 <!--
 		<DataLayer name="sstskinC" netCDFName="OKT1" units="degreeC" minBound="-1.8" maxBound="30.5"
 			standardName="sea_surface_temperature_used_for_gas_transfer_velocity_and_schmidt"

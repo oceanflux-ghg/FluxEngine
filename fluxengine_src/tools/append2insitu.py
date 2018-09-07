@@ -60,22 +60,20 @@ def parse_cl_arguments():
     return clArgs
 
 
-def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=0, rowsToSkip=[], missingValue='nan', encoding='utf-8'):
+def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = ["OF", "OK1"], delim="\t", latCol="Latitude", lonCol="Longitude", dateIndex=0, rowsToSkip=[], missingValue='nan', encoding='utf-8', verbose=False):
     
     #Keep track of failures.
     #failedFiles = []; #Files which could not be opened / processed.
     
     #Process each input netCDF file and produce a text file
-    print "Combining files at ", feOutputPath, "and", insituDataPath;
+    if verbose:
+        print "Combining files at ", feOutputPath, "and", insituDataPath;
     
     #Read in situ data file
     insituData = pd.read_table(insituDataPath, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
     
     #Read feOutput file
-    try:
-        ncFile = Dataset(feOutputPath, 'r');
-    except IOError:
-        print "Failed to open", feOutputPath;
+    ncFile = Dataset(feOutputPath, 'r');
     
     #Create empty vectors for each netCDF variable
     newVectors = {};
@@ -88,7 +86,6 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     
     #Iterate through each line in the in situ data file and append FluxEngine output variables to it.
     for i, row in insituData.iterrows():
-        print i;
         lat = row[latCol];
         lon = row[lonCol];
         x = find_nearest(lat, latArr);
@@ -98,9 +95,12 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
             value = ncFile.variables[variable][0,x,y];
             if np.ma.is_masked(value):
                 newVectors[variable][i] = missingValue;
-                print "Warning: No data found for lat", lat, "lon", lon;
+                if verbose:
+                    print "Row", i, "Warning: No data found for lat", lat, "lon", str(lon)+".", missingValue, "inserted instead";
             else:
                 newVectors[variable][i] = float(value);
+                if verbose:
+                    print "Row", i;
     
     #Add new vectors to dataframe and export
     for variable in varsToAppend:

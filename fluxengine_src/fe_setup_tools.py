@@ -123,6 +123,16 @@ def read_config_metadata(settingsPath, verbose=False):
                         varMetadata[element.attrib["name"]+"_longName"] = {"name": element.attrib["name"],
                                                                        "required": "false",
                                                                        "type": "string"}
+                        
+                        varMetadata[element.attrib["name"]+"_temporalChunking"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "integer"}
+                        varMetadata[element.attrib["name"]+"_temporalSkipInterval"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "integer"}
+                        varMetadata[element.attrib["name"]+"_timeDimensionName"] = {"name": element.attrib["name"],
+                                                                       "required": "false",
+                                                                       "type": "string"}
                     else: #just a straightforward variable, so add it.
                         varMetadata[element.attrib["name"]] = element.attrib;
             except ValueError as e:
@@ -191,6 +201,13 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             except ValueError:
                 print "%s: Config variable '%s' requires a decimal / floating point number. Got %s instead." % (function, varName, configVariables[varName]);
         
+        #Int: string to int
+        elif metadata[varName]["type"] == "integer":
+            try:
+                configVariables[varName] = float(configVariables[varName]);
+            except ValueError:
+                print "%s: Config variable '%s' requires a whole / integer number. Got %s instead." % (function, varName, configVariables[varName]);
+        
         #Strings: Do nothing, strings are just strings.
         elif metadata[varName]["type"] == "string":
             pass;
@@ -250,6 +267,7 @@ def substitute_tokens(inputStr, curDatetime):
     outputStr = outputStr.replace("<YYYY>", str(year));
     outputStr = outputStr.replace("<YY>", str(year)[-2:]);
     outputStr = outputStr.replace("<MM>", "%02d"%(month));
+    outputStr = outputStr.replace("<M>", str(month)); #numeric month with no 0 padding
     outputStr = outputStr.replace("<MMM>", calendar.month_abbr[month].upper());
     outputStr = outputStr.replace("<Mmm>", calendar.month_abbr[month]);
     outputStr = outputStr.replace("<mmm>", calendar.month_abbr[month].lower());
@@ -285,13 +303,24 @@ def match_filenames(givenPath, glob):
 #Converts between inconsistencies in the config file naming convention and FluxEngine nameing convention, e.g.:
 #   path -> infile
 #   appending _switch to bool variables
-def create_run_parameters(configVariables, varMetadata, curTimePoint, processTimeStr, configFile, processIndicatorLayersOff):
+#Arguments:
+#   configVariables:    Parsed .conf file
+#   varMetadata:        Metadata for configuration files
+#   curTimePoint:       Current datetime of the time point to run
+#   executionCount:     Number of previous executions in this set (used to group output files temporally).
+def create_run_parameters(configVariables, varMetadata, curTimePoint, executionCount, processTimeStr, configFile, processIndicatorLayersOff, previousRunParams):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     
     runParams = {};
     #Copy over misc. parameters
     #runParams["year"] = 2000 if clArgs.use_takahashi_validation==True else runParams["year"] = year;
     runParams["year"] = curTimePoint.year;
+    runParams["month"] = curTimePoint.month;
+    runParams["day"] = curTimePoint.day;
+    runParams["hour"] = curTimePoint.hour;
+    runParams["minute"] = curTimePoint.minute;
+    runParams["second"] = curTimePoint.second;
+    runParams["run_count"] = executionCount;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
     runParams["src_home"] = configVariables["src_home"];
@@ -356,13 +385,19 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, processTim
             
 
     #Output file/path
-    outputRoot = configVariables["output_dir"];
-    outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
-    outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
-
-    runParams["output_dir"] = path.join(outputRoot, outputStructure); #root output directory
-    runParams["output_path"] = path.join(outputRoot, outputStructure, outputFile);
+    outputChunk = executionCount%runParams["output_temporal_chunking"];
+    #runParams["output_chunk"] = int(outputChunk); #if 0 a new file will be created, otherwise it will be append to previous chunk
     
+    if outputChunk == 0: #Will need to create a new file
+        outputRoot = configVariables["output_dir"];
+        outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
+        outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
+    
+        runParams["output_dir"] = path.join(outputRoot, outputStructure); #root output directory
+        runParams["output_path"] = path.join(outputRoot, outputStructure, outputFile);
+    else: #Output will be appended to previous file
+        runParams["output_dir"] = previousRunParams["output_dir"];
+        runParams["output_path"] = previousRunParams["output_path"];
     
     return runParams;
 
@@ -585,11 +620,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     timePoints = generate_datetime_points(startDate, endDate, deltaTime=configVariables["temporal_resolution"], singleDate=singleRun);
     #print "num timepoints:", len(timePoints);
     #input("key to continue...");
-    for timePoint in timePoints:
+    for i, timePoint in enumerate(timePoints):
         #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
         #So these must be generated on a per-month/year basis.
         try:
-            runParameters = create_run_parameters(configVariables, metadata, timePoint, processTimeStr, configFilePath, processLayersOff);
+            if i==0: runParameters = None; #TODO: tidy this and the create_run_parameters function
+            runParameters = create_run_parameters(configVariables, metadata, timePoint, i, processTimeStr, configFilePath, processLayersOff, runParameters);
             
             #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
             if takahashiDriver == True:
@@ -614,6 +650,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         #Create fluxengine object to use runParameters
         fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
         
+        
         #Run fluxengine            
         if fe != None:
             returnCode = fe.run();
@@ -625,8 +662,8 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
             return (returnCode, fe);
         else:
             print "Flux engine exited with exit code:", returnCode;
-            print "%d02"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "completed successfully.\n";
-    
+            print "%02d"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "%02d:%02d:%02d completed successfully.\n"%(timePoint.hour, timePoint.minute, timePoint.second);
+
     return (returnCode, fe); #return code, FluxEngine object.
 
 

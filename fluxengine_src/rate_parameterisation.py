@@ -643,6 +643,49 @@ class k_Wanninkhof2014(KCalculationBase):
         return True;
 
 
+
+
+#Biological surfactant dampening with Nightingale2000 parameterisation. First applies Nightingale parameterisation then applied surfactant suppression
+#Implements method described in:
+#   Pereira, Ryan, Ian Ashton, Bita Sabbaghzadeh, Jamie D. Shutler, and Robert C. Upstill-Goddard. "Reduced air–sea CO 2 exchange in the Atlantic Ocean due to biological surfactants." Nature Geoscience (2018): 1.
+class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
+    def __init__(self):
+        self.name = self.__class__.__name__;
+    
+    def input_names(self):
+        return ["windu10", "windu10_moment2", "windu10_moment3", "scskin", "sstskin"];
+        
+    def output_names(self):
+        return ["k"];
+    
+    def __call__(self, data):
+        function = "(rate_parameterisation.py: k_Nightingale2000_with_surfactant_suppression.__call__)";
+        print "%s Using the Nightingale 2000 with surfactant suppression k parameterisation" % (function);
+        
+        #Calculate Nightingale2000 k
+        nightingaleFunctor = k_Nightingale2000();
+        nightingaleFunctor(data);
+        
+        #Apply surfactant suppression using methodology in Pereira et al. 2018.
+        try:
+            #for ease of access, simply assign attributes to each input/output.
+            self.SSTSkin = data["sstskin"].fdata;
+            data["k"].standardName="Nightingale2000 with surfactant surpression" 
+            data["k"].longName="Nightingale 2000 with surfactant surpression: Pereira, R. et al., Nature Geoscience";
+            self.k = data["k"].fdata; #Contains Nightingale parameterisation
+        except KeyError as e:
+           print "%s: Required data layer for selected k parameterisation was not found." % function;
+           print type(e), e.args;
+           return False;
+        
+        #Apply surfactant suppression
+        for i in arange(len(self.k)):   
+            if ( (self.SSTSkin[i] != DataLayer.missing_value) and (self.k[i] != DataLayer.missing_value) ):
+               self.k[i] = self.k[i] * (1.0 - (0.0046 * (self.SSTSkin[i]-173.15)**2.5673));
+        return True;
+
+
+
 #Base class for extensions to the core k-calculation, e.g. 
 class KCalculationExtension:
     def __init__(self):

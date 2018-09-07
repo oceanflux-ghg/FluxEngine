@@ -26,7 +26,7 @@ def run_takahashi09_validation(verbose=True):
     if verbose:
         print "Running FluxEngine for year 2000 using takahashi09 validation";
     configFilePath = path.join("configs", "takahashi09_validation.conf");
-    runStatus = run_fluxengine(configFilePath, 2000, 2000, processLayersOff=True, takahashiDriver=True, verbose=False);
+    runStatus, fe = run_fluxengine(configFilePath, 2000, 2000, processLayersOff=True, takahashiDriver=True, verbose=False);
     
     
     #run net budgets

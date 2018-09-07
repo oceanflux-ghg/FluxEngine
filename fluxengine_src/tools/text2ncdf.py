@@ -9,7 +9,8 @@ Input inFiles should be csv, or tab delimited text file(s). Headers are interrog
 IGA ??/??/2016 Updated variable names to include CH4 and N20
 IGA 5/5/2016 Updated filenames to allow for Arctic (or other) grid
 IGA 11/5/2016 Updated to include vCO2_air data as req'd in FE
-TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0 '''
+TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0
+TMH 2018/09/04: Updated to support use of temporal dimension in output files'''
 
 
 import numpy as np, argparse;
@@ -39,7 +40,10 @@ def parse_cl_arguments():
     parser.add_argument("-e", "--endTime",
         help="end date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
     parser.add_argument("-t", "--temporalResolution", default="monthly",
-        help="Temporal resolution to use. Defaults to monthly. Format required (days hours:minutes): D hh:mm")
+        help="Temporal resolution to use. Defaults to monthly. Format required (days hours:minutes): D hh:mm");
+    parser.add_argument("-k", "--temporalChunking", type=int, default=1,
+        help="Temporal chunking: How many time points to store in each file. Defaults to one time point per file.");
+    
     parser.add_argument("--latProd", default="Latitude",
         help="latitude product name. This should match the column name in the input text file. Default is 'Latitude'");
     parser.add_argument("--lonProd", default="Longitude",
@@ -193,11 +197,11 @@ def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDim
 #   netCDFFile: the netCDF file to be written to
 #   latData: latitude data for the grid
 #   lonData: longitude data for the grid
-def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime):
+def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, stopTime, timeDimLength):
     #Create dimensions for the output netCDF file
     netCDFFile.createDimension(DIM_NAME_LAT, len(latData));
     netCDFFile.createDimension(DIM_NAME_LON, len(lonData));
-    netCDFFile.createDimension(DIM_NAME_TIME, 1);
+    netCDFFile.createDimension(DIM_NAME_TIME, timeDimLength);
     
     #Create longitude and latitude variables
     lats = netCDFFile.createVariable('latitude','f',(DIM_NAME_LAT,));
@@ -223,7 +227,7 @@ def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAM
     secs.axis = "T"
     secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
     secs.standard_name = "time"
-    secs[:] = (startTime - datetime.utcfromtimestamp(0)).total_seconds();
+    secs[:] = np.linspace((startTime - datetime.utcfromtimestamp(0)).total_seconds(), (stopTime - datetime.utcfromtimestamp(0)).total_seconds(), timeDimLength);
     secs.valid_min = 0.0 
     secs.valid_max = 1.79769313486232e+308
     
@@ -291,7 +295,8 @@ def append_timestamp_to_filename(filePath, startTime, temporalResolution, tempor
 
 
 def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
-                           limits=[-90.0, 90.0, -180.0, 180], latResolution=1.0, lonResolution=1.0, temporalResolution="monthly",
+                           limits=[-90.0, 90.0, -180.0, 180], latResolution=1.0, lonResolution=1.0,
+                           temporalResolution="monthly", temporalChunking=1,
                            delim="\t", numCommentLines=0, encoding='utf-8', parseUnits=True, textFileMissingValue=np.nan,
                            dateIndex=0, colNames=None, latProd="Latitude", lonProd="Longitude"):
     ##############
@@ -359,7 +364,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     northLimit = limits[1]; #max lat
     westLimit = limits[2]; #min lon
     eastLimit = limits[3]; #max lon
-    temporalDimLength = get_temporal_coordinate(endTime, temporalResolution, startTime)+1;
+    temporalDimLength = get_temporal_coordinate(endTime, temporalResolution, startTime)+1; #Total number of time points (across all output files)
     
     ###########
     # Read and process data
@@ -429,29 +434,34 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ##############
     #A seperate netCDF file will be created for each index in the time dimension.
     #Loop through the temporal index and create the netCDF files
-    print "Writing output netCDF file(s)..."
+    print "Writing output netCDF file(s)...";
+    currentChunk = 0;
     for temporalIndex in range(0, temporalDimLength):
-        if temporalDimLength == 1:
-            outFilePath = ncOutPath;
-        else: #must append the start timestamp of the current temporal step to the filename
-            outFilePath = append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
-        #Create netCDF file
-        ncOutput = Dataset(outFilePath, 'w', format='NETCDF3_CLASSIC');
+        #Create netCDF file if required
+        if currentChunk == 0:
+            if temporalDimLength == 1 or temporalDimLength >= temporalChunking: #if only one file
+                outFilePath = ncOutPath;
+            else: #must append the start timestamp of the current temporal step to the filename
+                outFilePath = append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
+            ncOutput = Dataset(outFilePath, 'w');
         
-        #Create dimensions set lat/lon data
-        create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime);
+            #Create dimensions set lat/lon data
+            create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, endTime, temporalChunking);
         
-        #Create the required netCDF variables (mean, count, stddev)
-        allVariables = create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);
+            #Create the required netCDF variables (mean, count, stddev)
+            allVariables = create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);
         
         #Copy relevant time slice of each array to the netCDF
         for colName in colNames:
-            allVariables[colName+"_mean"][:] = allArrays[colName+"_mean"][temporalIndex,:,:];
-            allVariables[colName+"_stddev"][:] = allArrays[colName+"_stddev"][temporalIndex,:,:];
-            allVariables[colName+"_count"][:] = allArrays[colName+"_count"][temporalIndex,:,:];
+            allVariables[colName+"_mean"][currentChunk, :, :] = allArrays[colName+"_mean"][temporalIndex,:,:];
+            allVariables[colName+"_stddev"][currentChunk, :, :] = allArrays[colName+"_stddev"][temporalIndex,:,:];
+            allVariables[colName+"_count"][currentChunk, :, :] = allArrays[colName+"_count"][temporalIndex,:,:];
+        
+        currentChunk = int((currentChunk+1)%temporalChunking);
         
         #Close netCDF file
-        ncOutput.close();
+        if currentChunk == 0:
+            ncOutput.close();
     
     
     ############
@@ -474,11 +484,9 @@ if __name__ == "__main__":
     args = parse_cl_arguments();
     
     convert_text_to_netcdf(args.inFiles, args.startTime, args.endTime, args.ncOutPath,
-                           limits=args.limits, latResolution=args.latResolution, lonResolution=args.lonResolution, temporalResolution=args.temporalResolution,
+                           limits=args.limits, latResolution=args.latResolution, lonResolution=args.lonResolution,
+                           temporalResolution=args.temporalResolution, temporalChunking=args.temporalChunking,
                            delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding,
                            textFileMissingValue=args.missing_value, parseUnits=args.parse_units,
                            dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd); 
-
-
-
 

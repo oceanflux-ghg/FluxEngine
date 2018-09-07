@@ -32,6 +32,10 @@ class DataLayerMetaData:
         except ValueError:
             print "%s: Invalid maximum value supplied (%s) for DataLayer %s, defaulting to None." % (function, maxBound, self.name);
             self.maxBound = None;
+        
+        self.temporalChunking = 1;
+        self.temporalSkipInterval = 0;
+        self.timeDimensionName = "time";
 
 
 #Encapsulates of an input data layer, and manages checking it for integrity etc.
@@ -56,11 +60,15 @@ class DataLayer:
     #Throws ValueError if an unexpected number of dimensions are found
     #TODO: transposeData should be handled as a preprocessing function
     @classmethod
-    def create_from_file(cls, name, infile, prod, metadata, transposeData=False, preprocessing=None):
+    def create_from_file(cls, name, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
         function = "(DataLayer.create_from_file)"
         
         #Open netCDF file
-        dataset = Dataset(infile);
+        try:
+            dataset = Dataset(infile);
+        except IOError as e:
+            print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
+            print e.args;
         
         #Check netCDF file: Prints some info when in DEBUG mode.
         check_input(infile, prod, DataLayer.DEBUG);
@@ -68,7 +76,17 @@ class DataLayer:
         #Open netCDF file and check variable exists.
         dataset = Dataset(infile);
         ncVariable = dataset.variables[prod];
-        data = ncVariable[:];
+        
+        #Find the right time dimension index and slice/copy the data appropriately
+        dims = ncVariable.dimensions;
+        if dims.index(metadata.timeDimensionName) == 0:
+            data = ncVariable[timeIndex, :, :];
+        elif dims.index(metadata.timeDimensionName) == 2:
+            data = ncVariable[:, :, timeIndex];
+        elif dims.index(metadata.timeDimensionName) == 1:
+            data = ncVariable[:, timeIndex, :];
+        else:
+            raise RuntimeError("Invalid time dimension index when reading %s datalayer from %s"%(name, infile));
         
         #TODO: APPLY PREPROCESSING HERE instead of later.
         
@@ -92,7 +110,7 @@ class DataLayer:
         if ma.isMaskedArray(data) and (npall(data.mask) == True):
               data.mask = False; #Remove the mask...
                 
-        #If necessary flip the data
+        #If necessary flip the data #TODO: remove this as this should be handled in the pre-processing functions by the user
         data, flipped = flip_data(dataset, data, name); #If different from takahashi orientation, flip data.
 
         #Extract fill value from netCDF if it exists. Note that this will overwrite fill default or config specified fill value.
@@ -131,7 +149,12 @@ class DataLayer:
             for preprocessingFunction in preprocessing:
                 preprocessingFunction(self); #Modifies in place
 
-        #TODO: Should recalculate_fdata after preprocessing in case of bad preprocessing function? Or force preprocessing functions to modify 'data' not 'fdata' and calculate fdata after.
+        #Should we recalculate_fdata after preprocessing to guard against badly written custom preprocessing functions. 
+        #self.calculate_fdata(); WARNING: cannot do both this and propagate_fdata_to_data()
+        
+        #required in case of automatic resampling of large datalayers (which adjusts data)
+        #self.propagate_fdata_to_data();
+        
         
         #Replace anything outside of the valid range with missing_value
         validate_range(self.fdata, self.minBound, self.maxBound, self.missing_value);
@@ -141,6 +164,9 @@ class DataLayer:
         self.fdata = ravel(self.data);
         if ma.is_masked(self.fdata):
             self.fdata.unshare_mask(); #TMH: masked array behaviour is changing in future versions of numpy. This avoids ambiguity between current and future behaviour.
+    
+    #def propagate_fdata_to_data():
+    #   pass;
 
 
 #Replaces elements in a matrix who's values are outside the specified range [minBound, maxBound] with missing value.

@@ -7,9 +7,9 @@ Created on Mon Mar 26 14:42:46 2018
 """
 
 
+#Used as default pre-processing function. Do not modify.
 def no_preprocessing(datalayer):
     pass;
-    #return datalayer.fdata;
 
 #transpose data
 def transpose(datalayer):
@@ -49,6 +49,12 @@ def percent_to_proportion(datalayer):
         if datalayer.fdata[i] != datalayer.missing_value:
             datalayer.fdata[i] /= 100.0;
 
+def nano_to_micro(datalayer):
+    print "Converting %s from nano<units> to micro<units>" % datalayer.name;
+
+    for i in range(len(datalayer.fdata)):
+        if datalayer.fdata[i] != datalayer.missing_value:
+            datalayer.fdata[i] /= 1000.0;
 
 ##Reorder axes. The Required order by FluxEngine is lat, lon./Users/tomholding/Documents/Files/standalone_fluxengine/output/SOCATv4_WoolfRuns/no_gradients-N00/netFlux_output.log
 ##Reorder (lon, lat) to (lat, long)

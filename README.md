@@ -23,7 +23,7 @@ Specifically, data on irregular grids can now be handled through the main flux c
 In-situ data should be put in separate netCDF files and the last two digits of the filename needs to represent the month of interest as a two digit number. e.g. January -> ’01’. 
 To operate the system with different gases, the appropriate switch should be changed in ofluxghg-flux-calc.py. Please use ofluxghg-flux-calc.py --help for further information.
 
-v3.0 (April 2018)
+v3.0 (first released in April 2018, updated 07 September 2018)
 ----
 These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. Additionally verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2015). Results were identical to those produced using FluxEngine v1 and FluxEngine v2.
 Changes include:

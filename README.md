@@ -26,7 +26,7 @@ To operate the system with different gases, the appropriate switch should be cha
 v3.0 (first released in April 2018, updated 07 September 2018)
 ----
 These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. Additionally verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2015). Results were identical to those produced using FluxEngine v1 and FluxEngine v2.
-Changes include:
+Extensions to the toolbox include:
 
     •   A more flexible way of specifying input data in the configuration files,
     •   Data pre-processing options (e.g. unit conversion),

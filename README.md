@@ -32,7 +32,7 @@ Extensions to the toolbox include:
     •   Data pre-processing options (e.g. unit conversion),
     •   Python is used for all tools, allowing a more streamlined workflow,
     •   A move toward an API-like toolkit, beyond a simple set of commandline tools
-    •   A more modularised structure to the code including modular k parameterisation and data pre-processing to facilitate easy extension
+    •   A more modularised structure to the code including modular k parameterisation and data pre-processing options
     •   Metadata and default options specified in an xml file (settings.xml)
     •   Automatic validation scripts for SOCATv4 and Takahashi09
     •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations)

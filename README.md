@@ -28,15 +28,15 @@ v3.0 (first released in April 2018, updated 07 September 2018)
 These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. Additionally verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. Results were identical to those produced using FluxEngine v1 and FluxEngine v2. These updates were funded by the European Space Agency and two European Union research projects, Ringo and Integral, which are preparatory projects for the European Integrated Carbon Observing System (ICOS).
 Extensions to the toolbox include:
 
-    •   A more flexible way of specifying input data in the configuration files,
-    •   Data pre-processing options (e.g. unit conversion),
-    •   Python is used for all tools, allowing a more streamlined workflow,
-    •   A move toward an API-like toolkit, beyond a simple set of commandline tools
-    •   A more modularised structure to the code including modular k parameterisation and data pre-processing options
-    •   Metadata and default options specified in an xml file (settings.xml)
-    •   Automatic validation scripts for SOCATv4 and Takahashi09
-    •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations)
-    •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format)
+    •   A more flexible way of specifying input data in the configuration files.
+    •   Data pre-processing options (e.g. unit conversion).
+    •   Python is used for all tools, allowing a more streamlined workflow.
+    •   A move toward an API-like toolkit, beyond a simple set of commandline tools.
+    •   A more modularised structure to the code including modular k parameterisation and data pre-processing options.
+    •   Metadata and default options specified in an xml file (settings.xml).
+    •   Automatic verification scripts that use SOCATv4 and Takahashi09 reference datasets.
+    •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations).
+    •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format).
 
 
 Publications which use FluxEngine and/or FluxEngine outputs:

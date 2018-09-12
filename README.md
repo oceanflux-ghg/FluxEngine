@@ -35,7 +35,7 @@ Extensions to the toolbox include:
     •   A more modularised structure to the code including modular k parameterisation and data pre-processing to facilitate easy extension
     •   Metadata and default options specified in an xml file (settings.xml)
     •   Automatic validation scripts for SOCATv4 and Takahashi09
-    •   Tools for simplifying analysis of in situ data (possible data sources include: resaerch cruises, drifting buoys, fixed stations)
+    •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from resaerch cruises, drifting buoys and fixed stations)
     •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format)
 
 

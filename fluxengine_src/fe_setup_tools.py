@@ -624,10 +624,11 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
         #So these must be generated on a per-month/year basis.
         try:
-            if i==0: runParameters = None; #TODO: tidy this and the create_run_parameters function
+            if i==0:
+                runParameters = None; #Creates an empty previous runParameters... TODO: tidy this and the create_run_parameters function
             runParameters = create_run_parameters(configVariables, metadata, timePoint, i, processTimeStr, configFilePath, processLayersOff, runParameters);
             
-            #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
+            #TODO: Takahashi driver switch should be removed from future releases and moved to the configuration file.
             if takahashiDriver == True:
                 runParameters["TAKAHASHI_DRIVER"] = True;
             else:

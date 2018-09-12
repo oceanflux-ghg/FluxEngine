@@ -79,14 +79,23 @@ class DataLayer:
         
         #Find the right time dimension index and slice/copy the data appropriately
         dims = ncVariable.dimensions;
-        if dims.index(metadata.timeDimensionName) == 0:
-            data = ncVariable[timeIndex, :, :];
-        elif dims.index(metadata.timeDimensionName) == 2:
-            data = ncVariable[:, :, timeIndex];
-        elif dims.index(metadata.timeDimensionName) == 1:
-            data = ncVariable[:, timeIndex, :];
-        else:
-            raise RuntimeError("Invalid time dimension index when reading %s datalayer from %s"%(name, infile));
+        
+        #Two spatial dimensions and a time dimensions
+        if len(dims) == 3:
+            if metadata.timeDimensionName in dims:
+                if dims.index(metadata.timeDimensionName) == 0:
+                    data = ncVariable[timeIndex, :, :];
+                elif dims.index(metadata.timeDimensionName) == 1:
+                    data = ncVariable[:, timeIndex, :];
+                elif dims.index(metadata.timeDimensionName) == 2:
+                    data = ncVariable[:, :, timeIndex];
+            else:
+                raise RuntimeError("Time dimension name ('%s') for Datalayer '%s' was not found. Try setting this manually in the configuration file using (for example) datalayername_timeDimensionName = time"%(metadata.timeDimensionName, name));
+        #No time dimension anyway
+        elif len(dims) == 2:
+            data = ncVariable[:];
+        else: #
+            raise RuntimeError("Invalid number of dimensions (%d) when reading datalayer '%s' from '%s'"%(len(dims), name, infile));
         
         #TODO: APPLY PREPROCESSING HERE instead of later.
         

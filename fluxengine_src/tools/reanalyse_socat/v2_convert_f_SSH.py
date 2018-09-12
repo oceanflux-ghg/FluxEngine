@@ -437,7 +437,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    data_subset=[]
    #subset the year(s) we want
    print "Subsetting data for year range: %d %d"%(year_range[0],year_range[1])
-   print len(data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]);
+   #print len(data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]);
    data_subset=data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]
    
 

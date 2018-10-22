@@ -772,7 +772,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            print "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile);
+            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile));
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid
@@ -788,7 +788,7 @@ class FluxEngine:
             self.time_data = (curDatetime - datetime(1970, 1, 1)).total_seconds();
             #self.time_data = dataset.variables[self.runParams.time_prod][:];
         except KeyError as e:
-            print "%s: Couldn't find time (%s%) variables in %s." % (function, self.runParams.time_prod, self.runParams.sstskin_infile);
+            raise ValueError("%s: Couldn't find time (%s%) variables in %s. Have you set time_prod correctly in your configuration file?" % (function, self.runParams.time_prod, self.runParams.sstskin_infile));
 
         #set dimensions
         self.ny, self.nx = self.latitude_grid.shape;

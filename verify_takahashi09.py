@@ -47,7 +47,7 @@ def run_takahashi09_validation(verbose=True):
     
     #Keep track of tests passed
     nTestsPassed = 0;
-    N_TESTS = 3;
+    N_TESTS = 4;
     
     
     #Test 1: compare similarity flux budgets output to results in Takahashi 2009 paper
@@ -98,6 +98,7 @@ def run_takahashi09_validation(verbose=True):
         if verbose:
             print "Validation failed because %d values were outside threshold compared to FluxEngine v1.0." % numFailed;
     
+    
     #Test 3: Compare similarity of flux budgets to reference data for FEv2:
     if verbose:
         print "\n\nValidation Test 3) Comparing validation output to FluxEngine v2.0 output:";
@@ -121,6 +122,29 @@ def run_takahashi09_validation(verbose=True):
     else:
         print "Validation failed because %d values were outside threshold compared to FluxEngine v2.0." % numFailed;
     
+    
+    #Test 4: Compare similarity of flux budgets to reference data for FEv3:
+    if verbose:
+        print "\n\nValidation Test 4) Comparing validation output to FluxEngine v3.0 output:";
+    refFEv3Path = path.join(feRoot, "data","validation_data","validation_reference_netflux","takahashi09_FEv3", "_global.txt");
+    diffsFEv3 = calc_net_budget_percentages(budgetsOutputFilePath, refFEv3Path, verbose=False);
+    numFailed = 0;
+    
+    for key in diffsFEv1:
+        if diffsFEv3[key] > 100.01 or diffsFEv2[key] < 99.99:
+            if verbose:
+                print key, "percentage difference from reference:", diffsFEv3[key];
+            numFailed += 1;
+    
+    if numFailed == 0:
+        if verbose:
+            print "Validation run is sufficiently similar to FluxEngine v3.0 output! All values are within threshold limits:";
+        for key in diffsFEv3:
+            if verbose:
+                print "\t"+key+": "+str(diffsFEv3[key])+"%";
+        nTestsPassed += 1;
+    else:
+        print "Validation failed because %d values were outside threshold compared to FluxEngine v3.0." % numFailed;
     
     #Summary:
     if nTestsPassed == N_TESTS:

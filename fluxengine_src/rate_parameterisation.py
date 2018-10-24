@@ -681,7 +681,8 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
         #Apply surfactant suppression
         for i in arange(len(self.k)):   
             if ( (self.SSTSkin[i] != DataLayer.missing_value) and (self.k[i] != DataLayer.missing_value) ):
-               self.k[i] = self.k[i] * (1.0 - (0.0046 * (self.SSTSkin[i]-273.15)**2.5673));
+               self.k[i] = self.k[i] * (1.0 - (0.0046 * (self.SSTSkin[i]-273.15)**2.5673)/100.0);
+               #percentage surpression, so (1.0 - ((0.0046 * (self.SSTSkin[i]-273.15)**2.5673))/100.0))
         return True;
 
 

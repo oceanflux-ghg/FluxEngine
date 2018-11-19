@@ -1145,8 +1145,6 @@ class FluxEngine:
         self.data["scfnd"].fdata = schmidt(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
         
          # calculating the skin solubility, using skin sst and salinity
-        import numpy as np;
-        
         self.data["solubility_skin"].fdata = solubility(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True)
         
          # calculating the interfacial solubility

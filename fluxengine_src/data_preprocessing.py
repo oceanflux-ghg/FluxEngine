@@ -79,10 +79,10 @@ def flip_latitude(datalayer):
     datalayer.calculate_fdata(); #must update fdata after changing data.
 
 
-#E.g. as rough way to approximate second moment
+#E.g. as rough way to approximate second moment (not recommented)
 def pow2(datalayer):
     datalayer.fdata = datalayer.fdata**2;
 
-#E.g. as rough way to approximate third moment
+#E.g. as rough way to approximate third moment (not recommended)
 def pow3(datalayer):
     datalayer.fdata = datalayer.fdata**3;

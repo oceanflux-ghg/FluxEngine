@@ -1180,31 +1180,9 @@ class FluxEngine:
         
         sys.stdout.flush();
         
-#        salskin_fc = 0;
-#        sstskinK_fc = 0;
-#        pres_fc = 0;
-#        vco2_air_fc = 0;
-#        sstfndK_fc = 0;
-#        sstpco2_fc = 0;
-#        pco2_sw_fc = 0;
-#        sstskinK_fc0 = 0;
-        
         for i in arange(nx * ny):
-#            salskin_fc += (ma.is_masked(self.data["salinity_skin"].fdata[i]) == False) and (self.data["salinity_skin"].fdata[i] != missing_value);
-#            sstskinK_fc += (ma.is_masked(self.data["sstskin"].fdata[i]) == False) and (self.data["sstskin"].fdata[i] != missing_value);
-#            pres_fc += (ma.is_masked(self.data["pressure"].fdata[i]) == False) and (self.data["pressure"].fdata[i] != missing_value);
-#            vco2_air_fc += (ma.is_masked(self.data["vco2_air"].fdata[i]) == False) and (self.data["vco2_air"].fdata[i] != missing_value);
-#            sstfndK_fc += (ma.is_masked(self.data["sstfnd"].fdata[i]) == False) and (self.data["sstfnd"].fdata[i] != missing_value);
-#            sstpco2_fc += (ma.is_masked(self.data["pco2_sst"].fdata[i]) == False) and (self.data["pco2_sst"].fdata[i] != missing_value);
-#            pco2_sw_fc += (ma.is_masked(self.data["pco2_sw"].fdata[i]) == False) and (self.data["pco2_sw"].fdata[i] != missing_value);
-#            sstskinK_fc0 += (ma.is_masked(self.data["sstskin"].fdata[i]) == False) and (self.data["sstskin"].fdata[i] != 0.0);
-        
-            
             if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
-            #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
-                #print "1self.data["sstskin"].fdata: (%d,%d) %d %f log:%f\n" %(nx, ny,i,self.data["sstskin"].fdata[i]/100.0,log(self.data["sstskin"].fdata[i]/100.0))
                 self.data["pH2O"].fdata[i] = 1013.25 * exp(24.4543 - (67.4509 * (100.0/self.data["sstskin"].fdata[i])) - (4.8489 * log(self.data["sstskin"].fdata[i]/100.0)) - 0.000544 * self.data["salinity_skin"].fdata[i])
-                #print "2self.data["sstskin"].fdata: %d %f log:%f\n" %(i,self.data["sstskin"].fdata[i]/100.0,log(self.data["sstskin"].fdata[i]/100.0))
                   
                 # this may be needed when using SMOS salinity data
                 # To-DO: awaiting info from Lonneke and David before implementing fully

@@ -86,3 +86,14 @@ def pow2(datalayer):
 #E.g. as rough way to approximate third moment (not recommended)
 def pow3(datalayer):
     datalayer.fdata = datalayer.fdata**3;
+
+#Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
+def foc_to_epsilon(datalayer):
+    print "Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name;
+    
+    waterDensity = 1026.0;
+    for i in range(len(datalayer.fdata)):
+        if datalayer.fdata[i] != datalayer.missing_value:
+            datalayer.fdata[i] *= waterDensity;
+
+

@@ -717,7 +717,7 @@ class k_Zappa2007(KCalculationBase):
         
         #determine the k relationship
         for i in arange(len(self.k)):   
-            if ( (self.kte_dissipation[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - no need for wind moment 3
+            if ( (self.tke_dissipation[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - no need for wind moment 3
                 kinematicViscosity = 0.00000183 * exp( (-(self.sstskin[i])) / 36.0);
                 self.k[i] = 0.419*(self.scskin[i]**0.5) * (self.tke_dissipation[i]*kinematicViscosity)**0.25;
             else:

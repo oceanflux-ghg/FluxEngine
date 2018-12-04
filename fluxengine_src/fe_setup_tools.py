@@ -585,6 +585,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     settingsPath = path.join(rootPath, "fluxengine_src", "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
+    #Append custom datalayers to metadata file, this means they will be automatically added as a datalayer
+    for varName in configVariables.keys():
+        if (varName not in metadata) and (varName[-5:] == "_path"):
+            varBase = varName[:-5];
+            metadata[varName] = {"required":"false", "type":"DataLayerPath", "name":varBase};
+    
     #Substitute commandline override arguments (-pco2_dir_override, -output_dir_override)
     if (pco2DirOverride != None):
         print "Using optional override for pCO2w data directory. '%s' will be set to '%s' (ie overriding both directory of pco2 data and selection in the configuration file)." % (configVariables["pco2"], pco2DirOverride);

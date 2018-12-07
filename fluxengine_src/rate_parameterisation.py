@@ -698,6 +698,9 @@ class k_Zappa2007(KCalculationBase):
     def output_names(self):
         return ["k"];
     
+    def si_viscosity_to_cSt(self, viscosity):
+        return viscosity*1000000.0;
+    
     def __call__(self, data):
         # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
         # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
@@ -718,8 +721,12 @@ class k_Zappa2007(KCalculationBase):
         #determine the k relationship
         for i in arange(len(self.k)):   
             if ( (self.tke_dissipation[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - no need for wind moment 3
-                kinematicViscosity = 0.00000183 * exp( (-(self.sstskin[i])) / 36.0);
-                self.k[i] = 0.419*(self.scskin[i]**-0.5) * (self.tke_dissipation[i]*kinematicViscosity)**0.25;
+                kinematicViscosity = 0.00000183 * exp( -(self.sstskin[i]-273.15) / 36.0);
+                
+                kinematicViscosity = self.si_viscosity_to_cSt(kinematicViscosity); #Convert from m^2 s^-1 to cSt (centistokes)
+                schmidtToUse = self.scskin[i]/1000000.0; #convert to the cSt/m^2s^-1 ratio in Zappa? Assumes Zappa et al used centiStokes for their Sc calculation, more work needed to confirm this...
+                
+                self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((self.tke_dissipation[i]*kinematicViscosity)**0.25); #new
             else:
                self.k[i] = DataLayer.missing_value
         return True;

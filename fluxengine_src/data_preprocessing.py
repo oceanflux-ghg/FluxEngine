@@ -54,7 +54,7 @@ def nano_to_micro(datalayer):
 
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] /= 1000.0;
+            datalayer.fdata[i] *= 1000.0;
 
 ##Reorder axes. The Required order by FluxEngine is lat, lon./Users/tomholding/Documents/Files/standalone_fluxengine/output/SOCATv4_WoolfRuns/no_gradients-N00/netFlux_output.log
 ##Reorder (lon, lat) to (lat, long)
@@ -88,12 +88,14 @@ def pow3(datalayer):
     datalayer.fdata = datalayer.fdata**3;
 
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
+#Calculates dissipation rate of turbulent energy in the top 2m
 def foc_to_epsilon(datalayer):
     print "Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name;
     
     waterDensity = 1026.0;
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] *= waterDensity;
+            #datalayer.fdata[i] = (datalayer.fdata[i] * 2.0) * waterDensity; #2.0 meters deep column of water. #ORIGINAL
+            datalayer.fdata[i] = datalayer.fdata[i] / (2.0 * waterDensity); #2.0 meters deep column of water. #CORRECTED
 
 

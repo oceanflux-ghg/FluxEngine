@@ -453,16 +453,16 @@ def median_filter2D(datain, nx, ny):
 
    return datain
 
-             # determine the schmidt number
-
-def schmidt(sstC_fdata, nx, ny,gas):
- # calculating the schmidt data
+#determine the schmidt number
+#based on Schmid relationship from Wanninkhof1992 - Relationship between wind speed and gas exchange over the ocean, JGR Oceans
+def schmidt_Wanninkhof1992(sstC_fdata, nx, ny, gas):
+#calculating the schmidt data
 
    sc_fdata = array([missing_value] * nx*ny)
    if 'o2' in gas.lower():
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):
-             sc_fdata[i] = 1953.4 - (128.0 * sstC_fdata[i]) + (3.9918 * (sstC_fdata[i] * sstC_fdata[i])) - (0.050091 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i])) + (0.00093777 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
+             sc_fdata[i] = 1953.4 - (128.0 * sstC_fdata[i]) + (3.9918 * (sstC_fdata[i] * sstC_fdata[i])) - (0.050091 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -491,6 +491,43 @@ def schmidt(sstC_fdata, nx, ny,gas):
         # assigning invalid values
              sc_fdata[i] = missing_value
    return sc_fdata
+
+#based on Schmid relationship from Wanninkhof2014 - Relationship between wind speed and gas exchange over the ocean revisited, Limnology and Oceanography
+def schmidt_Wanninkhof2014(sstC_fdata, nx, ny, gas):
+    sc_fdata = array([missing_value] * nx*ny)
+    if 'o2' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                sc_fdata[i] = 1920.4 + (-135.6 * sstC_fdata[i]) + (5.2122 * sstC_fdata[i]**2) + (0.10939 * sstC_fdata[i]**3) + (0.00093777 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+
+    if 'n2o' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):            
+                sc_fdata[i] = 2356.2 + (-166.38 * sstC_fdata[i]) + (6.3952 * sstC_fdata[i]**2) + (-0.13422 *sstC_fdata[i]**3) + (0.0011506 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+
+    if 'ch4' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                sc_fdata[i] = 2101.2 + (-131.54 * sstC_fdata[i]) + (4.4931 * sstC_fdata[i]**2) + (-0.08676 * sstC_fdata[i]**3) + (0.00070663 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+    if 'co2' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                # relationship is only valid for temperatures <=30.0 oC
+                sc_fdata[i] = 2116.8 + (-136.25 * sstC_fdata[i]) + (4.7353 * sstC_fdata[i]**2) + (-0.092307 * sstC_fdata[i]**3) + (0.0007555 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+    return sc_fdata
+    
 
 
 def solubility(sstK, sal, deltaT, nx, ny, flux_calc):
@@ -675,7 +712,7 @@ class FluxEngine:
     #Adds a single datalayer and acquires metadata
     #TODO: transposeData is now be handled by preprocessing, so this cna be removed...
     def _add_single_data_layer(self, name, infile, prod, transposeData=False, preprocessing=None):
-        function = "(ofluxghg_flux_calc, FluxEngine._add_single_data_layer)";
+        #function = "(ofluxghg_flux_calc, FluxEngine._add_single_data_layer)";
         
         metaData = self._extract_data_layer_meta_data(name);
         
@@ -1140,9 +1177,15 @@ class FluxEngine:
            print "\n%s runParams.flux_calc from configuration not recognised, exiting." % (function)
            return 1;
         
-        # calculating the schmidt number at the skin and fnd
-        self.data["scskin"].fdata = schmidt(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
-        self.data["scfnd"].fdata = schmidt(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        #Calculating the schmidt number at the skin and fnd
+        if runParams.schmidt_parameterisation == "schmidt_Wanninkhof2014":
+            self.data["scskin"].fdata = schmidt_Wanninkhof2014(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
+            self.data["scfnd"].fdata = schmidt_Wanninkhof2014(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        elif runParams.schmidt_parameterisation == "schmidt_Wanninkhof1992":
+            self.data["scskin"].fdata = schmidt_Wanninkhof1992(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
+            self.data["scfnd"].fdata = schmidt_Wanninkhof1992(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        else:
+            raise ValueError("Unrecognised schmidt parameterisation selected: "+runParams.schmidtParameterisation);
         
          # calculating the skin solubility, using skin sst and salinity
         self.data["solubility_skin"].fdata = solubility(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True)

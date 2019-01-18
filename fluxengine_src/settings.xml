@@ -357,6 +357,7 @@
 			<Option value="2" str="equilibrium"></Option>
 			<Option value="3" str="bulk"></Option>
 		</Variable>
+
 		<!--<Variable name="lat_grid_size" required="true" type="integer"></Variable>
 		<Variable name="lon_grid_size" required="true" type="integer"></Variable> -->
 

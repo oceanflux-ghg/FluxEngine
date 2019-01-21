@@ -681,8 +681,58 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
         #Apply surfactant suppression
         for i in arange(len(self.k)):   
             if ( (self.SSTSkin[i] != DataLayer.missing_value) and (self.k[i] != DataLayer.missing_value) ):
-               self.k[i] = self.k[i] * (1.0 - (0.0046 * (self.SSTSkin[i]-173.15)**2.5673));
+               self.k[i] = self.k[i] * (1.0 - (0.0046 * (self.SSTSkin[i]-273.15)**2.5673)/100.0);
+               #percentage surpression, so (1.0 - ((0.0046 * (self.SSTSkin[i]-273.15)**2.5673))/100.0))
         return True;
+
+
+#Zappa et al 2007. k-parameterisation using dissipation rate of turbulent kinetic energy (epsilon)
+#Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. "Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems." Geophysical Research Letters 34, no. 10 (2007).
+class k_Zappa2007(KCalculationBase):
+    def __init__(self):
+        self.name = self.__class__.__name__;
+    
+    def input_names(self):
+        return ["tke_dissipation", "scskin", "sstskin"];
+    
+    def output_names(self):
+        return ["k"];
+    
+    def si_viscosity_to_cSt(self, viscosity):
+        return viscosity*1000000.0;
+    
+    def __call__(self, data):
+        # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
+        # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
+        function = "(rate_parameterisation.py: k_Zappa2007.__call__)";
+        print "%s Using the Zappa 2007 k parameterisation" % (function);
+        
+        try:
+            #for ease of access, simply assign attributes to each input/output.
+            for name in self.input_names() + self.output_names():
+                setattr(self, name, data[name].fdata);
+            data["k"].standardName="Zappa2007" 
+            data["k"].longName="Zappa 2007: using the dissipation rate of turbulent kinetic energy. Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems. Geophysical Research Letters 34, no. 10 (2007).";
+        except KeyError as e:
+           print "%s: Required data layer for selected k parameterisation was not found." % function;
+           print type(e), e.args;
+           return False;
+        
+        #determine the k relationship
+        for i in arange(len(self.k)):   
+            if ( (self.tke_dissipation[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - no need for wind moment 3
+                kinematicViscosity = 0.00000183 * exp( -(self.sstskin[i]-273.15) / 36.0);
+                
+                kinematicViscosity = self.si_viscosity_to_cSt(kinematicViscosity); #Convert from m^2 s^-1 to cSt (centistokes)
+                schmidtToUse = self.scskin[i]/1000000.0; #convert to the cSt/m^2s^-1 ratio in Zappa? Assumes Zappa et al used centiStokes for their Sc calculation, more work needed to confirm this...
+                
+                self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((self.tke_dissipation[i]*kinematicViscosity)**0.25); #new
+            else:
+               self.k[i] = DataLayer.missing_value
+        return True;
+
+
+
 
 
 

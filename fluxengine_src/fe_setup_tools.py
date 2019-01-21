@@ -585,6 +585,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     settingsPath = path.join(rootPath, "fluxengine_src", "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
+    #Append custom datalayers to metadata file, this means they will be automatically added as a datalayer
+    for varName in configVariables.keys():
+        if (varName not in metadata) and (varName[-5:] == "_path"):
+            varBase = varName[:-5];
+            metadata[varName] = {"required":"false", "type":"DataLayerPath", "name":varBase};
+    
     #Substitute commandline override arguments (-pco2_dir_override, -output_dir_override)
     if (pco2DirOverride != None):
         print "Using optional override for pCO2w data directory. '%s' will be set to '%s' (ie overriding both directory of pco2 data and selection in the configuration file)." % (configVariables["pco2"], pco2DirOverride);
@@ -624,10 +630,11 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         #Run parameters can vary depending on the current month and year (e.g. paths and filenames,
         #So these must be generated on a per-month/year basis.
         try:
-            if i==0: runParameters = None; #TODO: tidy this and the create_run_parameters function
+            if i==0:
+                runParameters = None; #Creates an empty previous runParameters... TODO: tidy this and the create_run_parameters function
             runParameters = create_run_parameters(configVariables, metadata, timePoint, i, processTimeStr, configFilePath, processLayersOff, runParameters);
             
-            #TODO: temporary stop-gap. Takahashi driver switch will be removed from future releases and moved to the configuration file.
+            #TODO: Takahashi driver switch should be removed from future releases and moved to the configuration file.
             if takahashiDriver == True:
                 runParameters["TAKAHASHI_DRIVER"] = True;
             else:

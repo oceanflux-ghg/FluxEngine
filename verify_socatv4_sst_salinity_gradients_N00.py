@@ -48,12 +48,12 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if verbose:
         print "\n\nComparing output to reference data...";
     newPath = path.join("output", "validate_socatv4_sst_salinity_N00", "_global.txt");
-    refPath = path.join("data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv2", "SST_Salinity_gradients-N00_global.txt");
+    refPath = path.join("data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;
     for key in diffs:
-        if diffs[key] > 101.0 or diffs[key] < 99.0:
+        if diffs[key] > 100.0001 or diffs[key] < 99.9999:
             if verbose:
                 print key, "percentage difference from reference:", diffs[key];
             numFailed += 1;

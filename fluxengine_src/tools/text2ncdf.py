@@ -197,7 +197,10 @@ def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDim
 #   netCDFFile: the netCDF file to be written to
 #   latData: latitude data for the grid
 #   lonData: longitude data for the grid
-def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, stopTime, timeDimLength):
+def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, timeDimLength, temporalResolution):
+    if temporalResolution == "monthly":
+        raise ValueError("'monthly' temporal resolution not yet supported in create_netCDF_dimensions.");
+    
     #Create dimensions for the output netCDF file
     netCDFFile.createDimension(DIM_NAME_LAT, len(latData));
     netCDFFile.createDimension(DIM_NAME_LON, len(lonData));
@@ -227,7 +230,18 @@ def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAM
     secs.axis = "T"
     secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
     secs.standard_name = "time"
-    secs[:] = np.linspace((startTime - datetime.utcfromtimestamp(0)).total_seconds(), (stopTime - datetime.utcfromtimestamp(0)).total_seconds(), timeDimLength);
+    
+    vals = [];
+    curPoint = (startTime - datetime(1970, 1, 1)).total_seconds();
+    for i in range(0, timeDimLength):
+        vals.append(curPoint);
+        curPoint += temporalResolution.total_seconds();
+    secs[:] = vals;
+        
+    
+    #firstPoint = (startTime - datetime(1970, 1, 1));
+    #lastPoint = firstPoint + (timeDimLength * temporalResolution);
+    #secs[:] = np.linspace(firstPoint.total_seconds(), lastPoint.total_seconds(), timeDimLength);
     secs.valid_min = 0.0 
     secs.valid_max = 1.79769313486232e+308
     
@@ -432,7 +446,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ##############
     # Create and write output netCDF files
     ##############
-    #A seperate netCDF file will be created for each index in the time dimension.
+    #A seperate netCDF file will be created for each index in the time dimension (unless chunking is being used).
     #Loop through the temporal index and create the netCDF files
     print "Writing output netCDF file(s)...";
     currentChunk = 0;
@@ -446,7 +460,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
             ncOutput = Dataset(outFilePath, 'w');
         
             #Create dimensions set lat/lon data
-            create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, endTime, temporalChunking);
+            create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, temporalChunking, temporalResolution);
         
             #Create the required netCDF variables (mean, count, stddev)
             allVariables = create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);

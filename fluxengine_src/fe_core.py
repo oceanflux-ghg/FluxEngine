@@ -453,16 +453,16 @@ def median_filter2D(datain, nx, ny):
 
    return datain
 
-             # determine the schmidt number
-
-def schmidt(sstC_fdata, nx, ny,gas):
- # calculating the schmidt data
+#determine the schmidt number
+#based on Schmid relationship from Wanninkhof1992 - Relationship between wind speed and gas exchange over the ocean, JGR Oceans
+def schmidt_Wanninkhof1992(sstC_fdata, nx, ny, gas):
+#calculating the schmidt data
 
    sc_fdata = array([missing_value] * nx*ny)
    if 'o2' in gas.lower():
        for i in arange(nx * ny):
           if (sstC_fdata[i] != missing_value):
-             sc_fdata[i] = 1953.4 - (128.0 * sstC_fdata[i]) + (3.9918 * (sstC_fdata[i] * sstC_fdata[i])) - (0.050091 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i])) + (0.00093777 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
+             sc_fdata[i] = 1953.4 - (128.0 * sstC_fdata[i]) + (3.9918 * (sstC_fdata[i] * sstC_fdata[i])) - (0.050091 * (sstC_fdata[i] * sstC_fdata[i] * sstC_fdata[i]))#IGA-O2
           else:
         # assigning invalid values
              sc_fdata[i] = missing_value
@@ -492,6 +492,43 @@ def schmidt(sstC_fdata, nx, ny,gas):
              sc_fdata[i] = missing_value
    return sc_fdata
 
+#based on Schmid relationship from Wanninkhof2014 - Relationship between wind speed and gas exchange over the ocean revisited, Limnology and Oceanography
+def schmidt_Wanninkhof2014(sstC_fdata, nx, ny, gas):
+    sc_fdata = array([missing_value] * nx*ny)
+    if 'o2' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                sc_fdata[i] = 1920.4 + (-135.6 * sstC_fdata[i]) + (5.2122 * sstC_fdata[i]**2) + (0.10939 * sstC_fdata[i]**3) + (0.00093777 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+
+    if 'n2o' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):            
+                sc_fdata[i] = 2356.2 + (-166.38 * sstC_fdata[i]) + (6.3952 * sstC_fdata[i]**2) + (-0.13422 *sstC_fdata[i]**3) + (0.0011506 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+
+    if 'ch4' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                sc_fdata[i] = 2101.2 + (-131.54 * sstC_fdata[i]) + (4.4931 * sstC_fdata[i]**2) + (-0.08676 * sstC_fdata[i]**3) + (0.00070663 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+    if 'co2' in gas.lower():
+        for i in arange(nx * ny):
+            if (sstC_fdata[i] != missing_value):
+                # relationship is only valid for temperatures <=30.0 oC
+                sc_fdata[i] = 2116.8 + (-136.25 * sstC_fdata[i]) + (4.7353 * sstC_fdata[i]**2) + (-0.092307 * sstC_fdata[i]**3) + (0.0007555 * sstC_fdata[i]**4);
+            else:
+            # assigning invalid values
+                sc_fdata[i] = missing_value
+    return sc_fdata
+    
+
 
 def solubility(sstK, sal, deltaT, nx, ny, flux_calc):
  # solubility calculation
@@ -508,6 +545,24 @@ def solubility(sstK, sal, deltaT, nx, ny, flux_calc):
       else:
          sol[i] = missing_value
    return sol
+
+#Calculate the mass boundary layer concentration (ie concentration in the water)
+#Each argument should be supplied as fdata matrix (flattened matrix)
+def calculate_concw(concFactor, foundationSolubility, fCO2water, concw):
+    for i in range(len(concw)):
+        if ( (foundationSolubility[i] != missing_value) and (fCO2water[i] != missing_value)):
+            concw[i] = foundationSolubility[i] * concFactor * fCO2water[i];
+        else:
+            concw[i] = missing_value;
+
+#Calculate the interfacial concentration (i.e. at the interface between the ocean and the atmosphere)
+#Each argument should be supplied as fdata matrix (flattened matrix)
+def calculate_conca(concFactor, skinSolubility, fCO2air, conca):
+    for i in range(len(conca)):
+        if ( (skinSolubility[i] != missing_value) and (fCO2air[i] != missing_value)):
+            conca[i] = skinSolubility[i] * concFactor * fCO2air[i];
+        else:
+            conca[i] = missing_value;
 
 
 #Copies missing_values from 'master' to 'derived' e.g. for making mean and stddev datasets consistent.
@@ -675,7 +730,7 @@ class FluxEngine:
     #Adds a single datalayer and acquires metadata
     #TODO: transposeData is now be handled by preprocessing, so this cna be removed...
     def _add_single_data_layer(self, name, infile, prod, transposeData=False, preprocessing=None):
-        function = "(ofluxghg_flux_calc, FluxEngine._add_single_data_layer)";
+        #function = "(ofluxghg_flux_calc, FluxEngine._add_single_data_layer)";
         
         metaData = self._extract_data_layer_meta_data(name);
         
@@ -772,7 +827,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            print "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s." % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile);
+            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile));
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid
@@ -788,7 +843,7 @@ class FluxEngine:
             self.time_data = (curDatetime - datetime(1970, 1, 1)).total_seconds();
             #self.time_data = dataset.variables[self.runParams.time_prod][:];
         except KeyError as e:
-            print "%s: Couldn't find time (%s%) variables in %s." % (function, self.runParams.time_prod, self.runParams.sstskin_infile);
+            raise ValueError("%s: Couldn't find time (%s%) variables in %s. Have you set time_prod correctly in your configuration file?" % (function, self.runParams.time_prod, self.runParams.sstskin_infile));
 
         #set dimensions
         self.ny, self.nx = self.latitude_grid.shape;
@@ -879,7 +934,8 @@ class FluxEngine:
         
         #some specific pco2 conditions
         #TODO: This shouldn't be randomly here.
-        self.data["pco2_sw"].fdata[abs(self.data["pco2_sw"].fdata)<0.1]=DataLayer.missing_value#IGA_SOCATv4
+        if "pco2_sw" in self.data:
+            self.data["pco2_sw"].fdata[abs(self.data["pco2_sw"].fdata)<0.1]=DataLayer.missing_value#IGA_SOCATv4
 
         if (runParams.pco2_data_selection != 1):
             #signifies that we're NOT using SOCAT data, which means there is no stddev data for pco2_sw
@@ -891,8 +947,6 @@ class FluxEngine:
         self.add_empty_data_layer("solubility_skin");
         self.add_empty_data_layer("solubility_fnd");
         self.add_empty_data_layer("pH2O");
-        self.add_empty_data_layer("pco2_air_cor");
-        self.add_empty_data_layer("pco2_sw_cor");
         
         #apply additive saline skin value, but why selectively apply it?
         #TODO: Why are these hard-coded values. Should be using minBound and maxBound?
@@ -1121,6 +1175,7 @@ class FluxEngine:
          
         # pCO2/fCO2 extrapolation (if turned on) from reference year
         pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_correction;
+        pco2_increment_air = pco2_increment;
             
         DeltaT_fdata = array([missing_value] * nx*ny)
         
@@ -1140,13 +1195,17 @@ class FluxEngine:
            print "\n%s runParams.flux_calc from configuration not recognised, exiting." % (function)
            return 1;
         
-        # calculating the schmidt number at the skin and fnd
-        self.data["scskin"].fdata = schmidt(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
-        self.data["scfnd"].fdata = schmidt(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        #Calculating the schmidt number at the skin and fnd
+        if runParams.schmidt_parameterisation == "schmidt_Wanninkhof2014":
+            self.data["scskin"].fdata = schmidt_Wanninkhof2014(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
+            self.data["scfnd"].fdata = schmidt_Wanninkhof2014(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        elif runParams.schmidt_parameterisation == "schmidt_Wanninkhof1992":
+            self.data["scskin"].fdata = schmidt_Wanninkhof1992(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
+            self.data["scfnd"].fdata = schmidt_Wanninkhof1992(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
+        else:
+            raise ValueError("Unrecognised schmidt parameterisation selected: "+runParams.schmidtParameterisation);
         
          # calculating the skin solubility, using skin sst and salinity
-        import numpy as np;
-        
         self.data["solubility_skin"].fdata = solubility(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True)
         
          # calculating the interfacial solubility
@@ -1161,140 +1220,119 @@ class FluxEngine:
          # pCO2_water = pCO2_water_tak exp (0.0423 (T_foundation - T_tak)
          # T_tak = Takahashi temperature
         
-         # debuggin differences in pH20 values
-        pH2O_takahashi_fdata = array([missing_value] * nx*ny)
-        humidity_fdata = array([missing_value] * nx*ny)
-        pH2O_diff_fdata = array([missing_value] * nx*ny)
-        pCO2a_diff_fdata = array([missing_value] * nx*ny)
-        #dpCO2_diff_fdata = array([missing_value] * nx*ny) #TODO: Should this be calculated/outputted?
-        b11_fdata = array([missing_value] * nx*ny)
-        d12_fdata = array([missing_value] * nx*ny)
-
-        #TODO: This should be handled with options in the config file        
-        # always using XCO2 from 2000 for SOCAT data
-        if runParams.pco2_data_selection == 1 or runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 45:
-           #pco2_increment_air = (runParams.year - 2000.0) * 1.5 #TODO: Changed.
-           pco2_increment_air = pco2_increment;
-           print "%s year: %d fCO2/pCO2_increment_air: %lf (uatm)" % (function, runParams.year, pco2_increment_air)
-        else:
-           pco2_increment_air = pco2_increment
-           print "%s year: %d fCO2/pCO2_increment_air: %lf (uatm)" % (function, runParams.year, pco2_increment_air)
+         
+        
         
         sys.stdout.flush();
+
         
-#        salskin_fc = 0;
-#        sstskinK_fc = 0;
-#        pres_fc = 0;
-#        vco2_air_fc = 0;
-#        sstfndK_fc = 0;
-#        sstpco2_fc = 0;
-#        pco2_sw_fc = 0;
-#        sstskinK_fc0 = 0;
-        
+        ###############################
+        # Calculate:                  #
+        #   pH2O                      #
+        ###############################
         for i in arange(nx * ny):
-#            salskin_fc += (ma.is_masked(self.data["salinity_skin"].fdata[i]) == False) and (self.data["salinity_skin"].fdata[i] != missing_value);
-#            sstskinK_fc += (ma.is_masked(self.data["sstskin"].fdata[i]) == False) and (self.data["sstskin"].fdata[i] != missing_value);
-#            pres_fc += (ma.is_masked(self.data["pressure"].fdata[i]) == False) and (self.data["pressure"].fdata[i] != missing_value);
-#            vco2_air_fc += (ma.is_masked(self.data["vco2_air"].fdata[i]) == False) and (self.data["vco2_air"].fdata[i] != missing_value);
-#            sstfndK_fc += (ma.is_masked(self.data["sstfnd"].fdata[i]) == False) and (self.data["sstfnd"].fdata[i] != missing_value);
-#            sstpco2_fc += (ma.is_masked(self.data["pco2_sst"].fdata[i]) == False) and (self.data["pco2_sst"].fdata[i] != missing_value);
-#            pco2_sw_fc += (ma.is_masked(self.data["pco2_sw"].fdata[i]) == False) and (self.data["pco2_sw"].fdata[i] != missing_value);
-#            sstskinK_fc0 += (ma.is_masked(self.data["sstskin"].fdata[i]) == False) and (self.data["sstskin"].fdata[i] != 0.0);
-        
-            
-            if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
-            #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
-                #print "1self.data["sstskin"].fdata: (%d,%d) %d %f log:%f\n" %(nx, ny,i,self.data["sstskin"].fdata[i]/100.0,log(self.data["sstskin"].fdata[i]/100.0))
+            #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+            if (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value):
                 self.data["pH2O"].fdata[i] = 1013.25 * exp(24.4543 - (67.4509 * (100.0/self.data["sstskin"].fdata[i])) - (4.8489 * log(self.data["sstskin"].fdata[i]/100.0)) - 0.000544 * self.data["salinity_skin"].fdata[i])
-                #print "2self.data["sstskin"].fdata: %d %f log:%f\n" %(i,self.data["sstskin"].fdata[i]/100.0,log(self.data["sstskin"].fdata[i]/100.0))
-                  
-                # this may be needed when using SMOS salinity data
-                # To-DO: awaiting info from Lonneke and David before implementing fully
-                pCO2_salinity_term = 0
-                #dSalinity = salinity_rmse
-                #if (salinity_option == 1):
-                #  # need to determine dS/S using original salinity (its been modified above to add the salinity_rmse)
-                #  # so (self.data["salinity"].fdata[i] - salinity_rmse) ensures that we are dealing with the original value of salinity
-                  #  # using Ys=1 as a global correction following Sarmiento and Gruber, 2006)
-                #pCO2_salinity_term = 1.0*(dSalinity/(self.data["salinity"].fdata[i] - salinity_rmse) ) #TH: Commented this out!
-                #else:
-                # pCO2_salinity_term = 0.0
-                  
-                # correction to different years, correction is data and year specific.
-                # note for 2010, correction for SOCAT isn't strictly required. However the contents of the exponential will collapse
-                # to 1 (with some rounding error expected), so effectively no correction will be applied
-                if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
-                    self.data["pco2_sw_cor"].fdata[i] = pco2_increment + (self.data["pco2_sw"].fdata[i] *exp( (0.0423*(self.data["sstfndC"].fdata[i] - self.data["pco2_sst"].fdata[i])) - (0.0000435*((self.data["sstfndC"].fdata[i]*self.data["sstfndC"].fdata[i]) - (self.data["pco2_sst"].fdata[i]*self.data["pco2_sst"].fdata[i]) )) + pCO2_salinity_term) )
-                    # if pco2_increment + (self.data["sstfndC"].fdata[i] - self.data["pco2_sst"].fdata[i]) + ((self.data["sstfndC"].fdata[i]*self.data["sstfndC"].fdata[i]) - (self.data["pco2_sst"].fdata[i]*self.data["pco2_sst"].fdata[i]) ) >0:#SOCATv4
-                    #   print pco2_increment, self.data["sstfndC"].fdata[i] - self.data["pco2_sst"].fdata[i], ((self.data["sstfndC"].fdata[i]*self.data["sstfndC"].fdata[i]) - (self.data["pco2_sst"].fdata[i]*self.data["pco2_sst"].fdata[i]) )#SOCATv4
-                else:
-                    self.data["pco2_sw_cor"].fdata[i] = self.data["pco2_sw"].fdata[i]
-                # following disables temp correction when using SOCAT data
-                #if runParams.pco2_data_selection != 0:
-                    # check added for testing; only valid for 2010 data, otherwise test is meaningless
-                    # e.g. (corrected value:15.115202, uncorrected value:350.351990); exponential should collapse to zero
-            
-                    # if runParams.year == 2010 and self.data["pco2_sw_cor"].fdata[i] != self.data["pco2_sw"].fdata[i]:
-                #         print "%s Using SOCAT data, seawater correction miscalculation, corrected version is not identical to uncorrected version (corrected value:%lf, uncorrected value:%lf, SSTfnd %lf, SSTco2 %lf); exponential should collapse to zero (pco2_increment %lf)" % (function, self.data["pco2_sw_cor"].fdata[i],self.data["pco2_sw"].fdata[i], self.data["sstfndC"].fdata[i], self.data["pco2_sst"].fdata[i], pco2_increment)
-                #         self.data["pco2_sw_cor"].fdata[i] = self.data["pco2_sw"].fdata[i]
-                
-                ###Converts from ppm to microatm THc
-                # vco2 in ppm * 1000000 = atm
-                # result /1000 to then convert from atm to uatm
-                # hence * 0.001 factor
-                if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
-                    #THtodo: 1e-6 can be removed...
-                    self.data["pco2_air_cor"].fdata[i] = (self.data["vco2_air"].fdata[i] * 1e-6 * (self.data["pressure"].fdata[i] - self.data["pH2O"].fdata[i]) / (1e-6 * 1013.25)) + (pco2_increment_air)
-                else:
-                    self.data["pco2_air_cor"].fdata[i] = self.data["vco2_air"].fdata[i]
-            
-                #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata      
-                if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
-                    # conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
-                    b11_fdata[i] = -1636.75 + (12.0408*self.data["sstskin"].fdata[i]) - (0.0327957*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]) + (3.16528e-5 * self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i])
-                    d12_fdata[i] = 57.7 - (0.118*self.data["sstskin"].fdata[i])
-                     # gas constant
-                    R = 82.0578 # in [cm^3 atm/(mol K)]
-                    # 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
-                    # the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
-                    self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
-                    #self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * ((self.data["pressure"].fdata[i] / 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
-                    #print exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
-                    #print self.data["pressure"].fdata[i]
-                  
-                  #((self.data["vco2_air"].fdata[i] * (self.data["pressure"].fdata[i] - self.data["pH2O"].fdata[i]))*0.001) + (pco2_increment)
-                  
-                  #>>> V=373.769989/1e6
-                  #>>> pco2a = 374.220001*1e-6*1013.25
-                  
-                if runParams.TAKAHASHI_DRIVER:           
-                    if self.data["pco2_air"].fdata[i] != missing_value:
-                     
-                        pCO2a_diff_fdata[i] = self.data["pco2_air_cor"].fdata[i] - self.data["pco2_air"].fdata[i]
-                        
-                        #dpCO2_diff_fdata[i] = (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i]) - (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air"].fdata[i])
-                        
-                        pH2O_takahashi_fdata[i] = self.data["pressure"].fdata[i] -  (self.data["pco2_air"].fdata[i] *1e-6 * 1013.25) / (self.data["vco2_air"].fdata[i] * 1e-6)
-                        #-( 1013.25*((self.data["pco2_air"].fdata[i]*1000000.0)/(self.data["vco2_air"].fdata[i]/1000000.0)) - self.data["pressure"].fdata[i])
-                            
-                        humidity_fdata[i] = pH2O_takahashi_fdata[i]/self.data["pH2O"].fdata[i]       
-                        
-                        pH2O_diff_fdata[i] = ((humidity_fdata[i])-1.0) * 100.0
-                        
-                    else:
-                        pH2O_takahashi_fdata[i] = missing_value
-                        humidity_fdata[i] = missing_value
-                        pH2O_diff_fdata[i] = missing_value
-                        # using Takahashi pCO2a to actual flux calculation
-                        #self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air"].fdata[i] #RECOMMENTED
-                      
             else:
                 self.data["pH2O"].fdata[i] = missing_value
-                self.data["pco2_air_cor"].fdata[i] = missing_value
-                self.data["pco2_sw_cor"].fdata[i] = missing_value
+                    
+        #######################################################
+        # Calculate corrected values for pco2_sw and pco2_air #
+        # Only do this is pco2 data is provided               #
+        #######################################################  
+        # this may be needed when using SMOS salinity data
+        # To-DO: awaiting info from Lonneke and David before implementing fully
+        pCO2_salinity_term = 0;
+        #dSalinity = salinity_rmse
+        #if (salinity_option == 1):
+        #  # need to determine dS/S using original salinity (its been modified above to add the salinity_rmse)
+        #  # so (self.data["salinity"].fdata[i] - salinity_rmse) ensures that we are dealing with the original value of salinity
+          #  # using Ys=1 as a global correction following Sarmiento and Gruber, 2006)
+        #pCO2_salinity_term = 1.0*(dSalinity/(self.data["salinity"].fdata[i] - salinity_rmse) ) #TH: Commented this out, but should not be removed as may be used in the future.
+        #else:
+        # pCO2_salinity_term = 0.0
+        
+        #if pCO2 data in sea water is provided calculated corrected values.
+        if "pco2_sw" in self.data: #Only calculate partial pressure data is available
+            self.add_empty_data_layer("pco2_sw_cor");
+            for i in range(len(self.data["pco2_sw"].fdata)):
+                #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                    if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
+                        # correction to different years, correction is data and year specific.
+                        # note for 2010, correction for SOCAT isn't strictly required. However the contents of the exponential will collapse
+                        # to 1 (with some rounding error expected), so effectively no correction will be applied
+                        self.data["pco2_sw_cor"].fdata[i] = pco2_increment + (self.data["pco2_sw"].fdata[i] *exp( (0.0423*(self.data["sstfndC"].fdata[i] - self.data["pco2_sst"].fdata[i])) - (0.0000435*((self.data["sstfndC"].fdata[i]*self.data["sstfndC"].fdata[i]) - (self.data["pco2_sst"].fdata[i]*self.data["pco2_sst"].fdata[i]) )) + pCO2_salinity_term) );
+                    else:
+                        self.data["pco2_sw_cor"].fdata[i] = self.data["pco2_sw"].fdata[i];
+        
+        #If pCO2 data at the interface / air is provided calculated corrected values.
+        if "vco2_air" in self.data:
+            ###Converts from ppm to microatm THc
+            # vco2 in ppm * 1000000 = atm
+            # result /1000 to then convert from atm to uatm
+            # hence * 0.001 factor
+            self.add_empty_data_layer("pco2_air_cor");
+            for i in range(len(self.data["vco2_air"].fdata)):
+                #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                    if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
+                        #THtodo: 1e-6 can be removed...
+                        self.data["pco2_air_cor"].fdata[i] = (self.data["vco2_air"].fdata[i] * 1e-6 * (self.data["pressure"].fdata[i] - self.data["pH2O"].fdata[i]) / (1e-6 * 1013.25)) + (pco2_increment_air)
+                    else:
+                        self.data["pco2_air_cor"].fdata[i] = self.data["vco2_air"].fdata[i]
+            
+            #SOCAT, so: conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
+            #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata      
+            if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
+                b11_fdata = array([missing_value] * nx*ny);
+                d12_fdata = array([missing_value] * nx*ny);
+                for i in range(len(self.data["pcow_air_cor"].fdata)):
+                    #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+                    if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                        # conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
+                        b11_fdata[i] = -1636.75 + (12.0408*self.data["sstskin"].fdata[i]) - (0.0327957*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]) + (3.16528e-5 * self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i])
+                        d12_fdata[i] = 57.7 - (0.118*self.data["sstskin"].fdata[i])
+                         # gas constant
+                        R = 82.0578 # in [cm^3 atm/(mol K)]
+                        # 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
+                        # the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
+                        self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
 
-        ########################################
-        # Calculating gas transfer velocity k
+        
+        ######################################
+        # Takahashi verification information #  ##TODO: CHECK IF THIS CAN BE REMOVED?
+        ######################################
+        if runParams.TAKAHASHI_DRIVER: #Assumes CO2 data input is not suppled as concentrations
+            # debuggin differences in pH20 values
+            pCO2a_diff_fdata = array([missing_value] * nx*ny)
+            dpCO2_diff_fdata = array([missing_value] * nx*ny)
+            for i in arange(nx * ny):
+                #Additional pCO2 outputs for Takahashi verification
+                if self.data["pco2_air"].fdata[i] != missing_value:
+                    pCO2a_diff_fdata[i] = self.data["pco2_air_cor"].fdata[i] - self.data["pco2_air"].fdata[i]
+                    dpCO2_diff_fdata[i] = (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i]) - (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air"].fdata[i])
+            
+            pH2O_takahashi_fdata = array([missing_value] * nx*ny)
+            humidity_fdata = array([missing_value] * nx*ny)
+            pH2O_diff_fdata = array([missing_value] * nx*ny)
+            for i in arange(nx * ny):
+                #Additional humidity outputs for Takahashi verification
+                if self.data["pco2_air"].fdata[i] != missing_value and self.data["pH2O"].fdata[i] != missing_value and self.data["pressure"].fdata[i] != missing_value and self.data["vco2_air"].fdata[i] != missing_value:
+                    pH2O_takahashi_fdata[i] = self.data["pressure"].fdata[i] -  (self.data["pco2_air"].fdata[i] *1e-6 * 1013.25) / (self.data["vco2_air"].fdata[i] * 1e-6)
+                    humidity_fdata[i] = pH2O_takahashi_fdata[i]/self.data["pH2O"].fdata[i];     
+                    pH2O_diff_fdata[i] = ((humidity_fdata[i])-1.0) * 100.0;    
+                else:
+                    pH2O_takahashi_fdata[i] = missing_value;
+                    humidity_fdata[i] = missing_value;
+                    pH2O_diff_fdata[i] = missing_value;
+
+
+
+        #######################################
+        # Calculating gas transfer velocity k #
+        #######################################
         for kParameterisationFunctor in self.kParameterisationFunctors:
             #Check each input exists #TODO: This should go in the pre-run checks!
             for inputDataName in kParameterisationFunctor.input_names():
@@ -1323,11 +1361,9 @@ class FluxEngine:
               print "\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of - %lf percent being used, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value)
 
 
-         ###############################
-         # actual flux calculation 
-         ###############################
-        
-        
+         ############################
+         # actual flux calculation  #
+         ############################
          # determine flux based on kHO6_fdata derivation
          # CO2 flux = k * s * Delta_PCO2
          # s = salinity, Delta_PCO2 calculated above
@@ -1354,78 +1390,93 @@ class FluxEngine:
         
         #k_factor = 36.0 * 24.0 / 100.0 # used if using 10^-4 ms units for k, whereas we are now using cm/h for k
         k_factor = 24.0 / 100.0
-        conc_factor = (12.0108/1000.0)
         
+        #Somewhere to store the net flux
         self.add_empty_data_layer("FH06");
-        self.add_empty_data_layer("concw");
-        self.add_empty_data_layer("conca");
-        self.add_empty_data_layer("FKo07");
-        
-        #Update FH06 (OF/gas flux data layer) descritpion to reflect the gas transfer velocity calculation used in the calculation.
+        #Update FH06 (OF/gas flux data layer) description to reflect the gas transfer velocity calculation used in the calculation.
         self.data["FH06"].longName = self.data["FH06"].longName % self.data["k"].name;
 
         #If using rain wet deposition, calculate the gas solubility in distilled water
         if runParams.rain_wet_deposition_switch:
+            self.add_empty_data_layer("FKo07");
             self.add_empty_data_layer("solubility_distilled");
             calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
                                            runParams.rain_wet_deposition_switch, self.data["sstskin"], DeltaT_fdata, self.nx, self.ny);
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
            print "%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation)
+           if runParams.flux_calc == 3:
+               raise ValueError("kb_asymmetry is not supported for the 'bulk' calculation. Try using 'rapid' or 'equilibrium' instead.");
 
-
-        #Main flux calculation loop
+        ###################################################
+        # If concentration data are not provided as input #
+        #    calculate them from corrected pco2 data      #
+        ###################################################
+        concFactor = (12.0108/1000.0);
+        if "concw" not in self.data:
+            self.add_empty_data_layer("concw");
+            if runParams.flux_calc == 3: #Bulk calculation, so should use the same solubility as conca
+                calculate_concw(concFactor, self.data["solubility_skin"].fdata, self.data["pco2_sw_cor"].fdata, self.data["concw"].fdata); #calculate concw
+            else: #Not bulk, so use the solubility at foundation layer
+                calculate_concw(concFactor, self.data["solubility_fnd"].fdata, self.data["pco2_sw_cor"].fdata, self.data["concw"].fdata); #calculate concw
+        if "conca" not in self.data:
+            self.add_empty_data_layer("conca");
+            calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pco2_air_cor"].fdata, self.data["conca"].fdata); #calculate conca
+        
+        
+        ##############################
+        # Main flux calculation loop # #assume corrected pco2 data at the moment #################################
+        ##############################
         for i in arange(nx * ny):
-           self.data["FH06"].fdata[i] = missing_value
-          
-           if ( (self.data["solubility_fnd"].fdata[i] != missing_value) and (self.data["k"].fdata[i] != missing_value) and (self.data["pco2_sw_cor"].fdata[i] != missing_value) and (self.data["pco2_air_cor"].fdata[i] != missing_value) ):
-               # original
-              #flux_H06[i] = (k_H06[i] * 36.0 * 24.0 * pow(10.0,-2)) * (solubility_data[i]* (12.0/1000.0)) * DpCO2_cor_data[i]
-               # expanded
-            
-              #mass boundary layer concentration (ie concentration in the water)
-              self.data["concw"].fdata[i] = ((self.data["solubility_fnd"].fdata[i] * conc_factor) * self.data["pco2_sw_cor"].fdata[i])
-              
-              #interfacial concentration (ie at the interface between the ocean and the atmosphere)
-              self.data["conca"].fdata[i] = ((self.data["solubility_skin"].fdata[i] * conc_factor) * self.data["pco2_air_cor"].fdata[i])
-              
-              #flux calculation
-              #TODO: This is partially K-parameterisation dependent. Need to decouple this...
-              if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
-                 kd_component = self.data["kd"].fdata[i] * k_factor
-                 kb_component = self.data["kb"].fdata[i] * k_factor
-                 self.data["FH06"].fdata[i] = (kd_component * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])) + (kb_component * (self.data["concw"].fdata[i] - (runParams.kb_asymmetry *self.data["conca"].fdata[i]) ) )
-              else:
-                 self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])
+            if ( (self.data["k"].fdata[i] != missing_value) and (self.data["concw"].fdata[i] != missing_value) and (self.data["conca"].fdata[i] != missing_value) ):
+                #flux calculation
+                #TODO: This is partially K-parameterisation dependent. Need to decouple this...
+                
+                #Rapid and equilibrium flux calculations
+                if runParams.flux_calc == 1 or runParams.flux_calc == 2:
+                    if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
+                        kd_component = self.data["kd"].fdata[i] * k_factor
+                        kb_component = self.data["kb"].fdata[i] * k_factor
+                        self.data["FH06"].fdata[i] = (kd_component * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])) + (kb_component * (self.data["concw"].fdata[i] - (runParams.kb_asymmetry *self.data["conca"].fdata[i]) ) )
+                    else:
+                        self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])
+
+                # using simplified flux calculation with no separation of temperature between airside and waterside CO2
+                # assumes that the skin temperature dataset is the only temperature dataset
+                #Bulk model (F = k*solubility*(pCO2_water - pCO2_air)
+                elif runParams.flux_calc == 3:
+                    #self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * concFactor * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])#IGA added conc_factor
+                    self.data["FH06"].fdata[i] = self.data["k"].fdata[i] * k_factor * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])#IGA added conc_factor
                     
-              # using simplified flux calculation with no separation of temperature between airside and waterside CO2
-              # assumes that the skin temperature dataset is the only temperature dataset
-              if runParams.flux_calc == 3:         
-                 self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * conc_factor * self.data["solubility_skin"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])#IGA added conc_factor
-                 # using Rik W's equation 6 from his new paper
-                 #self.data["FH06"].fdata[i] = (7.7e-4*(12.0108/365.0)) * self.data["windu10_moment2"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])
-              
-              
-              # calculating and adding in flux component for wet deposition due to rain
-              if runParams.rain_wet_deposition_switch:
-                  # relationship from Komori et al.m 2007
-                  # need solubility of CO2 in fresh water
-                  # solubility calculated using sstkin
-                  # 24.0/1000.0 = conversion from mm hr^-1 to m day^-1
-                  # flux is then in g C m^-2 day^-1
-                  # flux is always negative, ie going into the ocean
-                 self.data["FKo07"].fdata[i] = -(self.data["rain"].fdata[i] * (24.0/1000.0)) * (conc_factor * self.data["solubility_distilled"].fdata[i]) * self.data["pco2_air_cor"].fdata[i]
-                 if self.data["FH06"].fdata[i] != missing_value:
-                    self.data["FH06"].fdata[i] += self.data["FKo07"].fdata[i]
-                 else:
-                    self.data["FH06"].fdata[i] = self.data["FKo07"].fdata[i]
-              else:
-                 self.data["FKo07"].fdata[i] = missing_value
-           else:
-              self.data["FH06"].fdata[i] = missing_value
-              self.data["concw"].fdata[i] = missing_value
-              self.data["conca"].fdata[i] = missing_value
-              self.data["FKo07"].fdata[i] = missing_value
+                    #old version:
+                    #self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * concFactor * self.data["solubility_skin"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])#IGA added conc_factor
+                    # using Rik W's equation 6 from his new paper
+                    #self.data["FH06"].fdata[i] = (7.7e-4*(12.0108/365.0)) * self.data["windu10_moment2"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])
+                
+                #Some unexpected flux calculation was specified. Should never get this far as fe_setup.py will check this.
+                else:
+                    raise ValueError("Unrecognised flux calculation. Currently supported options are 'rapid' (1), 'equilibrium' (2) and 'bulk' (3). Recieved: "+str(runParams.flux_calc));
+                
+                
+                # calculating and adding in flux component for wet deposition due to rain
+                if runParams.rain_wet_deposition_switch:
+                    if "pco2_air_cor" not in self.data: #Check that pCO2 / vCO2 data were supplied
+                        raise ValueError("Cannot use wet deposition (rain_wet_deposition_switch) without specifying pCO2 or vCO2 data.");
+                    else:
+                        # relationship from Komori et al.m 2007
+                        # need solubility of CO2 in fresh water
+                        # solubility calculated using sstkin
+                        # 24.0/1000.0 = conversion from mm hr^-1 to m day^-1
+                        # flux is then in g C m^-2 day^-1
+                        # flux is always negative, ie going into the ocean
+                        self.data["FKo07"].fdata[i] = -(self.data["rain"].fdata[i] * (24.0/1000.0)) * (concFactor * self.data["solubility_distilled"].fdata[i]) * self.data["pco2_air_cor"].fdata[i]
+                        if self.data["FH06"].fdata[i] != missing_value:
+                            self.data["FH06"].fdata[i] += self.data["FKo07"].fdata[i]
+                        else:
+                            self.data["FH06"].fdata[i] = self.data["FKo07"].fdata[i]
+            else:
+                self.data["FH06"].fdata[i] = missing_value
+        
         
         #Adding verification data outputs at same units as T09
         if runParams.TAKAHASHI_DRIVER == True:
@@ -1440,18 +1491,20 @@ class FluxEngine:
           solskin_takadata = array([missing_value] * nx * ny)
           FH06_takadata = array([missing_value] * nx * ny)
         
+        
         #
         # quality control of datasets, following TS (OceanFluxGHG_TS_D2-9_v1.8-signed.pdf) table 7
         #
         #calculate takahashi style DpCO2 and check range
-        self.add_empty_data_layer("dpco2_cor");
-        self.add_empty_data_layer("dpconc_cor");
-        for i in arange(self.nx * self.ny):
-           if ( (self.data["pco2_sw_cor"].fdata[i] != missing_value) and (self.data["pco2_air_cor"].fdata[i] != missing_value) ):
-              self.data["dpco2_cor"].fdata[i] = (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i]) 
-           else:
-              self.data["dpco2_cor"].fdata[i] = missing_value
-        
+        if "pco2_sw_cor" in self.data and "pco2_air_cor" in self.data:
+            self.add_empty_data_layer("dpco2_cor");
+            for i in arange(self.nx * self.ny):
+               if ( (self.data["pco2_sw_cor"].fdata[i] != missing_value) and (self.data["pco2_air_cor"].fdata[i] != missing_value) ):
+                  self.data["dpco2_cor"].fdata[i] = (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i]) 
+               else:
+                  self.data["dpco2_cor"].fdata[i] = missing_value
+
+        self.add_empty_data_layer("dpconc_cor");        
         for i in arange(self.nx * self.ny):
            if ( (self.data["concw"].fdata[i] != missing_value) and (self.data["conca"].fdata[i] != missing_value) ):
               self.data["dpconc_cor"].fdata[i] = (self.data["concw"].fdata[i] - self.data["conca"].fdata[i]) 

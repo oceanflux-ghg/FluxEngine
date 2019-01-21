@@ -357,6 +357,7 @@
 			<Option value="2" str="equilibrium"></Option>
 			<Option value="3" str="bulk"></Option>
 		</Variable>
+
 		<!--<Variable name="lat_grid_size" required="true" type="integer"></Variable>
 		<Variable name="lon_grid_size" required="true" type="integer"></Variable> -->
 
@@ -385,6 +386,7 @@
 
 		<!-- Note: k_parameterisation is a string not multioption because the string is matched to class name in rate_parameterisation.py -->
 		<Variable name="k_parameterisation" required="true" type="string"></Variable>
+		<Variable name="schmidt_parameterisation" required="true" type="string" default="schmidt_Wanninkhof1992"></Variable>
 
 
 

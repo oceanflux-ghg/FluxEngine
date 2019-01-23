@@ -415,6 +415,7 @@ class k_Ho1997(KCalculationBase):
         return True;
 
 
+#Goddijn-Murphy, L., D.K. Woolf, B. Chapron, P. Queffeulou (2013) Improvements to estimating the air–sea gas transfer velocity by using dual-frequency, altimeter backscatter, Remote Sensing of Environment,  139, 1-5, doi:10.1016/j.rse.2013.07.026
 class kd_OceanFluxGHG_backscatter(KCalculationBase):
     def __init__(self):
         self.name = self.__class__.__name__;

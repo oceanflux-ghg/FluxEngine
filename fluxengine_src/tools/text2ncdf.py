@@ -40,7 +40,7 @@ def parse_cl_arguments():
     parser.add_argument("-e", "--endTime",
         help="end date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
     parser.add_argument("-t", "--temporalResolution", default="monthly",
-        help="Temporal resolution to use. Defaults to monthly. Format required (days hours:minutes): D hh:mm");
+        help="Temporal resolution to use in the output file. Defaults to monthly. Format required (days hours:minutes): D hh:mm");
     parser.add_argument("-k", "--temporalChunking", type=int, default=1,
         help="Temporal chunking: How many time points to store in each file. Defaults to one time point per file.");
     
@@ -54,10 +54,10 @@ def parse_cl_arguments():
         help="delimiter token used to seperate data in the input text file. Default is a tab.")
     parser.add_argument("-d", "--dateIndex", type=int, default=0,
         help="The column number (starting from 0) which contains the date/time field in your input text file. Default is a 0.");
-    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[],
+    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[0],
         help="Number of comment lines before the header to be ignored). Default is a 0.");
     parser.add_argument("--cols", nargs="+", default=None,
-        help="List of column names or numbers which will be added to the output netCDF file. Default will add all non-date/time columns.");
+        help="List of column names or numbers which will be added to the output netCDF file. This should not include longitude, latitude or data/time columns. Default will add all suitable columns.");
     parser.add_argument("-m", "--missing_value", default="nan", help="Indicates a missing value in the input text file. Default is 'nan'.");
     parser.add_argument("-u", "--parse_units", action="store_true",
                           help="will automatically parse units in the header column names if follow the variable name and are formatted between square brackets (e.g. Depth [m])");
@@ -385,16 +385,16 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ###########
     #Read and process each input file
     allArrays = {};
-    for i, inFile in enumerate(inFiles):
+    for iFile, inFile in enumerate(inFiles):
         #Parse data from text file into a pandas dataframe
-        if len(numCommentLines) == 1:
+        if len(numCommentLines) == 1: #Use the same numCommentLines value for all files
             rowsToSkip = numCommentLines[0];
-        else:
-            rowsToSkip = numCommentLines[i];
+        else: #Should have a different numCommentLines value for each file
+            rowsToSkip = numCommentLines[iFile];
         df = pd.read_table(inFile, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
         
         #If this is the first input file to be read there are some additional things to setup
-        if i==0:
+        if iFile==0:
             process_cols(df, colNames, encoding); #Process selected columns to ensure that they are valid column names/indices.
             allArrays = initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
         

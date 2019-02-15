@@ -127,7 +127,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         
         #open a new netCDF file for writing.
         #need to set format type, defaults to NetCDF4
-        ncfile = Dataset(runParams.output_path,'w');#,format='NETCDF3_CLASSIC');
+        ncfile = Dataset(runParams.output_path, 'w', format="NETCDF3_64BIT_OFFSET");#,format='NETCDF3_CLASSIC');
     
         #Assign units attributes to coordinate var data. This attaches a
         #text attribute to each of the coordinate variables, containing the

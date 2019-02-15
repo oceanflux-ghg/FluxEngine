@@ -136,7 +136,7 @@ class KCalculationBase:
 #Class name should correspond to a valid value of 'k_parameterisation' in the config file, e.g. "k_Wanninkhof1992".
 class k_example(KCalculationBase):
     #Optional initialiser arguments can be used, but their names must correspond to names in the config file.
-    #For example k_generic_sc is used here.
+    #For example example_init_parameter is used here.
     def __init__(self, example_init_parameter):
         self.name = self.__class__.__name__;
         self.parameter = example_init_parameter; #'example_init_parameter' would need to be defined in the configuration file
@@ -152,7 +152,7 @@ class k_example(KCalculationBase):
     #Main k calculation. Input and output datalayers can be extracted from 'data'.
     #Should modify output layers in place (i.e. without copying), and return True or False to indicate successful execution.
     def __call__(self, data):
-        print self.name, "with k_generic_sc as", self.k_generic_sc;
+        print self.name, "with example_init_parameter as", self.parameter;
         return True;
 
 
@@ -385,7 +385,7 @@ class k_Ho1997(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Ho1997.__call__)";
-        print "%s Using the Nightingale et al., 2000 (N00) k parameterisation" % (function)
+        print "%s Using the Ho1997 et al., 2000 (N00) k parameterisation" % (function)
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():

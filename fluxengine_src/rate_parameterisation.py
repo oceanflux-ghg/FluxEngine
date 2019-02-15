@@ -229,7 +229,7 @@ class k_Nightingale2000(KCalculationBase):
         self.name = self.__class__.__name__;
     
     def input_names(self):
-        return ["windu10", "windu10_moment2", "windu10_moment3", "scskin"];
+        return ["windu10", "windu10_moment2", "scskin"];
         
     def output_names(self):
         return ["k"];
@@ -251,7 +251,6 @@ class k_Nightingale2000(KCalculationBase):
         #determine the Nightingale et al 2000 k relationship
         for i in arange(len(self.k)):   
             self.k[i] = DataLayer.missing_value
-            #if ( (self.windu10[i] != missing_value) and (selfwindu10_moment2[i] != missing_value) and (self.windu10_moment3[i] != missing_value) and (self.scskin[i] != missing_value) and (self.scskin[i] > 0.0) ):
             if ( (self.windu10[i] != DataLayer.missing_value) and (self.windu10_moment2[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - No need for wind moment3
                 self.k[i] = 0.222 * self.windu10_moment2[i] + (0.333 * self.windu10[i])  
                 self.k[i] = self.k[i] * sqrt(600.0/self.scskin[i])

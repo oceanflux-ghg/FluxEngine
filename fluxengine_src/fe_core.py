@@ -316,7 +316,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         
         
         ncfile.close();
-                
+        
     return 0;
 
 

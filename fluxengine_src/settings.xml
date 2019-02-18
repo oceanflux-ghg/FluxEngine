@@ -98,7 +98,7 @@
 			longName="Concentration of CO2 in dry air in 2010 from NOAA ESLR (or dry molecular fraction of carbon dioxide in the atmosphere)">
 		</DataLayer>
 
-		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm?" minBound="0.0" maxBound="500.0"
+		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm" minBound="0.0" maxBound="500.0"
 			standardName="partial_pressure_of_CO2_in_air"
 			longName="partial pressure of CO2 in air">
 		</DataLayer>

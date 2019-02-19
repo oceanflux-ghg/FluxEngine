@@ -41,7 +41,6 @@ from datetime import timedelta, datetime;
  # debug mode switches
 DEBUG = False
 DEBUG_PRODUCTS = True
-TAKAHASHI_DRIVER = False # enables Takahashi data to drive code - used for verifying calculations
 VERIFICATION_RUNS = False # forces flux calculations to use Takahashi SST_t as the SST dataset for the pco2 data
 DEBUG_LOGGING = True; # TH: Added to make debugging easier. Sets up a logger object and writes a to the specified path (or cwd)
 #workingDirectory = os.getcwd(); #Only used to make a full path for logs, every other path is suppled as an absolute filepath.
@@ -915,11 +914,6 @@ class FluxEngine:
                  self.data["windu10_moment2"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
                  self.data["windu10_moment3"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
         
-        #If not using takahashi then we need to generate pco2_air, so create an empty data layer in preparation.
-            #No longer needed as this isn't automatically outputted.
-        #if TAKAHASHI_DRIVER == False:
-        #   self.add_empty_data_layer("pco2_air");
-        
         #SOCATv4 - using input foundation temperature as the SST temp-------------START
         #If there is no pco2_sst data, we need to get it / generate it.
         if "pco2_sst" not in self.data: #SOCATv4
@@ -1047,7 +1041,6 @@ class FluxEngine:
         #Calculate sstskinC and sstfndC
         self.add_empty_data_layer("sstskinC");
         self.add_empty_data_layer("sstfndC");
-        #if TAKAHASHI_DRIVER != True:
         for i in arange(nx * ny):
             if self.data["sstskin"].fdata[i] != missing_value:
                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15;
@@ -1258,7 +1251,7 @@ class FluxEngine:
             self.add_empty_data_layer("pco2_sw_cor");
             for i in range(len(self.data["pco2_sw"].fdata)):
                 #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
-                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
                     if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
                         # correction to different years, correction is data and year specific.
                         # note for 2010, correction for SOCAT isn't strictly required. However the contents of the exponential will collapse
@@ -1267,13 +1260,34 @@ class FluxEngine:
                     else:
                         self.data["pco2_sw_cor"].fdata[i] = self.data["pco2_sw"].fdata[i];
         
-        #If pCO2 data at the interface / air is provided calculated corrected values.
-        if "vco2_air" in self.data:
-            ###Converts from ppm to microatm THc
+        
+        #if interface/air CO2 data is provided as molar fraction and there is no partial pressure then calculate partial pressure.
+        if ("vco2_air" in self.data) and ("pco2_air" not in self.data):
             # vco2 in ppm * 1000000 = atm
             # result /1000 to then convert from atm to uatm
             # hence * 0.001 factor
-            self.add_empty_data_layer("pco2_air_cor");
+            self.add_empty_data_layer("pco2_air");
+            for i in range(len(self.data["vco2_air"].fdata)):
+                #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                    if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
+                        self.data["pco2_air"].fdata[i] = (self.data["vco2_air"].fdata[i] * (self.data["pressure"].fdata[i] - self.data["pH2O"].fdata[i])) / 1013.25;
+                    else:
+                        self.data["pco2_air"].fdata[i] = self.data["vco2_air"].fdata[i]
+        
+        #Now calculate corrected values for pCO2 at the interface/air
+        ###Converts from ppm to microatm THc
+        self.add_empty_data_layer("pco2_air_cor");
+        #If statement added below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+        if runParams.TAKAHASHI_DRIVER == False: #Different for takahashi run to maintain compatability with verification run. This will be updated when verification runs are updated
+            for i in range(len(self.data["pco2_air"].fdata)):
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                    if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
+                        ##THtodo: 1e-6 can be removed...
+                        self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air"].fdata[i] + pco2_increment_air;
+                    else:
+                        self.data["pco2_air_cor"].fdata[i] = self.data["pco2_air"].fdata[i]
+        else: #runParams.TAKAHASHI_DRIVER==True #Added to maintain compatability with takahashi verification. Should be removed when the verification runs are updated.
             for i in range(len(self.data["vco2_air"].fdata)):
                 #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
                 if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
@@ -1282,13 +1296,15 @@ class FluxEngine:
                         self.data["pco2_air_cor"].fdata[i] = (self.data["vco2_air"].fdata[i] * 1e-6 * (self.data["pressure"].fdata[i] - self.data["pH2O"].fdata[i]) / (1e-6 * 1013.25)) + (pco2_increment_air)
                     else:
                         self.data["pco2_air_cor"].fdata[i] = self.data["vco2_air"].fdata[i]
+
+                    
             
             #SOCAT, so: conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
             #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata      
             if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
                 b11_fdata = array([missing_value] * nx*ny);
                 d12_fdata = array([missing_value] * nx*ny);
-                for i in range(len(self.data["pcow_air_cor"].fdata)):
+                for i in range(len(self.data["pco2_air_cor"].fdata)):
                     #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
                     if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
                         # conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)

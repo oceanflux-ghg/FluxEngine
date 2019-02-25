@@ -1582,10 +1582,14 @@ class FluxEngine:
         
         
         #write out the final ouput to netcdf
-        write_netcdf(self);
-        
-        
+        write_netcdf(self);        
         print "%s SUCCESS writing file %s" % (function, runParams.output_path)
+#        
+#        #Finally, close the logger
+        handlers = self.logger.handlers[:];
+        for handler in handlers:
+            handler.close();
+        
         sys.stdout.flush();
         return 0;
 

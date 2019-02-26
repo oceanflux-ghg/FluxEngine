@@ -10,7 +10,8 @@ Created on Fri May 25 11:04:03 2018
 """
 
 import argparse;
-from glob import glob;
+import pathlib;
+#from glob import glob; #import pathlib; #pathlib may work better on Windows.
 from netCDF4 import Dataset;
 import numpy as np;
 #from datetime import datetime, timedelta;
@@ -44,10 +45,17 @@ def parse_cl_arguments():
 #Takes a list of file globs and returns a list of every file that matches any of the file globs.
 #If a file matches more than one glob it will be included multiple times.
 #   inFiles: List of file globs (uses standard Unix match patterns)
+#def match_input_file_globs(inFiles):
+#    expandedGlobs = [];
+#    for inFile in inFiles:
+#        expandedGlobs += glob(inFile);
+#    return expandedGlobs;
 def match_input_file_globs(inFiles):
     expandedGlobs = [];
     for inFile in inFiles:
-        expandedGlobs += glob(inFile);
+        expandedGlobs += pathlib.Path(".").glob(inFile);
+        
+    expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
     return expandedGlobs;
 
 

@@ -149,14 +149,17 @@ def write_netcdf(fluxEngineObject, verbose=False):
         secs.axis = "T"
         secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
         secs.standard_name = "time"
-        secs[outputChunk] = timeData;
-        secs.valid_min = 0.0 
+        if runParams.temporal_resolution != "monthly": #Fill in all the time points. Can't really do this with monthly temporal resolution.
+            for t in range(0, len(secs[:])):
+                secs[t] = timeData + runParams.temporal_resolution.total_seconds()*t;
+        else:
+            secs[outputChunk] = timeData;
+        secs.valid_min = 0.0
         secs.valid_max = 1.79769313486232e+308
     
         # Define the coordinate variables. They will hold the coordinate
         # information, that is, the latitudes and longitudes.
         if len(latitudeData.shape)<2:#IGA - If the initial latitude data was a vector, write data as vectors
-    
             lats2 = ncfile.createVariable('latitude',dtype('float64').char,('latitude'))
             lons2 = ncfile.createVariable('longitude',dtype('float64').char,('longitude'))
             # Assign units attributes to coordinate var data. This attaches a

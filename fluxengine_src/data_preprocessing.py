@@ -56,7 +56,7 @@ def nano_to_micro(datalayer):
         if datalayer.fdata[i] != datalayer.missing_value:
             datalayer.fdata[i] *= 1000.0;
 
-##Reorder axes. The Required order by FluxEngine is lat, lon./Users/tomholding/Documents/Files/standalone_fluxengine/output/SOCATv4_WoolfRuns/no_gradients-N00/netFlux_output.log
+##Reorder axes. The Required order by FluxEngine is lat, lon.
 ##Reorder (lon, lat) to (lat, long)
 ##TODO: Same as transpose, so remove!
 #def reorder_axes_lon_lat_t(datalayer):

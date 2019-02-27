@@ -17,7 +17,8 @@ import numpy as np, argparse;
 from netCDF4 import Dataset;
 from datetime import datetime, timedelta;
 import pandas as pd;
-from glob import glob;
+#from glob import glob;
+import pathlib;
 
 
 #############
@@ -357,10 +358,14 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         temporalResolution = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
     
     #Expand file globs
+#    expandedGlobs = [];
+#    for filepath in inFiles:
+#        expandedGlobs += glob(filepath);
+#    inFiles = expandedGlobs;
     expandedGlobs = [];
-    for filepath in inFiles:
-        expandedGlobs += glob(filepath);
-    inFiles = expandedGlobs;
+    for inFile in inFiles:
+        expandedGlobs += pathlib.Path(".").glob(inFile);
+    expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
     
     #numCommentLines should be a list
     if isinstance(numCommentLines, list) == False:

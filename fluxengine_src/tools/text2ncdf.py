@@ -17,8 +17,8 @@ import numpy as np, argparse;
 from netCDF4 import Dataset;
 from datetime import datetime, timedelta;
 import pandas as pd;
-#from glob import glob;
-import pathlib;
+from glob import glob;
+#import pathlib;
 
 
 #############
@@ -65,6 +65,9 @@ def parse_cl_arguments():
     parser.add_argument("--encoding", default="utf-8", help="Encoding of the input text file. Default it 'utf-8'");
     parser.add_argument("-l", "--limits", type=float, nargs = 4, default = [-90.0, 90.0, -180.0, 180],
                         help="Coordinates which define the grid limits given in latitude and longitude: South North West East, e.g. -45 -30 -45 10 Defaults to -90 90 -180 180")
+    
+    parser.add_argument("--dateFormatDayFirst", help="Specifies that the date/time column in the input data is formatted day-first (international/European format).", action="store_true", default=False);
+
     clArgs = parser.parse_args();
     
     return clArgs;
@@ -313,7 +316,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
                            limits=[-90.0, 90.0, -180.0, 180], latResolution=1.0, lonResolution=1.0,
                            temporalResolution="monthly", temporalChunking=1,
                            delim="\t", numCommentLines=0, encoding='utf-8', parseUnits=True, textFileMissingValue=np.nan,
-                           dateIndex=0, colNames=None, latProd="Latitude", lonProd="Longitude"):
+                           dateIndex=0, colNames=None, latProd="Latitude", lonProd="Longitude", dateFormatDayFirst=False):
     ##############
     # Constant definitions
     ##############
@@ -358,14 +361,14 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         temporalResolution = timedelta(days=int(days), hours=int(hours), minutes=int(minutes));
     
     #Expand file globs
-#    expandedGlobs = [];
-#    for filepath in inFiles:
-#        expandedGlobs += glob(filepath);
-#    inFiles = expandedGlobs;
     expandedGlobs = [];
-    for inFile in inFiles:
-        expandedGlobs += pathlib.Path(".").glob(inFile);
-    expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
+    for filepath in inFiles:
+        expandedGlobs += glob(filepath);
+    inFiles = expandedGlobs;
+#    expandedGlobs = [];
+#    for inFile in inFiles:
+#        expandedGlobs += pathlib.Path(".").glob(inFile);
+#    expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
     
     #numCommentLines should be a list
     if isinstance(numCommentLines, list) == False:
@@ -396,7 +399,8 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
             rowsToSkip = numCommentLines[0];
         else: #Should have a different numCommentLines value for each file
             rowsToSkip = numCommentLines[iFile];
-        df = pd.read_table(inFile, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
+        df = pd.read_table(inFile, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding, dayfirst=dateFormatDayFirst);
+        
         
         #If this is the first input file to be read there are some additional things to setup
         if iFile==0:
@@ -507,5 +511,5 @@ if __name__ == "__main__":
                            temporalResolution=args.temporalResolution, temporalChunking=args.temporalChunking,
                            delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding,
                            textFileMissingValue=args.missing_value, parseUnits=args.parse_units,
-                           dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd); 
+                           dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd, dateFormatDayFirst=args.dateFormatDayFirst); 
 

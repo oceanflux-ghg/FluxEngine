@@ -103,7 +103,11 @@ class DataLayer:
         #Extract just the dimensions we want.
         #requiredDims = [None if v in ['latitude', 'lat', 'longitude', 'lon'] else 0 for v in ncVariable.dimensions]
         #data = squeeze(ncVariable[slice(*requiredDims)]);
-        data = squeeze(data); #Remove any 1d dimensions.
+        if data.shape == (1, 1, 1): #Remove temporal dimension
+            data.shape = (1, 1);
+        
+        if data.shape != (1, 1): #Don't squeeze if there is a single lon/lat point or we'll end up with an empty array
+            data = squeeze(data); #Remove any 1d dimensions.
 
         #check number of dimensions
         dataDims = data.shape;

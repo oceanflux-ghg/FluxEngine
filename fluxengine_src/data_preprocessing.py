@@ -54,7 +54,7 @@ def nano_to_micro(datalayer):
 
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] *= 1000.0;
+            datalayer.fdata[i] /= 1000.0;
 
 ##Reorder axes. The Required order by FluxEngine is lat, lon.
 ##Reorder (lon, lat) to (lat, long)

@@ -149,7 +149,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         secs.axis = "T"
         secs.long_name = "Time - seconds since 1970-01-01 00:00:00"
         secs.standard_name = "time"
-        if runParams.temporal_resolution != "monthly": #Fill in all the time points. Can't really do this with monthly temporal resolution.
+        if (runParams.temporal_resolution != "monthly") and (runParams.temporal_resolution != None): #Fill in all the time points. Can't really do this with monthly temporal resolution.
             for t in range(0, len(secs[:])):
                 secs[t] = timeData + runParams.temporal_resolution.total_seconds()*t;
         else:

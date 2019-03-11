@@ -101,6 +101,7 @@ def lat_grid_lines_to_centre_of_cells(datalayer):
         newData[i,:] = mean(datalayer.data[[i,i+1],:], axis=0);
     datalayer.data = newData;
     datalayer.calculate_fdata(); #Update the 'fdata' after changing 'data'
+    datalayer.ny, datalayer.nx = datalayer.data.shape; #Shape has changed so this must be updated too
 
 #Rolls the dataset 180 degree in the east-west direction. This is useful for converting between
 #longitude conventions of -180 to 180 and 0 to 360.

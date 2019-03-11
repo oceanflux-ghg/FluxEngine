@@ -76,7 +76,7 @@
 		<DataLayer name="sig_wv_ht_count" netCDFName="SW1_N" units="count" minBound="0" maxBound="100"
 			 standardName="sea_surface_wave_significant_height_count"
 			 longName="count of data point of significant wave height data used to calculate significant wave height">
-		</DataLayer>
+		</DataLayer>outputNetCDFTemplate
 
 		<DataLayer name="pressure" netCDFName="air_pressure" units="millibar" minBound="0.0" maxBound="1500.0"
 			standardName="air_pressure"
@@ -95,7 +95,7 @@
 
 		<DataLayer name="vco2_air" netCDFName="VCO2" units="micromol mol-1" minBound="0.0" maxBound="500.0"
 			standardName="dry_molecular_fraction_of_carbon_dioxide_in_atmosphere"
-			longName="Concentration of CO2 in dry air (ppm) or dry molecular fraction of carbon dioxide in the atmosphere (umol mol-1)">
+			longName="Concentration CO2 in dry air (ppm) or dry molecular fraction of carbon dioxide in the atmosphere (umol mol-1)">
 		</DataLayer>
 
 		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm" minBound="0.0" maxBound="500.0"

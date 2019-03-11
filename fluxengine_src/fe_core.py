@@ -223,8 +223,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
                 raise e;
             except ValueError as e:
-                print "%s: Cannot reside datalayer '%s'" % (function, dataLayers[dataLayerName].name);
                 print type(e), e.args;
+                print "%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name);
                 raise e;
             
             variable.missing_value = missing_value;
@@ -652,7 +652,7 @@ def average_pixels(datalayer, nx, ny, missing_value):
 #Returns false if dataLayer dimensions do not match the reference dimensions.
 def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
    function = "(check_dimensions, main)"
-   if dataLayer.nx == ref_nx and dataLayer.ny == ref_ny:
+   if dataLayer.data.nx == ref_nx and dataLayer.data.ny == ref_ny:
       if DEBUG:
          print "\n%s Input data (%s) have identical dimensions to reference values (%s, %s) "% (function, dataLayer.name, dataLayer.nx, dataLayer.ny)
          return True;

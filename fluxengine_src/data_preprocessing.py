@@ -87,6 +87,29 @@ def pow2(datalayer):
 def pow3(datalayer):
     datalayer.fdata = datalayer.fdata**3;
 
+#Resamples the datalayer which used latitude grid lines starting on the 'line'
+#to be at the centre of grid points. This results in a latitude dimension with
+#a size one smaller than the original. E.g. for a 1x1 global grid, on the line 
+#latitudes would have 181 points (-90 and 90, inclusive). This function will convert
+#to 180 points (-89.5 to 89.5, inclusive).
+#It is and is achieved by using a rolling mean of two values across the latitude timension.
+def lat_grid_lines_to_centre_of_cells(datalayer):
+    from numpy import empty, mean;
+    newData = empty((datalayer.data.shape[0]-1, datalayer.data.shape[1]), dtype=float);
+    
+    for i in range(datalayer.data.shape[0]-1):
+        newData[i,:] = mean(datalayer.data[[i,i+1],:], axis=0);
+    datalayer.data = newData;
+    datalayer.calculate_fdata(); #Update the 'fdata' after changing 'data'
+
+#Rolls the dataset 180 degree in the east-west direction. This is useful for converting between
+#longitude conventions of -180 to 180 and 0 to 360.
+def longitude_roll_180(datalayer):
+    from numpy import roll;
+    datalayer.data = roll(datalayer.data, 180, axis=1);
+    datalayer.calculate_fdata(); #recalculate the 'fdata' after changing 'data'
+
+
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy in the top 2m
 def foc_to_epsilon(datalayer):

@@ -652,7 +652,7 @@ def average_pixels(datalayer, nx, ny, missing_value):
 #Returns false if dataLayer dimensions do not match the reference dimensions.
 def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
    function = "(check_dimensions, main)"
-   if dataLayer.data.nx == ref_nx and dataLayer.data.ny == ref_ny:
+   if dataLayer.data.shape[1] == ref_nx and dataLayer.data.shape[0] == ref_ny:
       if DEBUG:
          print "\n%s Input data (%s) have identical dimensions to reference values (%s, %s) "% (function, dataLayer.name, dataLayer.nx, dataLayer.ny)
          return True;

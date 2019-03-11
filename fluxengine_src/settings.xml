@@ -95,7 +95,7 @@
 
 		<DataLayer name="vco2_air" netCDFName="VCO2" units="micromol mol-1" minBound="0.0" maxBound="500.0"
 			standardName="dry_molecular_fraction_of_carbon_dioxide_in_atmosphere"
-			longName="Concentration of CO2 in dry air in 2010 from NOAA ESLR (or dry molecular fraction of carbon dioxide in the atmosphere)">
+			longName="Concentration of CO2 in dry air (ppm) or dry molecular fraction of carbon dioxide in the atmosphere (umol mol-1)">
 		</DataLayer>
 
 		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm" minBound="0.0" maxBound="500.0"

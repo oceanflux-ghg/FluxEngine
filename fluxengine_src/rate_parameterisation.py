@@ -688,9 +688,11 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
 
 #Zappa et al 2007. k-parameterisation using dissipation rate of turbulent kinetic energy (epsilon)
 #Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. "Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems." Geophysical Research Letters 34, no. 10 (2007).
+#Uses a custom configuration file parameter 'k_Zappa2007_epsilon_calibration' which 
 class k_Zappa2007(KCalculationBase):
-    def __init__(self):
+    def __init__(self, k_Zappa2007_epsilon_calibration=1.0):
         self.name = self.__class__.__name__;
+        self.k_Zappa2007_epsilon_calibration = k_Zappa2007_epsilon_calibration;
     
     def input_names(self):
         return ["tke_dissipation", "scskin", "sstskin"];
@@ -721,12 +723,13 @@ class k_Zappa2007(KCalculationBase):
         #determine the k relationship
         for i in arange(len(self.k)):   
             if ( (self.tke_dissipation[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):#SOCATv4 - no need for wind moment 3
-                kinematicViscosity = 0.00000183 * exp( -(self.sstskin[i]-273.15) / 36.0);
+                kinematicViscosity = 0.00000183 * exp( -(self.sstskin[i]-273.15) / 36.0); #Parameterisation from previously used study (GHGOceanFlux, see above k parameterisations)
+                #kinematicViscosity = self.si_viscosity_to_cSt(kinematicViscosity); #Convert from m^2 s^-1 to cSt (centistokes)
                 
-                kinematicViscosity = self.si_viscosity_to_cSt(kinematicViscosity); #Convert from m^2 s^-1 to cSt (centistokes)
-                schmidtToUse = self.scskin[i]/1000000.0; #convert to the cSt/m^2s^-1 ratio in Zappa? Assumes Zappa et al used centiStokes for their Sc calculation, more work needed to confirm this...
+                schmidtToUse = self.scskin[i]#1000000.0; #convert to the cSt/m^2s^-1 ratio in Zappa? Assumes Zappa et al used centiStokes for their Sc calculation, more work needed to confirm this...
+                tkeDissipationToUse = self.tke_dissipation[i] * k_Zappa2007_epsilon_calibration;
                 
-                self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((self.tke_dissipation[i]*kinematicViscosity)**0.25); #new
+                self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((tkeDissipationToUse*kinematicViscosity)**0.25); #new
             else:
                self.k[i] = DataLayer.missing_value
         return True;

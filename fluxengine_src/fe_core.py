@@ -1568,7 +1568,7 @@ class FluxEngine:
                         if outputDataLayer not in self.data:
                             self.add_empty_data_layer(outputDataLayer);
                     #Execute the process indicator layer functor.
-                    piFunctor();
+                    piFunctor(self.data);
                 except ValueError as e:
                     print e.args;
                     print "Exiting...";

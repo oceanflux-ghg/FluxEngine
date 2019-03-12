@@ -25,7 +25,7 @@
 			 longName="Count of data points of wind speed at 10m used for calculating the mean wind speed">
 		</DataLayer>
 
-		<DataLayer name="sstskin" netCDFName="ST1_Kelvin_mean" units="degreeC" minBound="271.35" maxBound="373.15"
+		<DataLayer name="sstskin" netCDFName="ST1_Kelvin_mean" units="degreeK" minBound="271.35" maxBound="373.15"
 			 standardName="sea_surface_skin_temperature"
 			 longName="Sea surface skin temperature used for the flux calculations">
 		</DataLayer>

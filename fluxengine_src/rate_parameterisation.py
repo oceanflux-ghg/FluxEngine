@@ -692,7 +692,7 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
 class k_Zappa2007(KCalculationBase):
     def __init__(self, k_Zappa2007_epsilon_calibration=1.0):
         self.name = self.__class__.__name__;
-        self.k_Zappa2007_epsilon_calibration = k_Zappa2007_epsilon_calibration;
+        self.k_Zappa2007_epsilon_calibration = k_Zappa2007_epsilon_calibration; #Allows calibration e.g. to different depths.
     
     def input_names(self):
         return ["tke_dissipation", "scskin", "sstskin"];

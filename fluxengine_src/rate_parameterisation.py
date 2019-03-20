@@ -714,7 +714,7 @@ class k_Zappa2007(KCalculationBase):
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
             data["k"].standardName="Zappa2007" 
-            data["k"].longName="Zappa 2007: using the dissipation rate of turbulent kinetic energy. Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems. Geophysical Research Letters 34, no. 10 (2007).";
+            data["k"].longName="Zappa 2007: using the dissipation rate of turbulent kinetic energy. Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems. Geophysical Research Letters 34, no. 10 (2007). The dissipation rate of turbulent kinetic energy was scaled by calibration factor: "+str(self.k_Zappa2007_epsilon_calibration);
         except KeyError as e:
            print "%s: Required data layer for selected k parameterisation was not found." % function;
            print type(e), e.args;
@@ -730,6 +730,7 @@ class k_Zappa2007(KCalculationBase):
                 tkeDissipationToUse = self.tke_dissipation[i] * self.k_Zappa2007_epsilon_calibration;
                 
                 self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((tkeDissipationToUse*kinematicViscosity)**0.25); #new
+                self.k[i] *= 100.0 * 3600.0; #Convert from m s^-1 to cm hr^-1
             else:
                self.k[i] = DataLayer.missing_value
         return True;

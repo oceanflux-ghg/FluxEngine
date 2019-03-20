@@ -119,7 +119,9 @@ def foc_to_epsilon(datalayer):
     waterDensity = 1026.0;
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
-            #datalayer.fdata[i] = (datalayer.fdata[i] * 2.0) * waterDensity; #2.0 meters deep column of water. #ORIGINAL
-            datalayer.fdata[i] = datalayer.fdata[i] / (2.0 * waterDensity); #2.0 meters deep column of water. #CORRECTED
+            datalayer.fdata[i] = datalayer.fdata[i] / (1.0 * waterDensity); #1.0 meters deep column of water
+
+            
+            
 
 

@@ -119,7 +119,7 @@ def foc_to_epsilon(datalayer):
     waterDensity = 1026.0;
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] = datalayer.fdata[i] / (6.0 * waterDensity); #6.0 meters deep column of water
+            datalayer.fdata[i] = datalayer.fdata[i] / (10.0 * waterDensity); #Assumes wave energy (input at surface) is dissipated through over a 10m layer
 
             
             

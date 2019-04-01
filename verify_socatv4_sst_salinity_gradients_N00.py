@@ -21,7 +21,7 @@ import inspect;
 def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #Determine the path of the FluxEngine root directory.
     selfPath = inspect.stack()[0][1];
-    feRoot = path.dirname(path.dirname(path.dirname(selfPath))); #Not ideal, relies on scripts being in the root/fluxengine_src/tools directory.
+    feRoot = path.dirname(selfPath); #Assumes script is in the root FluxEngine folder.
     
     #Run flux engine
     if verbose:

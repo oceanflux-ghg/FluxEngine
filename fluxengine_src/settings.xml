@@ -341,7 +341,6 @@
 		<!--Misc. / incomplete?-->
 		<DataLayer name="sstfnd" netCDFName="FT1_Kelvin_mean"></DataLayer>
 		<!--<DataLayer name="scfnd" netCDFName="scfnd"></DataLayer>-->
-		<DataLayer name="pco2_sw_cor" netCDFName="OBPC" minBound="200" maxBound="800"></DataLayer>
 		<DataLayer name="windu10_moment2"></DataLayer>
 		<DataLayer name="windu10_moment3"></DataLayer>
 

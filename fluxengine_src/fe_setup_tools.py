@@ -435,7 +435,7 @@ def build_k_functor(runParameters):
                     
                     try:
                         #Create a dictionary of name:value pairs for the __init__ arguments. Assumes arguments match config file names.
-                        argDict = {key : runParameters[key] for key in initialiserArgNames}; #create a dictionary of arguments name:value pairs
+                        argDict = {key : runParameters[key] for key in initialiserArgNames if key in runParameters}; #create a dictionary of arguments name:value pairs
                     except KeyError as e:
                         print "%s: Could not find all the required initialiser arguments. Are they specified correctly in the config file?\nExpected arguments are: "%function, initialiserArgNames;
                         print "KeyError.args: ", e.args;

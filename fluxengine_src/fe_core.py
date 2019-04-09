@@ -223,8 +223,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
                 raise e;
             except ValueError as e:
-                print "%s: Cannot reside datalayer '%s'" % (function, dataLayers[dataLayerName].name);
                 print type(e), e.args;
+                print "%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name);
                 raise e;
             
             variable.missing_value = missing_value;
@@ -531,22 +531,113 @@ def schmidt_Wanninkhof2014(sstC_fdata, nx, ny, gas):
     return sc_fdata
     
 
+#solubility calculation equation from Table A2 of Wanninkkhof, JGR, 1992
+def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
+    #solubility calculation
+    #equation from Table A2 of Wanninkkhof, JGR, 1992
+    sol = array([missing_value] * nx*ny)
+    if gas == 'co2':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -60.2409 + ( 93.4517*(100.0 / sstK[i]) ) + (23.3585 * (log(sstK[i]/100.0))) + (sal[i] * (0.023517 + ( (-0.023656)*(sstK[i]/100.0)) + (0.0047036*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+    elif gas == 'o2':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -58.3877 + ( 85.8079*(100.0 / sstK[i]) ) + (23.8439 * (log(sstK[i]/100.0))) + (sal[i] * (-0.034892 + ( (0.015568)*(sstK[i]/100.0)) + (-0.0019387*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+        
+    elif gas == 'n2o':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -64.8539 + ( 100.2520*(100.0 / sstK[i]) ) + (25.2049 * (log(sstK[i]/100.0))) + (sal[i] * (-0.062544 + ( (0.035337)*(sstK[i]/100.0)) + (-0.0054699*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+        
+    elif gas == 'ch4':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -68.8862 + ( 101.4956*(100.0 / sstK[i]) ) + (28.7314 * (log(sstK[i]/100.0))) + (sal[i] * (-0.076146 + ( (0.043970)*(sstK[i]/100.0)) + (-0.0068672*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+    
+    return sol
 
-def solubility(sstK, sal, deltaT, nx, ny, flux_calc):
- # solubility calculation
- # equation from Table A2 of Wanninkkhof, JGR, 1992
-   sol = array([missing_value] * nx*ny)
-   for i in arange(nx * ny):
-      if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
-         sol[i] = -60.2409 + ( 93.4517*(100.0 / sstK[i]) ) + (23.3585 * (log(sstK[i]/100.0))) + (sal[i] * (0.023517 + ( (-0.023656)*(sstK[i]/100.0)) + (0.0047036*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) )
-         sol[i] = exp(sol[i])
-             #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
-         if flux_calc != 2:
-            deltaT[i] = 0.0
-         sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
-      else:
-         sol[i] = missing_value
-   return sol
+#solubility calculation equation Table 2 of Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
+def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
+    #solubility calculation
+    #equation from Table A2 of Wanninkkhof, JGR, 1992
+    sol = array([missing_value] * nx*ny)
+    if gas == 'co2':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -58.0931 + ( 90.5069*(100.0 / sstK[i]) ) + (22.2940 * (log(sstK[i]/100.0))) + (sal[i] * (0.027766 + ( (-0.025888)*(sstK[i]/100.0)) + (0.0050578*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+    elif gas == 'o2':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -58.3877 + ( 85.8079*(100.0 / sstK[i]) ) + (23.8439 * (log(sstK[i]/100.0))) + (sal[i] * (-0.034892 + ( (0.015568)*(sstK[i]/100.0)) + (-0.0019387*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+        
+    elif gas == 'n2o':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -62.7062 + ( 97.3066*(100.0 / sstK[i]) ) + (24.1406 * (log(sstK[i]/100.0))) + (sal[i] * (-0.058420 + ( (0.033193)*(sstK[i]/100.0)) + (-0.0051313*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+        
+    elif gas == 'ch4':
+        for i in arange(nx * ny):
+            if ( (sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0) ):
+                sol[i] = -68.8862 + ( 101.4956*(100.0 / sstK[i]) ) + (28.7314 * (log(sstK[i]/100.0))) + (sal[i] * (-0.076146 + ( (0.043970)*(sstK[i]/100.0)) + (-0.0068672*( (sstK[i]/100.0)*(sstK[i]/100.0) ) ) ) );
+                sol[i] = exp(sol[i])
+                #runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
+                if flux_calc != 2:
+                    deltaT[i] = 0.0
+                sol[i] = sol[i] * (1 - (0.015*deltaT[i]))
+            else:
+                sol[i] = missing_value
+    
+    return sol
 
 #Calculate the mass boundary layer concentration (ie concentration in the water)
 #Each argument should be supplied as fdata matrix (flattened matrix)
@@ -652,7 +743,7 @@ def average_pixels(datalayer, nx, ny, missing_value):
 #Returns false if dataLayer dimensions do not match the reference dimensions.
 def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
    function = "(check_dimensions, main)"
-   if dataLayer.nx == ref_nx and dataLayer.ny == ref_ny:
+   if dataLayer.data.shape[1] == ref_nx and dataLayer.data.shape[0] == ref_ny:
       if DEBUG:
          print "\n%s Input data (%s) have identical dimensions to reference values (%s, %s) "% (function, dataLayer.name, dataLayer.nx, dataLayer.ny)
          return True;
@@ -1199,14 +1290,22 @@ class FluxEngine:
             self.data["scskin"].fdata = schmidt_Wanninkhof1992(self.data["sstskinC"].fdata, nx, ny, runParams.GAS)
             self.data["scfnd"].fdata = schmidt_Wanninkhof1992(self.data["sstfndC"].fdata, nx, ny, runParams.GAS)
         else:
-            raise ValueError("Unrecognised schmidt parameterisation selected: "+runParams.schmidtParameterisation);
+            raise ValueError("Unrecognised schmidt/solubility parameterisation selected: "+runParams.schmidtParameterisation);
         
-         # calculating the skin solubility, using skin sst and salinity
-        self.data["solubility_skin"].fdata = solubility(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True)
-        
-         # calculating the interfacial solubility
-        self.data["solubility_fnd"].fdata = solubility(self.data["sstfnd"].fdata, self.data["salinity"].fdata, DeltaT_fdata, nx, ny, runParams.flux_calc)
-
+        #Calculate solubility
+        if runParams.schmidt_parameterisation == "schmidt_Wanninkhof2014":
+            #calculating the skin solubility, using skin sst and salinity
+            self.data["solubility_skin"].fdata = solubility_Wanninkhof2014(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True, runParams.GAS.lower());
+            #calculating the interfacial solubility
+            self.data["solubility_fnd"].fdata = solubility_Wanninkhof2014(self.data["sstfnd"].fdata, self.data["salinity"].fdata, DeltaT_fdata, nx, ny, runParams.flux_calc, runParams.GAS.lower());
+        elif runParams.schmidt_parameterisation == "schmidt_Wanninkhof1992":
+            #calculating the skin solubility, using skin sst and salinity
+            self.data["solubility_skin"].fdata = solubility_Wanninkhof1992(self.data["sstskin"].fdata, self.data["salinity_skin"].fdata, DeltaT_fdata, nx, ny, True, runParams.GAS.lower());
+            #calculating the interfacial solubility
+            self.data["solubility_fnd"].fdata = solubility_Wanninkhof1992(self.data["sstfnd"].fdata, self.data["salinity"].fdata, DeltaT_fdata, nx, ny, runParams.flux_calc, runParams.GAS.lower());
+        else:
+            raise ValueError("Unrecognised schmidt/solubility parameterisation selected: "+runParams.schmidtParameterisation);
+    
          # calculate pCO2 data using mean sea level pressure data
          # equation 26, Kettle et al, 2009, ACP
          # pCO2_air = X[CO2] ( P(t) - pH2O(t) )
@@ -1215,9 +1314,6 @@ class FluxEngine:
          # S = salinity, Tk = temperature in Kelvin
          # pCO2_water = pCO2_water_tak exp (0.0423 (T_foundation - T_tak)
          # T_tak = Takahashi temperature
-        
-         
-        
         
         sys.stdout.flush();
 
@@ -1568,7 +1664,7 @@ class FluxEngine:
                         if outputDataLayer not in self.data:
                             self.add_empty_data_layer(outputDataLayer);
                     #Execute the process indicator layer functor.
-                    piFunctor();
+                    piFunctor(self.data);
                 except ValueError as e:
                     print e.args;
                     print "Exiting...";

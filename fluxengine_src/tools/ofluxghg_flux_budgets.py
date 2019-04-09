@@ -537,12 +537,13 @@ def run_flux_budgets(args):
                          eAg = float(es[extraNo]) * ag
                       except ArithmeticError:
                          print(month, year, i, j, 'eAg overflow', f, iceCover, icefreeArea, ag)
-                      if addedGlobal:
-                         globalExtras[extraNo] += eAg
-                         globalExtraAreas[extraNo] += ag
-                      for regionNo in regionNos:
-                         extras[extraNo, regionNo] += eAg
-                         extraAreas[extraNo, regionNo] += ag
+                      if np.isnan(eAg) == False: #TMH: Only sum if it's not nan.
+                          if addedGlobal:
+                             globalExtras[extraNo] += eAg
+                             globalExtraAreas[extraNo] += ag
+                          for regionNo in regionNos:
+                             extras[extraNo, regionNo] += eAg
+                             extraAreas[extraNo, regionNo] += ag
                 if referencing:
                    refFAg = refFlux[j, i] * ag
                    refDownFAg = refKw[j, i] * refCi[j, i] * ag
@@ -563,25 +564,27 @@ def run_flux_budgets(args):
                    for regionNo in regionNos:
                       missingAreas[regionNo] = min(icefreeArea * mask[regionNo], ag)
                    continue
-                if addedGlobal:
-                   globalFlux += fAg
-                   globalDownFlux += downFAg
-                   globalUpFlux += upFAg
-                   globalArea += ag
-                   if referencing:
-                      refGlobalFlux += refFAg
-                      refGlobalDownFlux += refDownFAg
-                      refGlobalUpFlux += refUpFAg
-                for regionNo in regionNos:
-                   a = min(icefreeArea * mask[regionNo], ag)
-                   fluxes[regionNo] += fAg
-                   downFluxes[regionNo] += downFAg
-                   upFluxes[regionNo] += upFAg
-                   areas[regionNo] += ag
-                   if referencing:
-                      refFluxes[regionNo] += refF * ag
-                      refDownFluxes[regionNo] += refDownFAg
-                      refUpFluxes[regionNo] += refUpFAg
+                #TMH: added if clause to prevent adding of nans
+                if np.isnan(fAg)==False:
+                    if addedGlobal:
+                       globalFlux += fAg
+                       globalDownFlux += downFAg
+                       globalUpFlux += upFAg
+                       globalArea += ag
+                       if referencing:
+                          refGlobalFlux += refFAg
+                          refGlobalDownFlux += refDownFAg
+                          refGlobalUpFlux += refUpFAg
+                    for regionNo in regionNos:
+                       a = min(icefreeArea * mask[regionNo], ag)
+                       fluxes[regionNo] += fAg
+                       downFluxes[regionNo] += downFAg
+                       upFluxes[regionNo] += upFAg
+                       areas[regionNo] += ag
+                       if referencing:
+                          refFluxes[regionNo] += refF * ag
+                          refDownFluxes[regionNo] += refDownFAg
+                          refUpFluxes[regionNo] += refUpFAg
           if addedGlobal:
              if printGlobalArea:
                 print('Global area: ', globalArea, globalMissingArea,
@@ -761,7 +764,7 @@ def run_flux_budgets(args):
              meanFlux = yearlyGlobalFlux / yearlyGlobalArea
              meanDownFlux = yearlyGlobalDownFlux / yearlyGlobalArea
              meanUpFlux = yearlyGlobalUpFlux / yearlyGlobalArea
-             print('Yearly mean flux: ', np.array([meanFlux, meanDownFlux, meanUpFlux]) / unitConversion)
+             print('Yearly mean flux ('+str(year)+"):", np.array([meanFlux, meanDownFlux, meanUpFlux]) / unitConversion)
              missingFlux = meanFlux * yearlyGlobalMissingArea
              missingDownFlux = meanDownFlux * yearlyGlobalMissingArea
              missingUpFlux = meanUpFlux * yearlyGlobalMissingArea

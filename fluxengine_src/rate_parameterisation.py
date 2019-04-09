@@ -726,10 +726,7 @@ class k_Zappa2007(KCalculationBase):
                 kinematicViscosity = 0.00000183 * exp( -(self.sstskin[i]-273.15) / 36.0); #Parameterisation from previously used study (GHGOceanFlux, see above k parameterisations)
                 #kinematicViscosity = self.si_viscosity_to_cSt(kinematicViscosity); #Convert from m^2 s^-1 to cSt (centistokes)
                 
-                schmidtToUse = self.scskin[i]#1000000.0; #convert to the cSt/m^2s^-1 ratio in Zappa? Assumes Zappa et al used centiStokes for their Sc calculation, more work needed to confirm this...
-                tkeDissipationToUse = self.tke_dissipation[i] * self.k_Zappa2007_epsilon_calibration;
-                
-                self.k[i] = (0.419*(schmidtToUse**-0.5)) * ((tkeDissipationToUse*kinematicViscosity)**0.25); #new
+                self.k[i] = self.k_Zappa2007_epsilon_calibration * (0.419*(self.scskin[i]**-0.5)) * ((self.tke_dissipation[i]*kinematicViscosity)**0.25); #new
                 self.k[i] *= 100.0 * 3600.0; #Convert from m s^-1 to cm hr^-1
             else:
                self.k[i] = DataLayer.missing_value

@@ -60,18 +60,18 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     
     if numFailed == 0:
         if verbose:
-            print "\nValidation successful! All values are within threshold limits:";
+            print "\Verification successful! All values are within threshold limits:";
             validationSuccessful = True;
         for key in diffs:
             if verbose:
                 print "\t"+key+": "+str(diffs[key])+"%";
     else:
         if verbose:
-            print "\nValidation failed because %d values were outside threshold limits." % numFailed;
+            print "\Verification failed because %d values were outside threshold limits." % numFailed;
             validationSuccessful = True;
     
     return {"run status":runStatus, "number of net budgets exceeding threshold":numFailed,
-            "validation successful?":validationSuccessful, "percentage difference from reference (dictionary)":diffs};
+            "verification successful?":validationSuccessful, "percentage difference from reference (dictionary)":diffs};
     
 if __name__ == "__main__":
     run_socat_sst_salinity_gradients_N00_validation(verbose=True);

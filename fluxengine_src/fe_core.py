@@ -920,7 +920,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile));
+            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.longitude_prod, self.runParams.latitude_prod, axesDatalayerInfile));
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid

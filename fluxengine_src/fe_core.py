@@ -26,7 +26,7 @@
 from netCDF4 import Dataset
 import sys
 from math import log, exp, pow, isnan;
-from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid;
+from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid, where;
 from numpy import any as npany;
 from random import normalvariate
 import logging;
@@ -960,6 +960,16 @@ class FluxEngine:
                     print e.args;
                     return False;
         return True;
+    
+    #Applies the mask to all data layers
+    def _apply_mask(self):
+        if "mask" in self.data:
+            toIgnore = where(self.data["mask"].fdata == 0);
+            
+            #Apply mask to each data layer
+            for dataLayerName in self.data:
+                if dataLayerName != "mask":
+                    self.data[dataLayerName].fdata[toIgnore] = self.data[dataLayerName].missing_value = True;
 
 
     def _run_fluxengine(self, runParams):
@@ -983,6 +993,9 @@ class FluxEngine:
         #TODO: Replace directly with self.nx, self.ny, no need to use local variables here.
         nx = self.nx;
         ny = self.ny;
+        
+        #Apply mask to all data layers, if applicable.
+        self._apply_mask(); #Checks for existance of mask internally.
 
         ### Adding empty data layers for data that are computed later.
         #If there isn't any sstfnd data create empty arrays to fill later. (i.e. sstfnd = sstskin + runParams.cool_skin_difference);

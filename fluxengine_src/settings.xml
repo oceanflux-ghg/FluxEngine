@@ -62,6 +62,10 @@
 
 		<DataLayer name="sigma0"></DataLayer>
 
+		<DataLayer name="mask" netCDFName="mask" units="none" standardName="mask"
+			 longName="Mask which can be used to filter grid cells. 0=filter, non-zero=allow.">
+		</DataLayer>
+
 		<!--<DataLayer name="sig_wv_ht" netCDFName="SW1_mean" units="m" minBound="0.0" maxBound="20.0"-->
 		<DataLayer name="sig_wv_ht" netCDFName="SW1_mean" units="m" minBound="0.0" maxBound="100.0"
 			 standardName="sea_surface_wave_significant_height"
@@ -76,7 +80,7 @@
 		<DataLayer name="sig_wv_ht_count" netCDFName="SW1_N" units="count" minBound="0" maxBound="100"
 			 standardName="sea_surface_wave_significant_height_count"
 			 longName="count of data point of significant wave height data used to calculate significant wave height">
-		</DataLayer>outputNetCDFTemplate
+		</DataLayer>
 
 		<DataLayer name="pressure" netCDFName="air_pressure" units="millibar" minBound="0.0" maxBound="1500.0"
 			standardName="air_pressure"
@@ -415,6 +419,7 @@
 		<Variable name="southern_ocean_mask" required="false" type="DataLayer"></Variable>
 		<Variable name="indian_ocean_mask" required="false" type="DataLayer"></Variable>
 		<Variable name="longhurst_mask" required="false" type="DataLayer"></Variable>
+		<Variable name="mask" required="false" type="DataLayer"></Variable>
 
 
 

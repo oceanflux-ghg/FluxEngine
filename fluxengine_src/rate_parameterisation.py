@@ -512,13 +512,13 @@ class k_generic(KCalculationBase):
             return False;
         
         # general form
-        # kw = (600/Sc)0.5 [a0 + a1*U + a2*U2 + a3*U3]        
+        # kw = (600/Sc)^0.5 [a0 + a1*U + a2*U2 + a3*U3]        
         for i in arange(len(self.k)):
             self.k[i] = DataLayer.missing_value
             #if ( (self.windu10[i] != DataLayer.missing_value) and (self.windu10_moment2[i] != DataLayer.missing_value) and (self.windu10_moment3[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):
             if ( (self.windu10[i] != DataLayer.missing_value) and (self.windu10_moment2[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) ):
                 
-                #general form kw = (600/Sc)0.5 [a0 + a1*U + a2*U2 + a3*U3]
+                #general form kw = (600/Sc)^0.5 [a0 + a1*U + a2*U2 + a3*U3]
                 self.k[i] = self.k_generic_a0 + (self.k_generic_a1 * self.windu10[i]) +  (self.k_generic_a2 * self.windu10_moment2[i]) + (self.k_generic_a3 * self.windu10_moment3[i])
                 self.k[i] = self.k[i] * sqrt((self.k_generic_sc/self.scskin[i]))
                 #k_fdata[i] = k_fdata[i]# /36.0 # conversion from cm/h to 10^-4 m/s (100/3600) = 1/36.0

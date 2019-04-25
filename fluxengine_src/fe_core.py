@@ -179,10 +179,10 @@ def write_netcdf(fluxEngineObject, verbose=False):
             lons2[:] = longitudeData
     
             lats2.valid_min = -90.0
-            lats2.valid_max = 90.0
+            lats2.valid_max = 180.0
     
             lons2.valid_min = -180.0
-            lons2.valid_max = 180.0
+            lons2.valid_max = 360.0
         else:# if the input lat/long was a grid, write output only as a grid.
             lats = ncfile.createVariable('latitude', dtype('float64').char, dims);
             lons = ncfile.createVariable('longitude', dtype('float64').char, dims);
@@ -203,10 +203,10 @@ def write_netcdf(fluxEngineObject, verbose=False):
             lons[:] = longitudeGrid
     
             lats.valid_min = -90.0
-            lats.valid_max = 90.0
+            lats.valid_max = 180.0
     
             lons.valid_min = -180.0
-            lons.valid_max = 180.0
+            lons.valid_max = 360.0
     
         #
         #data layers

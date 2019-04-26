@@ -26,7 +26,7 @@
 from netCDF4 import Dataset
 import sys
 from math import log, exp, pow, isnan;
-from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid;
+from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid, where;
 from numpy import any as npany;
 from random import normalvariate
 import logging;
@@ -179,10 +179,10 @@ def write_netcdf(fluxEngineObject, verbose=False):
             lons2[:] = longitudeData
     
             lats2.valid_min = -90.0
-            lats2.valid_max = 90.0
+            lats2.valid_max = 180.0
     
             lons2.valid_min = -180.0
-            lons2.valid_max = 180.0
+            lons2.valid_max = 360.0
         else:# if the input lat/long was a grid, write output only as a grid.
             lats = ncfile.createVariable('latitude', dtype('float64').char, dims);
             lons = ncfile.createVariable('longitude', dtype('float64').char, dims);
@@ -203,10 +203,10 @@ def write_netcdf(fluxEngineObject, verbose=False):
             lons[:] = longitudeGrid
     
             lats.valid_min = -90.0
-            lats.valid_max = 90.0
+            lats.valid_max = 180.0
     
             lons.valid_min = -180.0
-            lons.valid_max = 180.0
+            lons.valid_max = 360.0
     
         #
         #data layers
@@ -783,10 +783,10 @@ class FluxEngine:
             print e, e.args;
             raise e;
            # return False;
-        except ValueError as e: #E.g. incorrect number of dimensions
-            print "\n%s: %s" % (function, e.args);
-            raise e;
-            #return False;
+#        except ValueError as e: #E.g. incorrect number of dimensions
+#            print "\n%s: %s" % (function, e.args);
+#            raise e;
+#            #return False;
         
         #TODO: stddev and count should be turned into separate datalayers in the config file processing stage, rather
         #      than testing for _prods and adding them here. Then _add_single_data_layer can be merged with this function.
@@ -920,7 +920,7 @@ class FluxEngine:
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
         except KeyError as e:
-            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.latitude_prod, self.runParams.longitude_prod, axesDatalayerInfile));
+            raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.longitude_prod, self.runParams.latitude_prod, axesDatalayerInfile));
 
         #Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1: #not already a grid
@@ -960,6 +960,16 @@ class FluxEngine:
                     print e.args;
                     return False;
         return True;
+    
+    #Applies the mask to all data layers
+    def _apply_mask(self):
+        if "mask" in self.data:
+            toIgnore = where(self.data["mask"].fdata == 0);
+            
+            #Apply mask to each data layer
+            for dataLayerName in self.data:
+                if dataLayerName != "mask":
+                    self.data[dataLayerName].fdata[toIgnore] = self.data[dataLayerName].missing_value = True;
 
 
     def _run_fluxengine(self, runParams):
@@ -983,6 +993,9 @@ class FluxEngine:
         #TODO: Replace directly with self.nx, self.ny, no need to use local variables here.
         nx = self.nx;
         ny = self.ny;
+        
+        #Apply mask to all data layers, if applicable.
+        self._apply_mask(); #Checks for existance of mask internally.
 
         ### Adding empty data layers for data that are computed later.
         #If there isn't any sstfnd data create empty arrays to fill later. (i.e. sstfnd = sstskin + runParams.cool_skin_difference);

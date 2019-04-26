@@ -149,14 +149,14 @@ def run_takahashi09_validation(verbose=True):
     #Summary:
     if nTestsPassed == N_TESTS:
         if verbose:
-            print "\n\n***** Validation successful! *****";
+            print "\n\n***** Verification successful! *****";
         validationSuccessful = True;
     else:
         if verbose:
-            print "\n\n***** Validation failed! *****";
+            print "\n\n***** Verification failed! *****";
         validationSuccessful = False;
     
-    print "%d of %d validation tests passed." % (nTestsPassed, N_TESTS);
+    print "%d of %d verification tests passed." % (nTestsPassed, N_TESTS);
 
     return {"run status":runStatus, "tests passed":nTestsPassed, "total tests":N_TESTS,
             "total net flux percentage difference from Takahashi 2009 result":percentDiff,

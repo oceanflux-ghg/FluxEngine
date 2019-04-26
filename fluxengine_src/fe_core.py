@@ -783,10 +783,10 @@ class FluxEngine:
             print e, e.args;
             raise e;
            # return False;
-        except ValueError as e: #E.g. incorrect number of dimensions
-            print "\n%s: %s" % (function, e.args);
-            raise e;
-            #return False;
+#        except ValueError as e: #E.g. incorrect number of dimensions
+#            print "\n%s: %s" % (function, e.args);
+#            raise e;
+#            #return False;
         
         #TODO: stddev and count should be turned into separate datalayers in the config file processing stage, rather
         #      than testing for _prods and adding them here. Then _add_single_data_layer can be merged with this function.

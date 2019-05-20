@@ -8,7 +8,7 @@ ehthumbs.db
 Thumbs.db
 
 ### TEMP ignore tutorials!
-Tutorials/**
+#Tutorials/**
 
 ### Compiled source: ###
 *.pyc

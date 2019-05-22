@@ -1,0 +1,6 @@
+Contains cruise data for underway physical oceanography and CO2 measurements.
+
+kitidis2017.tsv - Data are from a single cruise in the SOCAT dataset.
+Kitidis, Vassilis; Brown, Ian (2017): Underway physical oceanography and carbon dioxide measurements during James Clark Ross cruise 74JC20131009. Plymouth Marine Laboratory, PANGAEA, https://doi.org/10.1594/PANGAEA.878492,
+Downloaded URL: https://doi.pangaea.de/10.1594/PANGAEA.878492
+SOCAT expocode: 74JC20131009

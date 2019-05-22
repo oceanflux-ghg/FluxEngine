@@ -353,7 +353,7 @@
 	<!-- Default values and metadata for config file parameters
 		 Valid types: path, multioption, switch (yes/no), float, string, DataLayer-->
 	<ConfigParameters>
-		<Variable name="src_home" required="true" type="path"></Variable>
+		<Variable name="src_home" required="true" type="path" default="fluxengine_src"></Variable>
 		<Variable name="output_dir" required="true" type="path"></Variable>
 		<Variable name="flux_calc" required="true" type="multioption">
 			<Option value="1" str="rapid"></Option>
@@ -373,7 +373,7 @@
 		<Variable name="longitude_prod" required="true" type="string"></Variable>
 		<Variable name="time_prod" required="true" type="string"></Variable>
 
-		<Variable name="pco2_data_selection" required="true" type="multioption">
+		<Variable name="pco2_data_selection" required="true" type="multioption" default="socat_pco2">
 			<Option value="0" str="taka"></Option>
 			<Option value="1" str="socat_pco2"></Option>
 			<Option value="2" str="socat_fco2"></Option>
@@ -425,11 +425,11 @@
 
 		<!-- these should be optional and/or moved to datalayer attributes: -->
 
-		<Variable name="bias_k" required="true" type="switch"></Variable>
-		<Variable name="bias_k_percent" required="true" type="switch"></Variable>
-		<Variable name="bias_k_value" required="true" type="float"></Variable>
-		<Variable name="bias_k_biology_value" required="true" type="float"></Variable>
-		<Variable name="bias_k_wind_value" required="true" type="float"></Variable>
+		<Variable name="bias_k" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_k_percent" required="true" type="switch" default="no"></Variable>
+		<Variable name="bias_k_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_k_biology_value" required="true" type="float" default="0.0"></Variable>
+		<Variable name="bias_k_wind_value" required="true" type="float" default="0.0"></Variable>
 
 		<!-- These values are conditional on other values and/or have default values -->
 		<Variable name="temporal_resolution" required="false" type="string" default="monthly"></Variable> <!-- Valid formats are YYYY, YYYY-MM-DD, YYYY-MM-DD hh:mm, any other strings are interpretted as monthly -->
@@ -438,7 +438,7 @@
 		<Variable name="GAS" required="false" type="string" default="CO2"></Variable>
 		<Variable name="ATMGAS" required="false" type="string" default="V"></Variable>
 		<Variable name="LOG_PATH" required="false" type="string" default="fluxengine.log"></Variable>
-		<Variable name="cool_skin_difference" required="false" type="float" default="-0.17"></Variable>
+		<Variable name="cool_skin_difference" required="false" type="float" default="0.17"></Variable>
 
 		<Variable name="pco2_reference_year" required="true" type="float" default="2010"></Variable>
 		<Variable name="pco2_annual_correction" required="true" type="float" default="0.0"></Variable>

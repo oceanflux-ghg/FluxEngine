@@ -53,6 +53,7 @@ if __name__ == "__main__":
     function = inspect.stack()[0][1]+", main";
     temporaryOutputPath = path.join(path.dirname(__file__), "reanalyse_socat/output/");
     
+    
     #Setup command line parser, and parse arguments.
     description = """Utility which allows reanalysis of SOCAT data to a consistent temperature and depth.
         (under continual development, use with care)
@@ -118,6 +119,7 @@ if __name__ == "__main__":
     if path.exists(temporaryOutputPath) == True:
         shutil.rmtree(temporaryOutputPath);
     
+    
     exitCode = rs.RunReanalyseSocat(socatdir=clArgs.socat_dir,
                          socatfiles=clArgs.socat_files,
                          sstdir=clArgs.sst_dir,
@@ -150,7 +152,8 @@ if __name__ == "__main__":
                          expocode_col=clArgs.expocode_col,
                          
                          withcoastal=clArgs.withcoastal,
-                         output="reanalyse_socat/output/");
+                         #output=clArgs.output_dir);
+                         output=temporaryOutputPath);#"reanalyse_socat/output/");
     
     #copy output files to the output_dir folder.
     if exitCode == 0:
@@ -167,7 +170,10 @@ if __name__ == "__main__":
             
             #remove irrelevant reanalyse_socat output files
             if clArgs.keeptempfiles == False:
-                shutil.rmtree(temporaryOutputPath);
+                try:
+                    shutil.rmtree(temporaryOutputPath);
+                except:
+                    pass;
             else:
                 print "-keeptempfiles was set so full output can be viewed at:", "Output can be viewed at:", path.abspath(temporaryOutputPath);
         except shutil.Error as e: #If the output directory already exists don't delete anything and tell the user.

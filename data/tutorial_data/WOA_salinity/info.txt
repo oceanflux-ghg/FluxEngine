@@ -1,0 +1,11 @@
+World Ocean Atlas salinity climatology.
+
+Downloaded from:
+https://www.nodc.noaa.gov/cgi-bin/OC5/woa18/woa18.pl
+
+E.g.
+https://data.nodc.noaa.gov/thredds/catalog/ncei/woa/salinity/A5B7/1.00/catalog.html?dataset=ncei/woa/salinity/A5B7/1.00/woa18_A5B7_s01_01.nc
+
+Citation:
+Zweng, M. M., J. R. Reagan, D. Seidov, T. P. Boyer, R. A. Locarnini, H. E. Garcia, A. V. Mishonov, O. K. Baranova, K. Weathers, C. R. Paver, and I. Smolyar, 2018. World Ocean Atlas 2018, Volume 2: Salinity. A. Mishonov Technical Ed.; in preparation.
+

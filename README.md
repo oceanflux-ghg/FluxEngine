@@ -40,6 +40,10 @@ These updates have been verified against reference runs using SOCATv4 pCO2 and a
 
 Publications which use FluxEngine and/or FluxEngine outputs:
 ----
+
+News Article: 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+Animation: The atmosphere-ocean flux of carbon dioxide and the FluxEngine http://due.esrin.esa.int/stse/videos/page_video013.php
+
 1. Henson SA, Humphreys MP, Land PE, Shutler JD, Goddijn-Murphy L, Warren M (2018). Controls on open-ocean North Atlantic ΔpCO2 at seasonal and interannual timescales are different. Geophysical Research Letters, doi:10.1029/2018GL078797
 
 2. Pereira R, Ashton, I, Sabbaghzadeh, B, Shutler, JD and Upstill-Goddard RC (2018). Reduced air–sea CO2 exchange in the Atlantic Ocean due to biological surfactants. Nature Geoscience, 1. doi: 10.1038/s41561-018-0136-2

@@ -13,6 +13,9 @@ echo "  *  A seperate version Python 2.7 (as not to interfere with the MacOS ver
 echo "  *  numpy"
 echo "  *  scipy"
 echo "  *  netCDF4"
+echo "  *  pandas"
+echo "  *  jupyter (for tutorials)"
+echo "  *  matplotlib (for tutorials)"
 echo ""
 read -p "You may need to enter your password during the installation. Press <enter> to continue the installation or press ctrl+c at anytime to cancel the installation."
 echo ""
@@ -78,6 +81,28 @@ else
 	read -p "pandas will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
 	echo "Installing pandas."
 	pip install pandas
+fi
+
+#Install jupyter
+echo "Installing python dependencies."
+if (python -c 'import jupyter;'>/dev/null 2>&1)
+then
+	echo "jupyter is already installed."
+else
+	read -p "jupyter will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
+	echo "Installing jupyter."
+	pip install jupyter
+fi
+
+#Install matplotlib
+echo "Installing python dependencies."
+if (python -c 'import matplotlib;'>/dev/null 2>&1)
+then
+	echo "matplotlib is already installed."
+else
+	read -p "matplotlib will be installed using pip. Press <enter> to continue or ctrl+c to cancel installation."
+	echo "Installing matplotlib."
+	pip install matplotlib
 fi
 
 echo "Dependencies are now installed. You should be good to go!"

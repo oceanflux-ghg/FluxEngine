@@ -262,6 +262,8 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
     order = numpy.argsort(indicesToExtract); #pandas ignores the column order so we need to rearrange the column names accordingly
     namesOfExtracted = [namesOfExtracted[i] for i in order];
     
+    print namesOfExtracted;
+    
     #dtypesOfExtracted = [info[1] for info in columnInfoToExtract];
 
     #Read in the columns we want into a data array

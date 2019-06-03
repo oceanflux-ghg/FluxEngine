@@ -364,7 +364,8 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     expandedGlobs = [];
     for filepath in inFiles:
         expandedGlobs += glob(filepath);
-    inFiles = expandedGlobs;
+    if len(expandedGlobs) != 0:
+        inFiles = expandedGlobs;
 #    expandedGlobs = [];
 #    for inFile in inFiles:
 #        expandedGlobs += pathlib.Path(".").glob(inFile);

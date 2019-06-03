@@ -99,8 +99,6 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
                     print "Row", i, "Warning: No data found for lat", lat, "lon", str(lon)+".", missingValue, "inserted instead";
             else:
                 newVectors[variable][i] = float(value);
-                if verbose:
-                    print "Row", i;
     
     #Add new vectors to dataframe and export
     for variable in varsToAppend:
@@ -127,7 +125,10 @@ if __name__ == "__main__":
     lonCol = clArgs.lonCol;
     
     #append selected variables as columns to the in situ data file
-    append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend, delim, latCol, lonCol, dateIndex, rowsToSkip, missingValue, encoding);
+    append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend, delim, latCol, lonCol, dateIndex, rowsToSkip, missingValue, encoding, verbose=True);
+    
+    print "Finished merging", varsToAppend, "from", feOutputPath, "with", insituDataPath;
+    print "Output written to", outputPath;
 
 
 

@@ -23,7 +23,7 @@ Specifically, data on irregular grids can now be handled through the main flux c
 In-situ data should be put in separate netCDF files and the last two digits of the filename needs to represent the month of interest as a two digit number. e.g. January -> ’01’. 
 To operate the system with different gases, the appropriate switch should be changed in ofluxghg-flux-calc.py. Please use ofluxghg-flux-calc.py --help for further information.
 
-v3.0 (first released in April 2018, updated: Sep 2018, Feb 2019, April 2019, June 2019)
+v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019)
 ----
 These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (in-review) and can be found here https://www.ocean-sci-discuss.net/os-2019-45/ . The FluxEngine v3.0 updates and extensions were funded by the European Space Agency and two European Union research projects, Ringo and Integral, which are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 extensions to the toolbox include:
 

@@ -53,10 +53,16 @@ def parse_cl_arguments():
 def match_input_file_globs(inFiles):
     expandedGlobs = [];
     for inFile in inFiles:
-        expandedGlobs += pathlib.Path(".").glob(inFile);
+        #pathlib does not support globbing with absolute paths, must make a relative path from the path anchor
+        pathAnchor = pathlib.Path(pathlib.Path(inFile).anchor);
+        relativePath = pathlib.Path(inFile).relative_to(pathAnchor);
+        expandedGlobs += pathAnchor.glob(str(relativePath)); #Find files matching glob
         
     expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
-    return expandedGlobs;
+    if len(expandedGlobs) != 0:
+        return expandedGlobs;
+    else:
+        return inFiles;
 
 
 if __name__ == "__main__":

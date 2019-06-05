@@ -59,7 +59,10 @@ def match_input_file_globs(inFiles):
         expandedGlobs += pathAnchor.glob(str(relativePath)); #Find files matching glob
         
     expandedGlobs = [str(p) for p in expandedGlobs]; #Convert from pathlib.Path to string
-    return expandedGlobs;
+    if len(expandedGlobs) != 0:
+        return expandedGlobs;
+    else:
+        return inFiles;
 
 
 if __name__ == "__main__":

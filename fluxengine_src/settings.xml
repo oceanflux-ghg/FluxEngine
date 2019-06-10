@@ -318,7 +318,6 @@
 
 		<!-- debug products -->
 		<DataLayer name="pH2O" netCDFName="PH2O" units="mb" minBound="0.0" maxBound="1500.0"
-			standardName="water_vapour_pressure"
 			longName="water vapour pressure from salinity and SST relationship of Weiss and Price 1980 Marine Chemistry">
 		</DataLayer>
 
@@ -327,12 +326,12 @@
 			longName="difference between the interface and mass boundary layer concentrations">
 		</DataLayer>
 
-		<DataLayer name="solubility_skin" netCDFName="skin_solubility" units="mol kg-1 atm-1" minBound="0.0" maxBound="1.0"
+		<DataLayer name="solubility_skin" netCDFName="skin_solubility" units="mol L-1 atm-1" minBound="0.0" maxBound="1.0"
 			standardName="solubility_of_carbon_dioxide_in_seawater_at_the_sea_air_interface"
 			longName="solubility as calculated using the sstskin (ST1) data">
 		</DataLayer>
 
-		<DataLayer name="solubility_fnd" netCDFName="fnd_solubility" units="mol kg-1 atm-1" minBound="0.0" maxBound="1.0"
+		<DataLayer name="solubility_fnd" netCDFName="fnd_solubility" units="mol L-1 atm-1" minBound="0.0" maxBound="1.0"
 			standardName="solubility_of_carbon_dioxide_in_seawater_at_depth"
 			longName="solubility as calculated using the sstfnd (FT1) data">
 		</DataLayer>

@@ -1573,13 +1573,9 @@ class FluxEngine:
                 # assumes that the skin temperature dataset is the only temperature dataset
                 #Bulk model (F = k*solubility*(pCO2_water - pCO2_air)
                 elif runParams.flux_calc == 3:
-                    #self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * concFactor * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])#IGA added conc_factor
-                    self.data["FH06"].fdata[i] = self.data["k"].fdata[i] * k_factor * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i])#IGA added conc_factor
-                    
-                    #old version:
-                    #self.data["FH06"].fdata[i] = (self.data["k"].fdata[i] * k_factor) * concFactor * self.data["solubility_skin"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])#IGA added conc_factor
-                    # using Rik W's equation 6 from his new paper
-                    #self.data["FH06"].fdata[i] = (7.7e-4*(12.0108/365.0)) * self.data["windu10_moment2"].fdata[i] * (self.data["pco2_sw_cor"].fdata[i] - self.data["pco2_air_cor"].fdata[i])
+                    #Note that that concw is calculated differently if flux_calc ==3 vs !=3, uses skin solubility (same as conca) if flux_calc==3.
+                    #The below calculation is therefore not identical to RAPID, and is the correct BULK forumulation.
+                    self.data["FH06"].fdata[i] = self.data["k"].fdata[i] * k_factor * (self.data["concw"].fdata[i] - self.data["conca"].fdata[i]);
                 
                 #Some unexpected flux calculation was specified. Should never get this far as fe_setup.py will check this.
                 else:

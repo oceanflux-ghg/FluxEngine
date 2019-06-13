@@ -35,7 +35,7 @@ else
 		sudo easy_install pip
 	fi
 	echo "Installing numpy."
-	sudo pip install netCDF4
+	sudo pip install numpy
 fi
 
 #Install netCDF4

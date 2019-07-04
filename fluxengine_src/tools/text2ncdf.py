@@ -259,8 +259,9 @@ def create_netCDF_variables(netCDFFile, colNames, parseUnits, DIM_NAMES, MISSING
     netCDFVariables = {};
     for colName in colNames:
         if parseUnits == True:
-            unitStr = colName[colName.find("[")+1 : colName.find("]")];
-            nameStr = colName.split("[")[0].strip();
+            if "[" in colName:
+                unitStr = colName[colName.find("[")+1 : colName.find("]")];
+                nameStr = colName.split("[")[0].strip();
         else:
             unitStr = "";
             nameStr = colName;

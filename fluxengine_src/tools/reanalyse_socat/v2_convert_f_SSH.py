@@ -282,8 +282,12 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
     orderedColNames = [info[0] for info in columnInfo];
     data = data[orderedColNames];
 
-    #data.columnInfo = columnInfo; #attach metadata to the data
+    #attach metadata to the data
     data = data.to_records(index=False);
+    
+    
+    
+    
     if "fCO2_qc_flag" in colNamesToInsert: #nan values must be float type, fCO2_qc_flag is usually int, so have to split here.
         data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
                      ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),

@@ -1021,18 +1021,6 @@ class FluxEngine:
                  self.data["windu10_moment2"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
                  self.data["windu10_moment3"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
         
-        #SOCATv4 - using input foundation temperature as the SST temp-------------START
-        #If there is no pco2_sst data, we need to get it / generate it.
-        if "pco2_sst" not in self.data: #SOCATv4
-            try:
-                print "No pco2_sst data was supplied."
-                self.add_empty_data_layer("pco2_sst");
-                self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
-            except (IOError, KeyError, ValueError) as e:
-                print "pco2_sst data not available and could read sstfnd so cannot proceed.";
-                print type(e), "\n"+e.args;
-                return 1;   
-        
         #some specific pco2 conditions
         #TODO: This shouldn't be randomly here.
         if "pco2_sw" in self.data:
@@ -1142,6 +1130,18 @@ class FluxEngine:
         else:
            print "\n%s sst_gradients_switch (%d), use_sstskin_switch (%d) and use_sstfnd_switch (%d) combination in configuration not recognised, exiting." % (function, runParams.sst_gradients_switch, runParams.use_sstskin_switch, runParams.use_sstfnd_switch)
            return 1;
+       
+        
+        #If there is no pco2_sst data, we need to get it / generate it.
+        if "pco2_sst" not in self.data: #SOCATv4
+            try:
+                print "No pco2_sst data was supplied. sstfnd will be used instead."
+                self.add_empty_data_layer("pco2_sst");
+                self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
+            except (IOError, KeyError, ValueError) as e:
+                print "pco2_sst data not available and could read sstfnd so cannot proceed.";
+                print type(e), "\n"+e.args;
+                return 1;
        
 
         #quality filtering and conversion of SST datasets

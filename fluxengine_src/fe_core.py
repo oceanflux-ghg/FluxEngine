@@ -642,11 +642,11 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
 #Returns the molecular mass of the compound used in the output units. This depends on the gas for which fluxes are being calculated.
 def get_output_unit_molecular_mass(gas):
-    if gas.tolower() == "co2":
+    if gas.lower() == "co2":
         return 12.0108; #Output units will be in carbon.
-    elif gas.tolower() == "n2o":
+    elif gas.lower() == "n2o":
         return 44.013; #N2O output units
-    elif gas.tolower() == "ch4":
+    elif gas.lower() == "ch4":
         return 16.04; #CH4 output units
     else:
         raise ValueError("Unrecognised gas specification in configuration file: ", gas);

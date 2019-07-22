@@ -51,7 +51,7 @@ import reanalyse_socat.reanalyse_socat_v2 as rs;
 
 if __name__ == "__main__":
     function = inspect.stack()[0][1]+", main";
-    temporaryOutputPath = path.join(path.dirname(__file__), "reanalyse_socat/output/");
+    temporaryOutputPath = path.join(path.dirname(__file__), "reanalyse_socat", "output");
     
     
     #Setup command line parser, and parse arguments.

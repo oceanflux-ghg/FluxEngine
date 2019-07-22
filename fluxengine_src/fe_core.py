@@ -639,6 +639,19 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
     
     return sol
 
+
+#Returns the molecular mass of the compound used in the output units. This depends on the gas for which fluxes are being calculated.
+def get_output_unit_molecular_mass(gas):
+    if gas.lower() == "co2":
+        return 12.0108; #Output units will be in carbon.
+    elif gas.lower() == "n2o":
+        return 44.013; #N2O output units
+    elif gas.lower() == "ch4":
+        return 16.04; #CH4 output units
+    else:
+        raise ValueError("Unrecognised gas specification in configuration file: ", gas);
+
+
 #Calculate the mass boundary layer concentration (ie concentration in the water)
 #Each argument should be supplied as fdata matrix (flattened matrix)
 def calculate_concw(concFactor, foundationSolubility, fCO2water, concw):
@@ -1021,18 +1034,6 @@ class FluxEngine:
                  self.data["windu10_moment2"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
                  self.data["windu10_moment3"].fdata[i] = self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]*self.data["windu10"].fdata[i]
         
-        #SOCATv4 - using input foundation temperature as the SST temp-------------START
-        #If there is no pco2_sst data, we need to get it / generate it.
-        if "pco2_sst" not in self.data: #SOCATv4
-            try:
-                print "No pco2_sst data was supplied."
-                self.add_empty_data_layer("pco2_sst");
-                self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
-            except (IOError, KeyError, ValueError) as e:
-                print "pco2_sst data not available and could read sstfnd so cannot proceed.";
-                print type(e), "\n"+e.args;
-                return 1;   
-        
         #some specific pco2 conditions
         #TODO: This shouldn't be randomly here.
         if "pco2_sw" in self.data:
@@ -1142,6 +1143,18 @@ class FluxEngine:
         else:
            print "\n%s sst_gradients_switch (%d), use_sstskin_switch (%d) and use_sstfnd_switch (%d) combination in configuration not recognised, exiting." % (function, runParams.sst_gradients_switch, runParams.use_sstskin_switch, runParams.use_sstfnd_switch)
            return 1;
+       
+        
+        #If there is no pco2_sst data, we need to get it / generate it.
+        if "pco2_sst" not in self.data: #SOCATv4
+            try:
+                print "No pco2_sst data was supplied. sstfnd will be used instead."
+                self.add_empty_data_layer("pco2_sst");
+                self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
+            except (IOError, KeyError, ValueError) as e:
+                print "pco2_sst data not available and could read sstfnd so cannot proceed.";
+                print type(e), "\n"+e.args;
+                return 1;
        
 
         #quality filtering and conversion of SST datasets
@@ -1499,7 +1512,7 @@ class FluxEngine:
           # mol -> grams for CO2 x 12
           # kg=liter -> m^-3 = x 1000
           # atm -> uatm = /1000000
-          # result = x12.0108/1000
+          # result = x12.0108/1000 #12.0108 is atomic mass of carbon
           # provides solubility in g-C m^-3 uatm^-1
           
           # multiplying solubility (g-C m^-3 uatm^-1) by pCO2 (uatm) = concentration in g-C m^-3
@@ -1540,7 +1553,8 @@ class FluxEngine:
         # If concentration data are not provided as input #
         #    calculate them from corrected pco2 data      #
         ###################################################
-        concFactor = (12.0108/1000.0);
+        outputUnitMolecularMass = get_output_unit_molecular_mass(runParams.GAS); #Different gases mean the output units will be different. Thus different molecular masses are needed to correctly calculate moles.
+        concFactor = (outputUnitMolecularMass/1000.0);
         if "concw" not in self.data:
             self.add_empty_data_layer("concw");
             if runParams.flux_calc == 3: #Bulk calculation, so should use the same solubility as conca

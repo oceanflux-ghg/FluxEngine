@@ -60,7 +60,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     
     if numFailed == 0:
         if verbose:
-            print "\Verification successful! All values are within threshold limits:";
+            print "Verification successful! All values are within threshold limits:";
             validationSuccessful = True;
         for key in diffs:
             if verbose:

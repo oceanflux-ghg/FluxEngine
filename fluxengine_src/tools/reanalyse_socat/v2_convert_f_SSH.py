@@ -15,11 +15,11 @@ import multiprocessing
 import pandas as pd;
 
 #Internal tool libs
-import get_sst
-import datenum
-import v2_f_conversion
-import netcdf_helper
-import combine_nc_files
+from . import get_sst
+from . import datenum
+from . import v2_f_conversion
+from . import netcdf_helper
+from . import combine_nc_files
 
 #These are command line defaults. Set here (rather than in command line) as they can
 #then be used as defaults when called from another script instead of command line
@@ -116,7 +116,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
 
    #The coastal data needs to be handled differently to other data
    if coastaldata is not None:
-      print "Updating coastal data for this region."
+      print("Updating coastal data for this region.")
       #If there are coastaldata then combine that to the data array
       #But only for cruises that exist in the data array and only for data that fall in a cell already occupied
       #These cruise data then need to be removed from the coastal data so that they are not added twice.
@@ -164,11 +164,11 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
-      print "Duplicates were found in %s and removed:"%inputfile
+      print("Duplicates were found in %s and removed:"%inputfile)
       for dupe in total_duplicates:
-         print dupe
+         print(dupe)
 
-   print "Total number of data points imported and used from file: %s : %d"%(inputfile,total_number_of_data_points)
+   print("Total number of data points imported and used from file: %s : %d"%(inputfile,total_number_of_data_points))
 
 
 def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],prefix=cldefaults['prefix'],
@@ -177,7 +177,7 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
                   version=cldefaults['socatversion'],ASCIIOUT=cldefaults['asciioutput'],
                   percruisedir=cldefaults['asciioutput'],useaatsr=False,usereynolds=False,removeduplicates=True):
    #Run the following for each pair of years in the range to process
-   print "Working on remaining coastal data."
+   print("Working on remaining coastal data.")
    total_number_of_data_points=0
    total_duplicates=[]
    year_ranges_to_process=GetYearsToProcess(startyr,endyr,notperyear)
@@ -189,11 +189,11 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
-      print "Duplicates were found in remaining coastal data and removed:"
+      print("Duplicates were found in remaining coastal data and removed:")
       for dupe in total_duplicates:
-         print dupe
+         print(dupe)
 
-   print "Total number of data points imported and used from remaining coastal data: %d"%(total_number_of_data_points)
+   print("Total number of data points imported and used from remaining coastal data: %d"%(total_number_of_data_points))
 
 def GetYearsToProcess(start,end,notperyear):
    """
@@ -262,13 +262,13 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
     order = numpy.argsort(indicesToExtract); #pandas ignores the column order so we need to rearrange the column names accordingly
     namesOfExtracted = [namesOfExtracted[i] for i in order];
     
-    print namesOfExtracted;
+    print(namesOfExtracted);
     
     #dtypesOfExtracted = [info[1] for info in columnInfoToExtract];
 
     #Read in the columns we want into a data array
-    print "Reading in data from SOCAT file: %s"%inputfile
-    print "This can take a while for large datasets.\n";
+    print("Reading in data from SOCAT file: %s"%inputfile)
+    print("This can take a while for large datasets.\n");
 
     data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
     
@@ -442,14 +442,14 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    
    data_subset=[]
    #subset the year(s) we want
-   print "Subsetting data for year range: %d %d"%(year_range[0],year_range[1])
+   print("Subsetting data for year range: %d %d"%(year_range[0],year_range[1]))
    #print len(data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]);
    data_subset=data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]
    
 
    #Test if there are any data - if not then return
    if data_subset.size==0:
-      print 'No data available for these years: %d %d'%(year_range[0],year_range[1])
+      print('No data available for these years: %d %d'%(year_range[0],year_range[1]))
       return 0,[]
 
    #remove rows that fail quality checks
@@ -501,10 +501,10 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
             duplicate_data.append(data_subset[i])
       #now remove the duplicates
       l = len(duplicates);
-      print "num duplicates is: ", l;
+      print("num duplicates is: ", l);
       if len(duplicates)>0:
          #get an array of all indices and then remove the ones marked as duplicates
-         allindices=range(data_subset.size)
+         allindices=list(range(data_subset.size))
          for dupe in duplicates:
             allindices.remove(dupe)
          data_subset=data_subset[allindices]
@@ -531,7 +531,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
                               data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
-         print "All Temperature data are no-data-values - skipping for this year."
+         print("All Temperature data are no-data-values - skipping for this year.")
          return 0,[]
       #Convert the temperature from skin to subskin
       Tcls += 0.17
@@ -540,7 +540,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
                               data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
-         print "All Temperature data are no-data-values - skipping for this year/month combination."
+         print("All Temperature data are no-data-values - skipping for this year/month combination.")
          return 0,[]
       #Temperature is already (kind-of) subskin so no need to convert it
    else:
@@ -626,9 +626,9 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
             common_prefix=outputfile.replace('.nc','')
             cruise_files=glob.glob("%s/%s*"%(percruiseoutput,common_prefix))
             if len(cruise_files) !=0:
-               print
-               print "Combining cruises from region, year and month: ",cruise_files
-               print
+               print()
+               print("Combining cruises from region, year and month: ",cruise_files)
+               print()
                combine_nc_files.FromFilelist(filelist=cruise_files,output=outputfilepath,
                                              weighting="cruise-weighted",outputtime=datadate)
 
@@ -664,7 +664,7 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
     output_data=month_data
 
     if output_data.size > 0:
-        print "Writing to: %s"%outputfile
+        print("Writing to: %s"%outputfile)
         numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
                       header=",".join(output_data.dtype.names),delimiter=',')
 
@@ -792,7 +792,7 @@ def WriteOutToNCAsGrid(vardict,outputfile,extrapolatetoyear,outputtime=1e9):
    dlat = (lat1 - lat0) / nlat
 
    #Write out the data into a netCDF file
-   print "Writing to: %s"%outputfile
+   print("Writing to: %s"%outputfile)
    #Test directory exists
    if not os.path.exists(os.path.dirname(outputfile)):
       raise Exception("Directory to write file to does not exist: %s"%(os.path.dirname(outputfile)))
@@ -943,14 +943,14 @@ def WriteOutToNCAsGrid(vardict,outputfile,extrapolatetoyear,outputtime=1e9):
 
 #if the script is run stand alone (i.e. from command line)
 def Main():
-   print "%s started at: %s "%(os.path.basename(__file__),str(datetime.datetime.now()))
+   print("%s started at: %s "%(os.path.basename(__file__),str(datetime.datetime.now())))
    cl=GetCommandline()
    DoConversion(inputfile=cl.inputfile,startyr=cl.start,endyr=cl.end,notperyear=cl.notperyear,
                 sstdir=cl.sstdir,ssttail=cl.ssttail,prefix=cl.prefix,outputdir=cl.outputdir,
                 extrapolatetoyear=cl.extrapolatetoyear,version=cl.socatversion,ASCIIOUT=cl.asciioutput,
                 percruisedir=cl.percruisedir,coastalfile=cl.coastalfile,useaatsr=cl.useaatsr,
                 usereynolds=cl.usereynolds,removeduplicates=not cl.keepduplicates)
-   print "%s ended at: %s "%(os.path.basename(__file__),str(datetime.datetime.now()))
+   print("%s ended at: %s "%(os.path.basename(__file__),str(datetime.datetime.now())))
 
 if __name__=="__main__":
    Main()

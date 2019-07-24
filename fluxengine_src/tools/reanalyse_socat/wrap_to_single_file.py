@@ -1,7 +1,7 @@
 #!/home/cercache/tools/environments/run_python_scibox_precise.sh
 #-*- coding:utf-8 -*-
 
-import combine_nc_files
+from . import combine_nc_files
 import glob
 import os
 import argparse

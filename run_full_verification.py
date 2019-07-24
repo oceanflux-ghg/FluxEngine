@@ -30,12 +30,12 @@ if __name__ == "__main__":
 #        sys.path.insert(1, feRootPath); #needs to be at the start of the path list to preceed any other versions of FluxEngine.
 #    
 
-    print "\nThe full validation suite will be run for the FluxEngine installation located at:\n", path.dirname(fluxengine_src.__file__); 
-    ans = raw_input("\nThis take several hours (longer on slower computers). Continue? (y/n): ");
+    print("\nThe full validation suite will be run for the FluxEngine installation located at:\n", path.dirname(fluxengine_src.__file__)); 
+    ans = input("\nThis take several hours (longer on slower computers). Continue? (y/n): ");
     if ans.lower() == "y":
-        print "Running validation suite...";
+        print("Running validation suite...");
     else:
-        print "Cancelled.";
+        print("Cancelled.");
         exit(0);
     
     
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     
     #Come brief output.
     for key in sorted(validationOutcome.keys()):
-        print key+": ", validationOutcome[key];
+        print(key+": ", validationOutcome[key]);
 
 
 

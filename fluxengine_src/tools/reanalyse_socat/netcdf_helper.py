@@ -17,7 +17,7 @@ def standard_setup_SOCAT(ncfile,timedata,londata,latdata):
    if isinstance(timedata,datetime.datetime):
       #need to +1 as, apparently, 1st Jan is 1 day since 1st Jan ...
       #or to put it another way the, 1st Jan 1970 should have value = 1
-      timeobj=timedata-datetime.datetime(1970,01,01)
+      timeobj=timedata-datetime.datetime(1970,0o1,0o1)
       timeobj=timeobj.days+(timedata.hour/24.0) +1
       ntimes=1
    elif isinstance(timedata,numpy.ndarray):
@@ -85,8 +85,8 @@ def write_netcdf_vars_to_ascii(ncfilein,asciifile,varlist,delimiter="\t"):
       longitude=ncfile.variables['longitude'][:]
       latitude=ncfile.variables['latitude'][:]
       initialvar=ncfile.variables[varlist[0]][:][0].filled()
-   except Exception, e:
-      print "Problem getting latitude and longitude from the netCDF file."
+   except Exception as e:
+      print("Problem getting latitude and longitude from the netCDF file.")
       raise
    #Get the inidices where there are data
    goodindices=numpy.where(initialvar!=MISSINGDATAVALUE)

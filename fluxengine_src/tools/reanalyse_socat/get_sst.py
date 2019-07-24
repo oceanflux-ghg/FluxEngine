@@ -31,7 +31,7 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
          #we want them in Kelvin (to be consistent with how the scripts were originally written)
          data=data+273.15
       else:
-         print "SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). "
+         print("SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). ")
    return data,lons,lats
 
 def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
@@ -51,7 +51,7 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
    Tcl=numpy.ma.array([-999.] * years.size, fill_value = -999.)
 
    #Get a list of all year and month combinations from the data
-   yrmon=zip(years,months)
+   yrmon=list(zip(years,months))
    yrmon=sorted(list(set(yrmon)))
 
    #loop through each date set in turn
@@ -61,7 +61,7 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
       #Read in the data from the SST data file
       sstfilename=os.path.join(SSTdir,"%d"%thisdate[0],"%d%02d"%(thisdate[0],thisdate[1])+SSTtail)
       if os.path.isfile(sstfilename) == False: 
-         print '%s: no SST file'%sstfilename
+         print('%s: no SST file'%sstfilename)
          Tcl[indices] = -999
          continue
       else:
@@ -88,13 +88,13 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
 
          lat_i.append(numpy.where(sstlats==xy[1])[0][0])
       #Note we are zipping in order lat,lon
-      grid_indices=numpy.array(zip(lat_i,lon_i))
+      grid_indices=numpy.array(list(zip(lat_i,lon_i)))
       #Now we need to get the fractional part of the grid index so that we can
       #interpolate to the position of the observation. Need to reshape due to 1 dim arrays.
       lonoffset=lons[indices]-sstlons[grid_indices[:,1]].reshape([-1])
       latoffset=lats[indices]-sstlats[grid_indices[:,0]].reshape([-1])
       #Add onto the grid cell indices
-      grid_indices_offset=grid_indices+numpy.array(zip(latoffset,lonoffset))
+      grid_indices_offset=grid_indices+numpy.array(list(zip(latoffset,lonoffset)))
       #Now we can get the interpolated SST data for these points
       Tcl[indices]=map_coordinates(sstdata, grid_indices_offset.transpose(), order = 1)
       #We need to test the integrity of the interpolated data

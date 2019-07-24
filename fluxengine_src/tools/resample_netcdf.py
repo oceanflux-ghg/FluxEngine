@@ -20,14 +20,14 @@ extension = args.extension
 csvfile = args.csvfile
 
 for infilename in glob.glob(sys.argv[1]):
-   print "INPUT FILE:",infilename
+   print("INPUT FILE:",infilename)
    infile = nc.Dataset(infilename, 'r')
    if outfilename == None:
       filename, extension2 = os.path.splitext(infilename)
       if csvfile:
          extension2 = '.csv'
       outfilename = filename + extension + extension2
-   print "OUTPUT FILE:",outfilename
+   print("OUTPUT FILE:",outfilename)
    if csvfile:
       outfile = open(outfilename, 'wb')
       writer = csv.writer(outfile)
@@ -38,11 +38,11 @@ for infilename in glob.glob(sys.argv[1]):
          clobber = True)
       for attname in infile.ncattrs():
          setattr(outfile, attname, getattr(infile,attname))
-      for dimname, diminst in list(infile.dimensions.iteritems()):
-         print "copying dimension ", dimname
+      for dimname, diminst in list(infile.dimensions.items()):
+         print("copying dimension ", dimname)
          if dimname == 'latitude':
             if len(diminst) != 180:
-               print "(resample_netcdf, main) latitude length", len(diminst)
+               print("(resample_netcdf, main) latitude length", len(diminst))
                infile.close()
                outfile.close()
                os.remove(outfilename)
@@ -50,7 +50,7 @@ for infilename in glob.glob(sys.argv[1]):
             outfile.createDimension('latitude', 45)
          elif dimname == 'longitude':
             if len(diminst) != 360:
-               print "(resample_netcdf, main) longitude length", len(diminst)
+               print("(resample_netcdf, main) longitude length", len(diminst))
                infile.close()
                outfile.close()
                os.remove(outfilename)
@@ -58,8 +58,8 @@ for infilename in glob.glob(sys.argv[1]):
             outfile.createDimension('longitude', 72)
          else:
             outfile.createDimension(dimname, len(diminst))
-   for varname, varinst in list(infile.variables.iteritems()):
-      print "copying variable ", varname
+   for varname, varinst in list(infile.variables.items()):
+      print("copying variable ", varname)
       if csvfile:
          if varname == 'time' or varname == 'latitude_longitude':
             continue
@@ -73,7 +73,7 @@ for infilename in glob.glob(sys.argv[1]):
                45, axis = 0)
          else:
             if varinst.shape != (1, 180, 360):
-               print '(resample_netcdf, main) odd shape ', varname, varinst.shape
+               print('(resample_netcdf, main) odd shape ', varname, varinst.shape)
                infile.close()
                outfile.close()
                os.remove(outfilename)
@@ -98,7 +98,7 @@ for infilename in glob.glob(sys.argv[1]):
                varinst.dimensions)
          for attname in atts:
             # python converts to integer if these are present
-            if not (attname in [u'scale_factor', u'add_offset']):
+            if not (attname in ['scale_factor', 'add_offset']):
                setattr(var, attname, getattr(varinst,attname))
          if varname == 'latitude':
             var[:] = np.arange(88., -89., -4.)
@@ -108,7 +108,7 @@ for infilename in glob.glob(sys.argv[1]):
             var[:] = varinst[:]
          else:
             if varinst.shape != (1, 180, 360):
-               print '(resample_netcdf, main) odd shape ', varname, varinst.shape
+               print('(resample_netcdf, main) odd shape ', varname, varinst.shape)
                infile.close()
                outfile.close()
                os.remove(outfilename)

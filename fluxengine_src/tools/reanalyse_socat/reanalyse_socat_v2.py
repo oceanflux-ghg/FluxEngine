@@ -16,10 +16,10 @@ import datetime
 import multiprocessing
 
 #internal libs
-import v2_convert_f_SSH
-import combine_xy
-import combine_nc_files
-import netcdf_helper
+from . import v2_convert_f_SSH
+from . import combine_xy
+from . import combine_nc_files
+from . import netcdf_helper
 
 #Returns a dictionary mapping region codes (keys) to input file names
 def GenerateRegionFileMap(socatfiles, regions):
@@ -30,11 +30,11 @@ def GenerateRegionFileMap(socatfiles, regions):
     #Multiple regions defined
     elif len(socatfiles) == len(regions):
         regionFileMap = {regions[i]:socatfiles[i] for i in range(0, len(regions))};
-        if len(regionFileMap.keys()) != len(regions): #Checks we're not overwriting files by using the same region key more than once.
+        if len(list(regionFileMap.keys())) != len(regions): #Checks we're not overwriting files by using the same region key more than once.
             raise ValueError("More than one file per region is not currently supported. To get around this you can define additional regions or concatenate input files manually.");
         if len(regions) > 1:
-            print "**********\nWarning using multiple regions: Region boundaries must be defined such that more than one region does not overlap a grid cell. If data from more than one region fall into one grid cell the values corresponding to this grid cell will be inaccurate. This constraint does not apply to regions which are specified as coastal using 'usecoastal'.";
-            raw_input("Press a key to continue...");
+            print("**********\nWarning using multiple regions: Region boundaries must be defined such that more than one region does not overlap a grid cell. If data from more than one region fall into one grid cell the values corresponding to this grid cell will be inaccurate. This constraint does not apply to regions which are specified as coastal using 'usecoastal'.");
+            input("Press a key to continue...");
         return regionFileMap;
     #Not global and there are more files than regions or more regions than files.
     else:
@@ -143,7 +143,7 @@ def CreateOutputTree(topdir,continuing=False):
    topdir=os.path.abspath(os.path.expanduser(topdir))
 
    #For ease in later functions update the output directory variables to include topdir
-   for key in outputdirectory.keys():
+   for key in list(outputdirectory.keys()):
       #if os.path.isabs(outputdirectory[key]) == False: #TMH: when using insitu data this isn't already appended.
           outputdirectory[key]=outputdirectory[key].safe_substitute(dirname=topdir)
 
@@ -180,7 +180,7 @@ def KrigeWithGstat(gstatcommdir):
    """
    #Get all the files that match the 'glob' in the gstatcommdir
    gstatcommfiles=glob.glob('%s/*.cmd'%gstatcommdir)
-   print "Found %d gstat command files."%len(gstatcommfiles)
+   print("Found %d gstat command files."%len(gstatcommfiles))
    #For each command file - run it with gstat and log the output
    for filename in sorted(gstatcommfiles):
       command=[GSTATEXE,filename]
@@ -325,27 +325,27 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
        raise Exception("Must specify one of AATSR or Reynolds SST products.")
 
    if usereynolds:
-      print
-      print "ATTENTION: selected to use Reynolds SST. This assumes that the sstdir points to the Reynolds data (if not you need to change it)."
-      print
+      print()
+      print("ATTENTION: selected to use Reynolds SST. This assumes that the sstdir points to the Reynolds data (if not you need to change it).")
+      print()
    if useaatsr:
-      print
-      print "ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it)."
-      print
+      print()
+      print("ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it).")
+      print()
    
 
    if methodused is not None and (diva==True or gstatcmds is not None):
-      print "Can only select one of --methodused, --diva or --gstatcmds."
+      print("Can only select one of --methodused, --diva or --gstatcmds.")
       return 1;
 
    elif diva==True and gstatcmds is not None:
-      print "Can only select one of --methodused, --diva or --gstatcmds."
+      print("Can only select one of --methodused, --diva or --gstatcmds.")
       return 1;
 
    if methodused is not None:
       allowedmethods=["DIVA","GSTAT"]
       if methodused not in allowedmethods:
-         print "Interpolation method should be one of: ", allowedmethods
+         print("Interpolation method should be one of: ", allowedmethods)
          return 1;
 
    #Expand and convert to absolute file paths
@@ -358,7 +358,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
    for path in [sstdir, vco2dir, socatdir]:
        if path != "" and path != None:
            if not os.path.exists(os.path.expanduser(path)):
-               print "File path does not exist: %s" % path
+               print("File path does not exist: %s" % path)
                return 2;
    
    
@@ -371,7 +371,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
    if methodused is None and diva==False and gstatcmds is None:
       #No interpolation has been specified. Exit when reach interpolation stage
       exitatinterpolation=True;
-      print "No interpolation option specified so will exit at interpolation stage.";
+      print("No interpolation option specified so will exit at interpolation stage.");
    
    #Get command line variables
    interpmethod=methodused
@@ -447,7 +447,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
       #Only do if netCDFs were produced in previous step 
       #TODO FIXME AND if more than 1 regions selected
       if not asciioutput:
-         print "Creating global netCDF products ..."
+         print("Creating global netCDF products ...")
          for month in range(1,13):
             for year in range(startyr,endyr+1):
                global_output_filename="%s/%d%02d01-OCF-CO2-GLO-1M-100-SOCAT-CONV.nc"%(
@@ -495,8 +495,8 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                             #"%s/%s"%(outputdirectory['reanalysedglobal'],output_global_monthly_file))
 
       if exitatinterpolation:
-         print "Have finished the pre-interpolation (reanalysis) stage."
-         print "If you are going to run with post-interpolation, please ensure that interpolated data files are named as expected and in the expected directories."
+         print("Have finished the pre-interpolation (reanalysis) stage.")
+         print("If you are going to run with post-interpolation, please ensure that interpolated data files are named as expected and in the expected directories.")
          return 0;
 
       #Test which interpolation methods to use
@@ -537,12 +537,12 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
       vco2_filename=glob.glob(vco2_pattern)
       if len(vco2_filename) == 0:
          # no file found
-         print "Cannot find vco2 filename based on filename %s"%(vco2_pattern)
+         print("Cannot find vco2 filename based on filename %s"%(vco2_pattern))
          vco2_filename=None
       elif len(vco2_filename) > 1:
          # more than one file found
-         print "Multiple vco2 files found based on filename %s"%(vco2_pattern)
-         print "Selecting first one: %s"%(vco2_filename[0])
+         print("Multiple vco2 files found based on filename %s"%(vco2_pattern))
+         print("Selecting first one: %s"%(vco2_filename[0]))
          vco2_filename=vco2_filename[0]
       else:
          # one file found
@@ -569,9 +569,9 @@ if __name__ == "__main__":
     exitCode = RunReanalyseSocat(**vars(cl));
     
     if exitCode == 0:
-        print "Reanalysis of socat data completed successfully.";
+        print("Reanalysis of socat data completed successfully.");
     else:
-        print "An error occured while performing reanalysis. Exited with exit-code:", exitCode;
+        print("An error occured while performing reanalysis. Exited with exit-code:", exitCode);
     
 
 

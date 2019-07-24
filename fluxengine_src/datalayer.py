@@ -4,7 +4,7 @@
 from netCDF4 import Dataset
 from numpy import flipud, ma, ravel, transpose, full, array, squeeze;
 from numpy import all as npall;
-from debug_tools import calc_mean;
+from .debug_tools import calc_mean;
 
 #Simple class for storing metadata about a datalayer.
 #These values are used as the default values for datalayers, unless they're overwritten by the config file.
@@ -24,13 +24,13 @@ class DataLayerMetaData:
         try:
             self.minBound = float(minBound) if minBound != None else None; #None is allowed
         except ValueError:
-            print "%s: Invalid minimum value supplied (%s) for DataLayer %s, defaulting to None." % {function, minBound, self.name};
+            print("%s: Invalid minimum value supplied (%s) for DataLayer %s, defaulting to None." % {function, minBound, self.name});
             self.minBound = None;
         
         try:
             self.maxBound = float(maxBound) if maxBound != None else None; #None is allowed
         except ValueError:
-            print "%s: Invalid maximum value supplied (%s) for DataLayer %s, defaulting to None." % (function, maxBound, self.name);
+            print("%s: Invalid maximum value supplied (%s) for DataLayer %s, defaulting to None." % (function, maxBound, self.name));
             self.maxBound = None;
         
         self.temporalChunking = 1;
@@ -67,8 +67,8 @@ class DataLayer:
         try:
             dataset = Dataset(infile);
         except IOError as e:
-            print "\n%s: %s inputfile %s does not exist" % (function, name, infile)
-            print e.args;
+            print("\n%s: %s inputfile %s does not exist" % (function, name, infile))
+            print(e.args);
         
         #Check netCDF file: Prints some info when in DEBUG mode.
         check_input(infile, prod, DataLayer.DEBUG);
@@ -203,9 +203,9 @@ def validate_range(fdata, minBound, maxBound, missingValue):
 def flip_data(dataset, this_variable, name):
     '''#IGA - for a netcdf data set, determine whether latitude orientation matches 'taka' and if not, flip the variable provided using flipud'''
     try:
-        data_latitude_prod = [str(x) for x in dataset.variables.keys() if 'lat' in str(x).lower()] #finds the correct latitude name for data
+        data_latitude_prod = [str(x) for x in list(dataset.variables.keys()) if 'lat' in str(x).lower()] #finds the correct latitude name for data
         if len(data_latitude_prod) != 1:
-            raise IndexError("Ambiguous or no latitude variable: "+str(dataset.variables.keys()));
+            raise IndexError("Ambiguous or no latitude variable: "+str(list(dataset.variables.keys())));
         
         data_lat = dataset.variables[data_latitude_prod[0]]
         if len(data_lat.shape)<2 and data_lat[0]<0:#IGA - if true, it is a vector that is in opposite orientation to 'taka'
@@ -217,26 +217,26 @@ def flip_data(dataset, this_variable, name):
     
         return this_variable_out, flipped
     except IndexError:
-        print "Assuming correct orientation for %s. Variable has not been flipped." % name;
+        print("Assuming correct orientation for %s. Variable has not been flipped." % name);
         return this_variable, False;
         
 
 def check_input(filename, dataset, DEBUG=False):
    function = "(check_input, main)"   
    if DEBUG:
-      print "%s checking %s for %s data" % (function, filename, dataset)
+      print("%s checking %s for %s data" % (function, filename, dataset))
    file = Dataset(filename,'r',clobber=False)
-   for dimname, diminst in sorted(list(file.dimensions.iteritems())):
+   for dimname, diminst in sorted(list(file.dimensions.items())):
       if diminst.isunlimited():
          if DEBUG:
-            print "%s %s dimension\t%s\t%s\tunlimited" % (function, dataset, dimname, len(diminst))
+            print("%s %s dimension\t%s\t%s\tunlimited" % (function, dataset, dimname, len(diminst)))
       else:
          if DEBUG:
-            print "%s %s dimension\t%s\t%s" % (function, dataset, dimname, len(diminst))
+            print("%s %s dimension\t%s\t%s" % (function, dataset, dimname, len(diminst)))
               
-   for varname, varinst in sorted(list(file.variables.iteritems())):
+   for varname, varinst in sorted(list(file.variables.items())):
       if DEBUG:
-         print "%s %s variable\t%s\t\t%s\t%s\t%s" % (function, dataset, varname, varinst.shape, varinst.dimensions, varinst.dtype)
+         print("%s %s variable\t%s\t\t%s\t%s\t%s" % (function, dataset, varname, varinst.shape, varinst.dimensions, varinst.dtype))
 
    file.close()
    return 0

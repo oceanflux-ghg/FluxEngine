@@ -21,10 +21,10 @@ from datetime import date, timedelta, datetime;
 import fnmatch; #matching file globs
 from numpy import cumsum;
 
-import fe_core as fluxengine
-import rate_parameterisation as k_params; #This is where k parameterisation logic is kept.
-import data_preprocessing as data_preprocessing; #preprocessing functions
-import process_indicator_layers as indicator_layers; #Process indicator layer functors
+from . import fe_core as fluxengine
+from . import rate_parameterisation as k_params; #This is where k parameterisation logic is kept.
+from . import data_preprocessing as data_preprocessing; #preprocessing functions
+from . import process_indicator_layers as indicator_layers; #Process indicator layer functors
 
 
 #Parses .conf files and returns a dictionary containing variable values.
@@ -48,19 +48,19 @@ def read_config_file(configPath, verbose=False):
                     if (name in configVariables) == False: #Duplicate definition of same variable?
                         configVariables[name] = value;
                     else:
-                        print "Warning: Duplicate definition in config file for '%s'. The first definition will be used." % name;
+                        print("Warning: Duplicate definition in config file for '%s'. The first definition will be used." % name);
                 except: #Will only happen if there isn't both left and righthand sides to the '=' assignment
-                    print "%s: Error parsing config file line:\n"%function, line;
+                    print("%s: Error parsing config file line:\n"%function, line);
                     return None;
     except Exception as e:
-        print "Error while parsing config file at path:", configPath;
-        print type(e), e.args;
+        print("Error while parsing config file at path:", configPath);
+        print(type(e), e.args);
         return None;
     
     if verbose:
-        print "\nParsed configurable variables as follows:";
-        for key in configVariables.keys():
-            print key, configVariables[key];
+        print("\nParsed configurable variables as follows:");
+        for key in list(configVariables.keys()):
+            print(key, configVariables[key]);
     return configVariables;
 
 
@@ -73,7 +73,7 @@ def read_config_metadata(settingsPath, verbose=False):
     import xml.etree.ElementTree as ET; #Only needed here.
     
     if verbose:
-        print "Parsing settings file at:", settingsPath;
+        print("Parsing settings file at:", settingsPath);
     tree = ET.parse(settingsPath);
     root = tree.getroot();
     
@@ -93,8 +93,8 @@ def read_config_metadata(settingsPath, verbose=False):
                                 try:
                                     options[child.attrib["str"]] = int(child.attrib["value"]);
                                 except ValueError as e:
-                                    print "%s: Invalid multioption child 'Option' element in %s. 'str' and 'value' attributes must be specified." % (function, element.attrib["name"])
-                                    print e.args;
+                                    print("%s: Invalid multioption child 'Option' element in %s. 'str' and 'value' attributes must be specified." % (function, element.attrib["name"]))
+                                    print(e.args);
                         varMetadata[element.attrib["name"]]["options"] = options;
                     
                     #DataLayer: Datalayers require several variables to define them, so create these here.
@@ -136,8 +136,8 @@ def read_config_metadata(settingsPath, verbose=False):
                     else: #just a straightforward variable, so add it.
                         varMetadata[element.attrib["name"]] = element.attrib;
             except ValueError as e:
-                print "%s: 'name' or 'type' attribute missing from Variable element in settings xml file. Specified settings file is invalid: %s" % (function, settingsPath);
-                print e.args;
+                print("%s: 'name' or 'type' attribute missing from Variable element in settings xml file. Specified settings file is invalid: %s" % (function, settingsPath));
+                print(e.args);
                 
     else:
         raise IOError("%s: Couldn't find parent 'ConfigParameters' element in %s."%(function, settingsPath));
@@ -180,7 +180,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
         #             Store string value with _name suffix overwrite original with integer value.
         elif metadata[varName]["type"] == "multioption":
             if configVariables[varName] not in metadata[varName]["options"]:
-                raise ValueError("%s: Invalid option specified in config file for %s. Valid options are: %s" % (function, varName, str(metadata[varName]["options"].keys())));
+                raise ValueError("%s: Invalid option specified in config file for %s. Valid options are: %s" % (function, varName, str(list(metadata[varName]["options"].keys()))));
             configVariables[varName+"_name"] = configVariables[varName]; #name is useful for writing messages to user
             configVariables[varName] = metadata[varName]["options"][configVariables[varName]]; #Overwrite with integer option
         
@@ -199,14 +199,14 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             try:
                 configVariables[varName] = float(configVariables[varName]);
             except ValueError:
-                print "%s: Config variable '%s' requires a decimal / floating point number. Got %s instead." % (function, varName, configVariables[varName]);
+                print("%s: Config variable '%s' requires a decimal / floating point number. Got %s instead." % (function, varName, configVariables[varName]));
         
         #Int: string to int
         elif metadata[varName]["type"] == "integer":
             try:
                 configVariables[varName] = float(configVariables[varName]);
             except ValueError:
-                print "%s: Config variable '%s' requires a whole / integer number. Got %s instead." % (function, varName, configVariables[varName]);
+                print("%s: Config variable '%s' requires a whole / integer number. Got %s instead." % (function, varName, configVariables[varName]));
         
         #Strings: Do nothing, strings are just strings.
         elif metadata[varName]["type"] == "string":
@@ -231,10 +231,10 @@ def verify_config_variables(configVariables, metadata, verbose=False):
         #tmpTime = datetime.strptime(configVariables["temporal_resolution"], "%d %H:%M");
         #configVariables["temporal_resolution"] = timedelta(days=tmpTime.day, hours=tmpTime.hour, minutes=tmpTime.minute);
         if verbose:
-            print "Temporal resolution set to: ", configVariables["temporal_resolution"];
+            print("Temporal resolution set to: ", configVariables["temporal_resolution"]);
     except ValueError:
         if verbose:
-            print "Temporal resolution has been set to default (monthly)";
+            print("Temporal resolution has been set to default (monthly)");
         configVariables["temporal_resolution"] = None;
     
     #Now process custom vars. Try to convert them to a float, but if they fail assume they're supposed to be a string.
@@ -360,8 +360,8 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
                     else: #There isn't exactly 1 matching file, so we have a problem, add it to the list.
                         missingFiles.append( (varName, path.join(curDir, curGlob) ) );
                 except Exception as e:
-                    print "Invalid filepath when checking for %s: %s" % (varName, curDir);
-                    print type(e), e.args;
+                    print("Invalid filepath when checking for %s: %s" % (varName, curDir));
+                    print(type(e), e.args);
                     return None;
         
             #Switches: _switch suffix added for clarity
@@ -377,9 +377,9 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
         
         #if there were missing files, raise them.
         if len(missingFiles) != 0:
-            print "Missing files:";
+            print("Missing files:");
             for missingFile in missingFiles:
-                print missingFile[0]+": "+missingFile[1];
+                print(missingFile[0]+": "+missingFile[1]);
             raise ValueError("%s: Error finding unique file matches for one or more input data layers." % (function));
             return None;
             
@@ -424,8 +424,8 @@ def build_k_functor(runParameters):
                 try:
                     ClassHandle = getattr(k_params, name);
                 except AttributeError as e:
-                    print "%s: Could not find a k parameterisation functor which corresponds to the specified k_parameterisation (%s). If this specified correctly in the config file?"%(function, name);
-                    print e.args;
+                    print("%s: Could not find a k parameterisation functor which corresponds to the specified k_parameterisation (%s). If this specified correctly in the config file?"%(function, name));
+                    print(e.args);
                     return None;
                 
                 #Check it derives from KCalculateBase - this is used as a simple way to filter out irrelevant classes
@@ -437,15 +437,15 @@ def build_k_functor(runParameters):
                         #Create a dictionary of name:value pairs for the __init__ arguments. Assumes arguments match config file names.
                         argDict = {key : runParameters[key] for key in initialiserArgNames if key in runParameters}; #create a dictionary of arguments name:value pairs
                     except KeyError as e:
-                        print "%s: Could not find all the required initialiser arguments. Are they specified correctly in the config file?\nExpected arguments are: "%function, initialiserArgNames;
-                        print "KeyError.args: ", e.args;
+                        print("%s: Could not find all the required initialiser arguments. Are they specified correctly in the config file?\nExpected arguments are: "%function, initialiserArgNames);
+                        print("KeyError.args: ", e.args);
                         return None;
                     
                     #Finally create and return the k functor instance
                     return ClassHandle(**argDict);
     
     except ImportError as e:
-        print "%s: Cannot find k_parameterisation module. Check FluxEngine is installed correctly.", e.args;
+        print("%s: Cannot find k_parameterisation module. Check FluxEngine is installed correctly.", e.args);
         return None;
     return None;
 
@@ -518,7 +518,7 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, v
                 break;
     
     if status == False:
-        print "Error adding data layers.";
+        print("Error adding data layers.");
         fe = None;
     
     return fe;
@@ -574,8 +574,8 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     hostname = socket.gethostname();
     rootPath = path.abspath(path.expanduser(path.join(__file__, "../..")));
     if verbose:
-        print "Hostname identified as: ", hostname;
-        print "Working directory is: ", rootPath;
+        print("Hostname identified as: ", hostname);
+        print("Working directory is: ", rootPath);
     
     #Parse config file
     configPath = path.join(configFilePath); #Don't make configFilePath absolute!
@@ -586,25 +586,25 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
     #Append custom datalayers to metadata file, this means they will be automatically added as a datalayer
-    for varName in configVariables.keys():
+    for varName in list(configVariables.keys()):
         if (varName not in metadata) and (varName[-5:] == "_path"):
             varBase = varName[:-5];
             metadata[varName] = {"required":"false", "type":"DataLayerPath", "name":varBase};
     
     #Substitute commandline override arguments (-pco2_dir_override, -output_dir_override)
     if (pco2DirOverride != None):
-        print "Using optional override for pCO2w data directory. '%s' will be set to '%s' (ie overriding both directory of pco2 data and selection in the configuration file)." % (configVariables["pco2"], pco2DirOverride);
+        print("Using optional override for pCO2w data directory. '%s' will be set to '%s' (ie overriding both directory of pco2 data and selection in the configuration file)." % (configVariables["pco2"], pco2DirOverride));
         configVariables["pco2_path"] = path.abspath(path.expanduser(pco2DirOverride));
     if (outputDirOverride != None):
         configVariables["output_dir"] = path.abspath(path.expanduser(outputDirOverride));
-        print "Using optional override for output directory, output_dir will be set to %s (overriding the configuration file value)." % (outputDirOverride);
+        print("Using optional override for output directory, output_dir will be set to %s (overriding the configuration file value)." % (outputDirOverride));
     
     #Printing some feedback...
     if processLayersOff == True and verbose:
-        print "Switching off generation of processing indicator layers. This reduces the processing time by appx. 50% (switch: process_layers_off).";
+        print("Switching off generation of processing indicator layers. This reduces the processing time by appx. 50% (switch: process_layers_off).");
         #configVariables["process_indicator_layers"] = None;
     if takahashiDriver == True and verbose:
-        print "This is a takahashi validation run. Ensure config is the configs/takahashi09_validation.conf file supplied with FluxEngine.";
+        print("This is a takahashi validation run. Ensure config is the configs/takahashi09_validation.conf file supplied with FluxEngine.");
     
     #Using the metadata, process the config variables appropriately
     #Checks types are valid, converts strings to the data types required by fluxengine
@@ -620,7 +620,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     
     #Begin main execution logic
     processTimeStr = time.strftime("%d/%m/%Y %H:%M:%S");
-    print "Executing on '%s' at %s" % (hostname, processTimeStr);
+    print("Executing on '%s' at %s" % (hostname, processTimeStr));
     
     #Generate a list of datetime objects overwhich to run the simulations
     timePoints = generate_datetime_points(startDate, endDate, deltaTime=configVariables["temporal_resolution"], singleDate=singleRun);
@@ -640,10 +640,10 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
             else:
                 runParameters["TAKAHASHI_DRIVER"] = False;
         except ValueError as e:
-            print e.args;
+            print(e.args);
             return;
         except OSError as e:
-            print e.args;
+            print(e.args);
             return;
         
         #Create output file path
@@ -651,8 +651,8 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
             if path.exists(runParameters["output_dir"]) == False:
                 makedirs(runParameters["output_dir"]);
         except OSError as e:
-            print "Couldn't create output directory '%s'. Do you have write access?" % runParameters["output_dir"];
-            print type(e), e.args;
+            print("Couldn't create output directory '%s'. Do you have write access?" % runParameters["output_dir"]);
+            print(type(e), e.args);
         
         #Create fluxengine object to use runParameters
         fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
@@ -664,12 +664,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         
         #Check for successful run, if one fails don't run the rest.
         if returnCode != 0:
-            print ("%s: There was an error running flux engine:\n\n"%function), e.args[0];
-            print "Exiting...";
+            print(("%s: There was an error running flux engine:\n\n"%function), e.args[0]);
+            print("Exiting...");
             return (returnCode, fe);
         else:
-            print "Flux engine exited with exit code:", returnCode;
-            print "%02d"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "%02d:%02d:%02d completed successfully.\n"%(timePoint.hour, timePoint.minute, timePoint.second);
+            print("Flux engine exited with exit code:", returnCode);
+            print("%02d"%timePoint.day, calendar.month_abbr[timePoint.month], timePoint.year, "%02d:%02d:%02d completed successfully.\n"%(timePoint.hour, timePoint.minute, timePoint.second));
 
     return (returnCode, fe); #return code, FluxEngine object.
 

@@ -19,7 +19,7 @@ import pandas as pd;
 
 
 def parse_cl_arguments():
-    description = unicode("""Converts netCDF3 data produced as output from FluxEngine into text data (e.g. csv, tsv).
+    description = str("""Converts netCDF3 data produced as output from FluxEngine into text data (e.g. csv, tsv).
     The text output will contain one column for each data layer, and one row for each cell of the grid (if there is no missing data).
     One text file will be created for each netCDF3 file.
     """, 'utf-8');
@@ -77,15 +77,15 @@ if __name__ == "__main__":
     
     #Process each input netCDF file and produce a text file
     for inFile in inFiles:
-        print "Processing file at:", inFile;
+        print("Processing file at:", inFile);
         try:
             ncFile = Dataset(inFile, 'r');
         except IOError:
-            print "Failed to open", inFile;
+            print("Failed to open", inFile);
             failedFiles.append(inFile);
             continue; #Move to the next file
             
-        varNames = [varName for varName in ncFile.variables.keys() if varName not in ["time", "latitude", "longitude"]];
+        varNames = [varName for varName in list(ncFile.variables.keys()) if varName not in ["time", "latitude", "longitude"]];
         #varNames = ["OF"];
         unitNames = [ncFile.variables[var].units for var in varNames];
         colNames = [varNames[i]+" ["+unitNames[i]+"]" if unitNames[i] != "" else varNames[i] for i in range(0, len(varNames))];#  else varNames[i]];
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         df = pd.DataFrame(rowList, columns = ["Latitude", "Longitude"]+colNames);
         outFile = inFile.rsplit('.',1)[0] + ".tsv";
         df.to_csv(outFile, sep="\t", index=False, encoding='utf-8');
-        print "outputFile written to:", outFile;
+        print("outputFile written to:", outFile);
 
 
 

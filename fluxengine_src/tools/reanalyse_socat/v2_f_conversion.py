@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 import numpy as np
-import datenum
+from . import datenum
 import tempfile
 
 # Constants
@@ -107,7 +107,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    
    if badpoints[0].size != 0:
       fileout=tempfile.mkstemp(prefix="%s/ignored_points_"%tempdir)[1]
-      print "Writing ignored points to temp file: %s"%fileout
+      print("Writing ignored points to temp file: %s"%fileout)
       fout=open(fileout,'w')
       fout.write("jd,lat,lon,SST_C,fCO2_rec,Tcl,Peq_cl\n")
       for item in badpoints[0]:

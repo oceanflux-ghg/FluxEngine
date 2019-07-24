@@ -27,7 +27,7 @@ from glob import glob;
 
 #Parse and set variables from command line arguments. Returns an object containing each command line argument as an attribute.
 def parse_cl_arguments():
-    description = unicode("""Converts text encoded data (e.g. csv, tsv) to netCDF3 data which is compatible for use with FluxEngine.
+    description = str("""Converts text encoded data (e.g. csv, tsv) to netCDF3 data which is compatible for use with FluxEngine.
     The text input file must have a header containing the column names.
     Column names must start with a letter (a-z or A-Z) and can only contain letters, numbers, spaces, underscores and certain symbols.
     For information on allowed symbols consult the netCDF3 documentation.
@@ -152,27 +152,27 @@ def calc_mean(allValues, mask, output):
 #   clArgs: parsed commandline arguments
 def process_cols(dataFrame, columnNames, encoding):
     if columnNames == None: #If no columns are specified, then add them all.
-        columnNames = dataFrame.keys();
+        columnNames = list(dataFrame.keys());
     else: #Convert integers indexed to strings column names
         for i, colName in enumerate(columnNames):
             try:
                 colIndex = int(colName);
                 try:
-                    columnNames[i] = dataFrame.keys()[colIndex];
+                    columnNames[i] = list(dataFrame.keys())[colIndex];
                 except IndexError:
-                    print "WARNING: Invalid column number specified (%d) because there are not this many labels in the data's header. This will be ignored." % colIndex;
+                    print("WARNING: Invalid column number specified (%d) because there are not this many labels in the data's header. This will be ignored." % colIndex);
             except ValueError:
                 pass;
     
     #Check each colName matches a column name in the header
     for colName in columnNames:
-        if colName not in dataFrame.keys():
-            print "WARNING: Unrecognised column name specified (%s). Column names must exactly match the header of your data file. Column names are case sensitive, and must be surrounded by quotes if they include spaces." %colName;
+        if colName not in list(dataFrame.keys()):
+            print("WARNING: Unrecognised column name specified (%s). Column names must exactly match the header of your data file. Column names are case sensitive, and must be surrounded by quotes if they include spaces." %colName);
     
     #Finally convert them to the correct encoding
     for i, colName in enumerate(columnNames):
-        if not isinstance(colName, unicode):
-            columnNames[i] = unicode(colName, encoding);
+        if not isinstance(colName, str):
+            columnNames[i] = str(colName, encoding);
 
 #Create arrays to store and process data in.
 #   colNames: list of column names to use (mean, count, stddev and value matrices will be created for each column)
@@ -181,9 +181,9 @@ def process_cols(dataFrame, columnNames, encoding):
 #   gridDimLengthY: length of the grid (longitude)
 def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY):
     allArrays = {}; #Store numpy arrays separately until we copy them over to the netCDF variable.
-    print "The following columns will be extracted:";
+    print("The following columns will be extracted:");
     for colName in colNames:
-        print "\t", colName;
+        print("\t", colName);
         
         #somewhere to store the mean, count and standard deviation of each grid cell
         allArrays[colName+"_mean"] = np.full([temporalDimLength, gridDimLengthX, gridDimLengthY], 0.0, dtype='f');
@@ -346,13 +346,13 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         startTime, formatUsed = parseDateTimeString(startTime, CL_DATE_FORMATS)
         startTime = startTime;
     except ValueError as e:
-        print e.clArgs;
+        print(e.clArgs);
         raise SystemExit("Unable to parse start datetime "+startTime);
     try:
         endTime, formatUsed = parseDateTimeString(endTime, CL_DATE_FORMATS);
         endTime = endTime;
     except ValueError as e:
-        print e.args;
+        print(e.args);
         raise SystemExit("Unable to parse end datetime "+endTime);
     
     #Parse temporalResolution
@@ -379,7 +379,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ###########
     # Define dimension data (lat, lon and time), grid size and resolution
     ###########
-    print "Calculating dimensions."
+    print("Calculating dimensions.")
     latitudeData = np.arange(limits[0]+(latResolution/2.0), limits[1]+(latResolution/2.0), latResolution); #+latResolution so it uses an inclusive range
     longitudeData = np.arange(limits[2]+(lonResolution/2.0), limits[3]+(lonResolution/2.0), lonResolution); #+lonResolution so it uses an inclusive range
     gridDimLengthX = len(latitudeData);
@@ -410,7 +410,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
             allArrays = initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
         
         #Loop through each row in the current file and process data
-        print "Processing data in file", inFile;
+        print("Processing data in file", inFile);
         missingValueRows = []; #Missing values
         skippedRows = []; #Skipped due to being outside lon/lat limits
         for i, row in df.iterrows():
@@ -459,7 +459,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ##############
     #A seperate netCDF file will be created for each index in the time dimension (unless chunking is being used).
     #Loop through the temporal index and create the netCDF files
-    print "Writing output netCDF file(s)...";
+    print("Writing output netCDF file(s)...");
     currentChunk = 0;
     for temporalIndex in range(0, temporalDimLength):
         #Create netCDF file if required
@@ -494,10 +494,10 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     ############
     
     #Output some info to the user
-    print "Finished converting text file to netCDF3. There were %d values which fell outside the specified lat/lon or start/stop time boundaries." % len(skippedRows)
+    print("Finished converting text file to netCDF3. There were %d values which fell outside the specified lat/lon or start/stop time boundaries." % len(skippedRows))
     #if len(invalidRowIndices) != 0:
     #    print "Rows with invalid values:", invalidRowIndices;
-    print "Number of missing values found:", len(missingValueRows);
+    print("Number of missing values found:", len(missingValueRows));
     #if len(missingValueRows) != 0:
     #    print "Rows with missing values:", missingValueRows;
     
@@ -505,7 +505,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
 
 if __name__ == "__main__":
     #parse command line arguments
-    print "Parsing command line arguments.";
+    print("Parsing command line arguments.");
     args = parse_cl_arguments();
     
     convert_text_to_netcdf(args.inFiles, args.startTime, args.endTime, args.ncOutPath,

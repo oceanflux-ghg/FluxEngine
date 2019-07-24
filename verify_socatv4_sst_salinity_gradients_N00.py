@@ -25,14 +25,14 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     
     #Run flux engine
     if verbose:
-        print "Running FluxEngine for year 2010...";
+        print("Running FluxEngine for year 2010...");
     configFilePath = path.join(feRoot, "configs/socatv4_sst_salinity_gradients-N00.conf");
     runStatus, fe = run_fluxengine(configFilePath, 2010, 2010, processLayersOff=True, verbose=False);
     
     
     #run net budgets
     if verbose:
-        print "\n\nNow calculating flux budgets...";
+        print("\n\nNow calculating flux budgets...");
     outputFilePath = path.join("output", "validate_socatv4_sst_salinity_N00", "");
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
                                 dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
@@ -46,7 +46,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     
     #compare similarity flux budgets output between new and ref runs
     if verbose:
-        print "\n\nComparing output to reference data...";
+        print("\n\nComparing output to reference data...");
     newPath = path.join("output", "validate_socatv4_sst_salinity_N00", "_global.txt");
     refPath = path.join("data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
@@ -55,19 +55,19 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     for key in diffs:
         if diffs[key] > 100.0001 or diffs[key] < 99.9999:
             if verbose:
-                print key, "percentage difference from reference:", diffs[key];
+                print(key, "percentage difference from reference:", diffs[key]);
             numFailed += 1;
     
     if numFailed == 0:
         if verbose:
-            print "Verification successful! All values are within threshold limits:";
+            print("Verification successful! All values are within threshold limits:");
             validationSuccessful = True;
         for key in diffs:
             if verbose:
-                print "\t"+key+": "+str(diffs[key])+"%";
+                print("\t"+key+": "+str(diffs[key])+"%");
     else:
         if verbose:
-            print "\Verification failed because %d values were outside threshold limits." % numFailed;
+            print("\Verification failed because %d values were outside threshold limits." % numFailed);
             validationSuccessful = True;
     
     return {"run status":runStatus, "number of net budgets exceeding threshold":numFailed,

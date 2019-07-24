@@ -9,7 +9,7 @@ computed in a modular fashion.
 @author: tomholding
 """
 
-from datalayer import DataLayer;
+from .datalayer import DataLayer;
 from numpy import arange;
 
 #Base class from which process indicator layers are derived.
@@ -49,7 +49,7 @@ class process_indicator_example(ProcessIndicatorBase):
     #Main calculation is performed here. Input and output datalayers can be accessed from 'data'.
     #Output layers should be modified in place (i.e. without copying), and return True or False to indicate successful execution.
     def __call__(self, data):
-        print self.long_name, "with 'someParameter' as", self.someParameter;
+        print(self.long_name, "with 'someParameter' as", self.someParameter);
         return True;
 
 
@@ -71,8 +71,8 @@ class low_wind_indicator(ProcessIndicatorBase):
             windu10 = data["windu10"].fdata;
             low_wind = data["low_wind"].fdata;
         except KeyError as e:
-            print "%s: Required data layer for process indicator layer was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for process indicator layer was not found." % function);
+            print(type(e), e.args);
             return False;
        
         #Main logic; generate low_wind mask
@@ -106,8 +106,8 @@ class bioclass_indicator(ProcessIndicatorBase):
             biology = data["biology"].fdata;
             bioclass = data["bioclass"].fdata;
         except KeyError as e:
-            print "%s: Required data layer for process indicator layer was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for process indicator layer was not found." % function);
+            print(type(e), e.args);
             return False;
         
         for i in arange(len(biology)):
@@ -144,8 +144,8 @@ class diurnal_warming_indicator(ProcessIndicatorBase):
             sstfnd = data["sstfnd"].fdata;
             diurnal_warming = data["diurnal_warming"].fdata;
         except KeyError as e:
-            print "%s: Required data layer for process indicator layer was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for process indicator layer was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #diurnal warming when (sstskin - sstfnd) > differenceThreshold
@@ -182,8 +182,8 @@ class oceanic_basins_indicator(ProcessIndicatorBase):
             southern_ocean_mask = data["southern_ocean_mask"].fdata;
             indian_ocean_mask = data["indian_ocean_mask"].fdata;
         except KeyError as e:
-            print "%s: Required data layer for process indicator layer was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for process indicator layer was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #re-assinging values and adding in missing_value entries
@@ -233,8 +233,8 @@ class longhurst_provinces_indicator(ProcessIndicatorBase):
         try:
             longhurst_mask = data["longhurst_mask"].fdata;
         except KeyError as e:
-            print "%s: Required data layer for process indicator layer was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for process indicator layer was not found." % function);
+            print(type(e), e.args);
             return False;
 
             #reassign longhurst provinces

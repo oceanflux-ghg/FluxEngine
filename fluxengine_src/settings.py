@@ -7,7 +7,7 @@ Created on Fri Mar 23 09:37:32 2018
 
 @author: tomholding
 """
-from datalayer import DataLayerMetaData;
+from .datalayer import DataLayerMetaData;
 
 #A place to store default information about DataLayers.
 class Settings:
@@ -16,7 +16,7 @@ class Settings:
         import xml.etree.ElementTree as ET; #Only needed here.
         self.allDataLayers = {};
         
-        print "Parsing settings file at:", filename;
+        print("Parsing settings file at:", filename);
         tree = ET.parse(filename);
         root = tree.getroot();
         

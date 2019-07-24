@@ -15,7 +15,7 @@
 # TO DO
 # account for months in which there are no valid pixels in a region
 
-from __future__ import print_function
+
 from netCDF4 import Dataset
 from glob import glob
 import numpy as np, sys, csv, argparse, calendar
@@ -135,7 +135,7 @@ def run_flux_budgets(args):
           print("Year directories don't match: ", nYears, len(refyeardirs))
           sys.exit(1)
     refFMask = False
-    for yearNo in xrange(nYears):
+    for yearNo in range(nYears):
        yeardir = yeardirs[yearNo]
        syear = yeardir[-5:-1]
        year = int(syear)
@@ -153,7 +153,7 @@ def run_flux_budgets(args):
        if nMonths == 0:
           print('No month directories found in ', year, ' - continuing')
           continue
-       for monthNo in xrange(nMonths):
+       for monthNo in range(nMonths):
           monthdir = monthdirs[monthNo]
           smonth = monthdir[-3:-1]
           month = int(smonth)
@@ -226,7 +226,7 @@ def run_flux_budgets(args):
              if verbosity > 0:
                 print('dimensions ', ny, nx, y0, y1, x0, x1)
              extraNames = []
-             for item in variables.iteritems(): # find extra variable names
+             for item in variables.items(): # find extra variable names
                 shape = item[1].shape
                 if shape == inshape:
                    extraNames.append(item[0])
@@ -242,7 +242,7 @@ def run_flux_budgets(args):
                 globalWriter.writerow(titles)
                 if referencing:
                    refGlobalWriter.writerow(titles)
-             for regionNo in xrange(nRegions):
+             for regionNo in range(nRegions):
                 writers[regionNo].writerow(titles)
                 if referencing:
                    refWriters[regionNo].writerow(titles)
@@ -295,7 +295,7 @@ def run_flux_budgets(args):
                 print('No grid areas given - assuming  a1deg x 1deg grid and calculating net flux accordingly.')
                 cellAreas = np.empty(ny)
                 cellAreas.fill(float('nan'))
-                for j in xrange(y0,y1):
+                for j in range(y0,y1):
                    cellAreas[j-y0] = quad(oneDegreeArea, 89. - j, 90. - j)[0]
              elif gridAreafile != 'no_file':
                 print('Reading grid area from file', gridAreafile)
@@ -425,7 +425,7 @@ def run_flux_budgets(args):
                 sys.exit(1)
              checkShape((fluxdataset, refVariable))
              refIce = refVariable[0, y0:y1, x0:x1]
-          for extraNo in xrange(nExtras):
+          for extraNo in range(nExtras):
              extraName = extraNames[extraNo]
              try:
                 variable = variables[extraName]
@@ -474,8 +474,8 @@ def run_flux_budgets(args):
              refExtraAreas = np.zeros((nExtras,nRegions))
           if verbosity > 0:
              print('Processing ', month, ' ', year)
-          for j in xrange(ny):
-             for i in xrange(nx):
+          for j in range(ny):
+             for i in range(nx):
                 if ocean[j, i] == 0.:
                    continue
                 f = flux[j, i]
@@ -736,7 +736,7 @@ def run_flux_budgets(args):
              refMissingDownFluxes *= daysInMonth
              refMissingUpFluxes *= daysInMonth
              refExtras = np.divide(refExtras, refExtraAreas)
-          for regionNo in xrange(nRegions):
+          for regionNo in range(nRegions):
              writers[regionNo].writerow(np.append([syear, smonth],
                 np.append([fluxes[regionNo], missingFluxes[regionNo],
                 standardFluxes[regionNo], downFluxes[regionNo],
@@ -877,7 +877,7 @@ def run_flux_budgets(args):
           refYearlyDownFluxes *= daysInMeanMonth
           refYearlyUpFluxes *= daysInMeanMonth
           refYearlyExtras /= refYearlyExtraAreas
-       for regionNo in xrange(nRegions):
+       for regionNo in range(nRegions):
           writers[regionNo].writerow(np.append([syear, 'ALL'],
              np.append([yearlyFluxes[regionNo], missingFluxes[regionNo],
              standardYearlyFluxes[regionNo], yearlyDownFluxes[regionNo],

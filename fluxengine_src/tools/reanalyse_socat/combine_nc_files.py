@@ -5,7 +5,7 @@ import sys
 import copy
 import numpy
 import netCDF4
-import netcdf_helper
+from . import netcdf_helper
 
 
 def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=False):
@@ -42,26 +42,26 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
       #open the file
       fin=netCDF4.Dataset(filename)
       #get a list of all variables
-      filevars=fin.variables.keys()
-      filedims=fin.dimensions.keys()
+      filevars=list(fin.variables.keys())
+      filedims=list(fin.dimensions.keys())
       #read all the dimensions and
       #read all of the data variables
       for variable in filevars:
          if variable in filedims:
             #variable is a dimension - check if it is already in the dimension dictionary
-            if variable not in dataitem_dims.keys():
+            if variable not in list(dataitem_dims.keys()):
                dataitem_dims[variable]=copy.copy(fin.variables[variable][:])
             else:
                #test if the numpy arrays are the same (i.e. same dimensions)
                if not numpy.array_equal(dataitem_dims[variable],fin.variables[variable][:]) and variable!="time":
-                  print "Dimensions are not the same for %s  what does this mean, they should be. "%variable
-                  print dataitem_dims[variable],fin.variables[variable][:]
+                  print("Dimensions are not the same for %s  what does this mean, they should be. "%variable)
+                  print(dataitem_dims[variable],fin.variables[variable][:])
                   sys.exit(1)
                elif variable == "time":
                   #time could be a different value so this is OK
                   dataitem_dims['time']=numpy.vstack([dataitem_dims['time'],copy.copy(fin.variables[variable][:])])
          else: # not a dimension
-            if variable in itemdata.keys():
+            if variable in list(itemdata.keys()):
                #We set the filled value to 0 so that we can add without worrying about no-data-values
                itemdata[variable]=numpy.ma.vstack((itemdata[variable],fin.variables[variable][:]))
             else:
@@ -77,13 +77,13 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
    #other than sum up the products
    #as we assume that there are no overlap between regions
    if combiningregions == True:
-      for variable in itemdata.keys():
+      for variable in list(itemdata.keys()):
          itemdata[variable]=numpy.ma.sum(itemdata[variable],axis=0)
    #if we are not combining regions - i.e. we are combining cruises, then 
    #there could be overlap so we need to update the parameters appropriately
    else:
       #need to do std first as it depends on other variables
-      for variable in itemdata.keys():
+      for variable in list(itemdata.keys()):
          if variable.startswith("std_"):
             #we don't want to average these - we want to update them
             #but we want to update them by taking the stdev of the new data
@@ -91,7 +91,7 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
             #"weighted" standard deviation (i.e. standard deviation based on these values only)
             itemdata[variable]=numpy.ma.std(itemdata[postfix],axis=0,ddof=1)
 
-      for variable in itemdata.keys():
+      for variable in list(itemdata.keys()):
          if variable.startswith("std_"):
             continue
          elif variable in ["count_nobs","count_ncruise"]: 
@@ -113,7 +113,7 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
    #Write out the concatenated variables to a new file
    with netCDF4.Dataset(output, 'w', format = 'NETCDF4') as ncfile:
       netcdf_helper.standard_setup_SOCAT(ncfile,timedata=outputtime,londata=dataitem_dims['longitude'],latdata=dataitem_dims['latitude'])
-      for variable in itemdata.keys():
+      for variable in list(itemdata.keys()):
          if variable not in filedims:
             tmpvar = ncfile.createVariable(itemvar[variable][0],'f4',('time','latitude','longitude'),
                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
@@ -131,7 +131,7 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
                tmpvar.long_name = itemvar[variable][1].long_name+weighting_string
             else:
                tmpvar.long_name = itemvar[variable][1].long_name
-      if "count_ncruise" not in itemdata.keys():
+      if "count_ncruise" not in list(itemdata.keys()):
          #Also add a new variable for the number of cruises per cell
          ncruise = ncfile.createVariable("count_ncruise",'f4',('time','latitude','longitude'),fill_value=0,zlib=True)
          ncruise[:] = sumN
@@ -168,25 +168,25 @@ def IntoTimeDimension(filelist,output):
       #open the file
       fin=netCDF4.Dataset(filename)
       #get a list of all variables
-      filevars=fin.variables.keys()
-      filedims=fin.dimensions.keys()
+      filevars=list(fin.variables.keys())
+      filedims=list(fin.dimensions.keys())
       #read all the dimensions and
       #read all of the data variables
       for variable in filevars:
          if variable in filedims:
             #variable is a dimension - check if it is already in the dimension dictionary
-            if variable not in dataitem_dims.keys():
+            if variable not in list(dataitem_dims.keys()):
                dataitem_dims[variable]=copy.copy(fin.variables[variable][:])
             else:
                #test if the numpy arrays are the same (i.e. same dimensions)
                if not numpy.array_equal(dataitem_dims[variable],fin.variables[variable][:]) and variable != "time":
-                  print "Dimensions are not the same for %s  what does this mean, they should be. "%variable
-                  print dataitem_dims[variable],fin.variables[variable][:]
+                  print("Dimensions are not the same for %s  what does this mean, they should be. "%variable)
+                  print(dataitem_dims[variable],fin.variables[variable][:])
                   sys.exit(1)
                if variable == "time":
                   dataitem_dims['time']=numpy.vstack([dataitem_dims['time'],copy.copy(fin.variables[variable][:])])
          else: # not a dimension
-            if variable in itemdata.keys():
+            if variable in list(itemdata.keys()):
                #itemdata[variable]=itemdata[variable]+fin.variables[variable][:].filled(0)
                itemdata[variable]=numpy.ma.vstack((itemdata[variable],fin.variables[variable][:]))
             else:
@@ -196,7 +196,7 @@ def IntoTimeDimension(filelist,output):
    #Write out the concatenated variables to a new file
    with netCDF4.Dataset(output, 'w', format = 'NETCDF4') as ncfile:
       netcdf_helper.standard_setup_SOCAT(ncfile,timedata=dataitem_dims['time'],londata=dataitem_dims['longitude'],latdata=dataitem_dims['latitude'])
-      for variable in itemdata.keys():
+      for variable in list(itemdata.keys()):
          if variable not in filedims:
             tmpvar = ncfile.createVariable(variable,'f4',('time','latitude','longitude'),
                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
@@ -211,7 +211,7 @@ def IntoTimeDimension(filelist,output):
             tmpvar.long_name = itemvar[variable].long_name
 
 def AddNewVariables(filename,newvars):
-   print "AddNewVariables"
+   print("AddNewVariables")
    with netCDF4.Dataset(filename, 'a', format = 'NETCDF4') as ncfile:
       fCO2_SST_data = ncfile.createVariable('unweighted_fCO2_SST','f4',('time','latitude','longitude'),
                                             fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
@@ -332,24 +332,24 @@ def Climatology(filelist,output,varswewant):
       #open the file
       fin=netCDF4.Dataset(filename)
       #We only want the fCO2 and pCO2 from ocflux
-      filevars=fin.variables.keys()
-      filedims=fin.dimensions.keys()
+      filevars=list(fin.variables.keys())
+      filedims=list(fin.dimensions.keys())
       for variable in filevars:
          if variable in filedims:
             #variable is a dimension - check if it is already in the dimension dictionary
-            if variable not in dataitem_dims.keys():
+            if variable not in list(dataitem_dims.keys()):
                dataitem_dims[variable]=copy.copy(fin.variables[variable][:])
             else:
                #test if the numpy arrays are the same (i.e. same dimensions)
                if not numpy.array_equal(dataitem_dims[variable],fin.variables[variable][:]) and variable!="time":
-                  print "Dimensions are not the same for %s  what does this mean, they should be. "%variable
-                  print dataitem_dims[variable],fin.variables[variable][:]
+                  print("Dimensions are not the same for %s  what does this mean, they should be. "%variable)
+                  print(dataitem_dims[variable],fin.variables[variable][:])
                   sys.exit(1)
                elif variable == "time": 
                   #time could be a different value so this is OK
                   dataitem_dims['time']=numpy.vstack([dataitem_dims['time'],copy.copy(fin.variables[variable][:])])
          if variable in varswewant:
-            if variable in itemdata.keys():
+            if variable in list(itemdata.keys()):
                itemdata[variable]=numpy.ma.vstack((itemdata[variable],fin.variables[variable][:]))
             else:
                itemdata[variable]=fin.variables[variable][:].astype(numpy.float64)

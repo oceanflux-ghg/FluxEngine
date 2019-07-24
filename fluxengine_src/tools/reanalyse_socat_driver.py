@@ -46,7 +46,7 @@ import shutil; ##move desired output from reanalyse_socat to the specified outpu
 #   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles -asciioutput
 
 
-import reanalyse_socat.reanalyse_socat_v2 as rs;
+from . import reanalyse_socat.reanalyse_socat_v2 as rs;
 
 
 if __name__ == "__main__":
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     
     #copy output files to the output_dir folder.
     if exitCode == 0:
-        print "Reanalysis completed successfully."
+        print("Reanalysis completed successfully.")
         outputDir = path.abspath(path.expanduser(clArgs.output_dir));
         
         #Create output directory
@@ -175,11 +175,11 @@ if __name__ == "__main__":
                 except:
                     pass;
             else:
-                print "-keeptempfiles was set so full output can be viewed at:", "Output can be viewed at:", path.abspath(temporaryOutputPath);
+                print("-keeptempfiles was set so full output can be viewed at:", "Output can be viewed at:", path.abspath(temporaryOutputPath));
         except shutil.Error as e: #If the output directory already exists don't delete anything and tell the user.
             if "already exists" in e.args[0]:
-                print e.args[0];
-                print "Output can be viewed at:", path.join(temporaryOutputPath, "reanalysed_data");
+                print(e.args[0]);
+                print("Output can be viewed at:", path.join(temporaryOutputPath, "reanalysed_data"));
             else: #Otherwise, propagate the exception
                 raise e;
         

@@ -6,7 +6,7 @@ import numpy as np
 import os
 import sys
 import netCDF4
-import netcdf_helper
+from . import netcdf_helper
 import argparse
 import matplotlib.pyplot as plt
 
@@ -66,11 +66,11 @@ def GetCommandline():
          path=os.path.expanduser(path)
 
    if commandline.tclyear is None:
-      print "Error! Must supply the year the Tcl data is relevant for."
+      print("Error! Must supply the year the Tcl data is relevant for.")
       sys.exit(1)
 
    if commandline.tcltype not in ["aatsr","reynolds"]:
-      print "Error! tcltype must be either aatsr or reynolds"
+      print("Error! tcltype must be either aatsr or reynolds")
       sys.exit(1)
 
    return commandline
@@ -80,7 +80,7 @@ def CheckFilesExist(fpred,ppred,tcl,vco2,fvari,pvari):
    Check if given files exist and throw exception if they don't
    """
    vardict={'fpred': fpred,'ppred': ppred,'vco2':vco2}
-   for fnamekey in vardict.keys():
+   for fnamekey in list(vardict.keys()):
       if vardict[fnamekey] is None:
          raise Exception("Must specify filename for: %s"%fnamekey)
       if not os.path.exists(vardict[fnamekey]):
@@ -128,9 +128,9 @@ def LoadDIVAAscii(filename,nodatavalue=-999):
       try:
          #repeat for all lines in the file
          #get the row indices
-         rindex=reader.next()
+         rindex=next(reader)
          #convert to floats
-         rindex=map(float,rindex)
+         rindex=list(map(float,rindex))
          cindex=[]
          while True:
             #update rindex to be the last cindex read in from loop below
@@ -139,9 +139,9 @@ def LoadDIVAAscii(filename,nodatavalue=-999):
             #set the previous column index = 0
             prev_cindex=0
             #read in the next row (column index + data)
-            cindex=reader.next()
+            cindex=next(reader)
             #convert to floats
-            cindex=map(float,cindex)
+            cindex=list(map(float,cindex))
             #for each block of data - i.e. until col index is not increasing
             while(float(cindex[0])==prev_cindex+1):
                prev_cindex=cindex[0]
@@ -149,9 +149,9 @@ def LoadDIVAAscii(filename,nodatavalue=-999):
                for i in range(1,len(rindex)):
                   data[rindex[i]-1,cindex[0]-1]=float(cindex[i])
                #get the next row from the file
-               cindex=reader.next()
+               cindex=next(reader)
                #convert to floats
-               cindex=map(float,cindex)
+               cindex=list(map(float,cindex))
       except StopIteration:
          #this occurs if try to read past end of file
          pass
@@ -222,7 +222,7 @@ def DoTheCombining(fpred,ppred,tcl,vco2,output,fvari=None,pvari=None,plot=False,
          sstkeyname="sst_mean"
          sstdataname="Reynolds"
       else:
-         raise("Unknown SST data type: %s"%tcltype)
+         raise "Unknown SST data type: %s"
       with netCDF4.Dataset(tcl) as sst_file:
          Tcl = sst_file.variables[sstkeyname]
          Tcl = Tcl[0,:,:]
@@ -230,7 +230,7 @@ def DoTheCombining(fpred,ppred,tcl,vco2,output,fvari=None,pvari=None,plot=False,
             #we want them in Kelvin (to be consistent with how the scripts were originally written)
             Tcl=Tcl+273.15
          elif sst_file.variables[sstkeyname].units not in ['Kelvin','kelvin','K']:
-            print "Unsure of data units for temperature - aassuming kelvin."
+            print("Unsure of data units for temperature - aassuming kelvin.")
    else:
       Tcl = None
 

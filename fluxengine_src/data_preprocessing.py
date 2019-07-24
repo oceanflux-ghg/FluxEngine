@@ -21,7 +21,7 @@ def transpose(datalayer):
 
 #converts kelvin to celsius
 def kelvin_to_celsius(datalayer):
-    print "Converting %s from kelvin to celsius." % datalayer.name;
+    print("Converting %s from kelvin to celsius." % datalayer.name);
     
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
@@ -29,28 +29,28 @@ def kelvin_to_celsius(datalayer):
 
 #converts celsius to kelvin
 def celsius_to_kelvin(datalayer):
-    print "Converting %s from celsius to kelvin." % datalayer.name;
+    print("Converting %s from celsius to kelvin." % datalayer.name);
     
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
             datalayer.fdata[i] += 273.15;
 
 def pascal_to_millibar(datalayer):
-    print "Converting %s from Pa to mbar" % datalayer.name;
+    print("Converting %s from Pa to mbar" % datalayer.name);
     for i in range(0, len(datalayer.fdata)):
         if (datalayer.fdata[i] != datalayer.missing_value):
             datalayer.fdata[i] = datalayer.fdata[i] * 0.01;
 
 #convert percentages to proportions
 def percent_to_proportion(datalayer):
-    print "Converting %s from percent to fraction" % datalayer.name;
+    print("Converting %s from percent to fraction" % datalayer.name);
     
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
             datalayer.fdata[i] /= 100.0;
 
 def nano_to_micro(datalayer):
-    print "Converting %s from nano<units> to micro<units>" % datalayer.name;
+    print("Converting %s from nano<units> to micro<units>" % datalayer.name);
 
     for i in range(len(datalayer.fdata)):
         if datalayer.fdata[i] != datalayer.missing_value:
@@ -67,13 +67,13 @@ def nano_to_micro(datalayer):
 
 
 def flip_longitude(datalayer):
-    print "Preprocessing %s: Flipping longitude orientation." % datalayer.name;
+    print("Preprocessing %s: Flipping longitude orientation." % datalayer.name);
     from numpy import flipud;
     datalayer.data = flipud(datalayer.data);
     datalayer.calculate_fdata(); #must update fdata after changing data.
 
 def flip_latitude(datalayer):
-    print "Preprocessing %s: Flipping latitude orientation." % datalayer.name;
+    print("Preprocessing %s: Flipping latitude orientation." % datalayer.name);
     from numpy import fliplr;
     datalayer.data = fliplr(datalayer.data);
     datalayer.calculate_fdata(); #must update fdata after changing data.
@@ -114,7 +114,7 @@ def longitude_roll_180(datalayer):
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy in the top 10m (mean)
 def foc_to_epsilon(datalayer):
-    print "Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name;
+    print("Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name);
     
     waterDensity = 1026.0;
     for i in range(len(datalayer.fdata)):
@@ -125,7 +125,7 @@ def foc_to_epsilon(datalayer):
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy at 0.2m by fitting mean dissipation rate over the top 10m using the relationship in Craig and Banner 1994 (figure 8)
 def foc_to_epsilon_craig1994(datalayer):
-    print "Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name;
+    print("Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name);
     import numpy as np;
     from scipy import optimize;
     
@@ -161,7 +161,7 @@ def foc_to_epsilon_craig1994(datalayer):
             #find beta that matches means.
             result = optimize.minimize_scalar(calib_error);
             
-            print i, targetEpsMean, result.success, result.x; # check if solver was successful
+            print(i, targetEpsMean, result.success, result.x); # check if solver was successful
             beta = result.x;
             #Calculate epsilon at 2cm and write to data layer.
             datalayer.fdata[i] = depth_function(0.2, a=beta);

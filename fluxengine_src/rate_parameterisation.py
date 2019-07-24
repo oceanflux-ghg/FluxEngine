@@ -8,7 +8,7 @@ Created on Fri Mar 16 14:54:46 2018
 
 #TODO: in fe, select and pack/unpack the appropriate data layers so that k_parameterisation module does not have full access to all data.
 
-from datalayer import DataLayer;
+from .datalayer import DataLayer;
 from numpy import arange, array;
 from math import sqrt, exp;
 import inspect;
@@ -152,7 +152,7 @@ class k_example(KCalculationBase):
     #Main k calculation. Input and output datalayers can be extracted from 'data'.
     #Should modify output layers in place (i.e. without copying), and return True or False to indicate successful execution.
     def __call__(self, data):
-        print self.name, "with example_init_parameter as", self.parameter;
+        print(self.name, "with example_init_parameter as", self.parameter);
         return True;
 
 
@@ -169,14 +169,14 @@ class rain_wet_deposition(KCalculationBase):
         
     def __call__(self, data):
         function = "(rate_parameterisation.py: rain_wet_deposition.__call__)"
-        print "%s Using the rain_wet_deposition k parameterisation" % (function);
+        print("%s Using the rain_wet_deposition k parameterisation" % (function));
         try:
             k = data["k"].fdata;
             data["k"].standardName = "wet_deposition so no k parameterisation";
             data["k"].longName = "wet deposition of DIC by rain so no k parameterisation";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
 
         #setting all k values to 0.0
@@ -198,7 +198,7 @@ class k_Ho2006(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Ho2006.__call__)"
-        print "%s Using the Ho et al., 2006 (H06) k parameterisation (default option)" % (function);
+        print("%s Using the Ho et al., 2006 (H06) k parameterisation (default option)" % (function));
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
@@ -207,8 +207,8 @@ class k_Ho2006(KCalculationBase):
             data["k"].longName="Ho et al., 2006 (H06) gas transfer velocity";
             
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #determine the Ho et al 2006 k relationship
@@ -236,7 +236,7 @@ class k_Nightingale2000(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Nightingale2000.__call__)";
-        print "%s Using the Nightingale et al., 2000 (N00) k parameterisation" % (function)
+        print("%s Using the Nightingale et al., 2000 (N00) k parameterisation" % (function))
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
@@ -244,8 +244,8 @@ class k_Nightingale2000(KCalculationBase):
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide" ;
             data["k"].longName="Nightingale et al., 2000 (N00) gas transfer velocity";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #determine the Nightingale et al 2000 k relationship
@@ -276,7 +276,7 @@ class kt_OceanFluxGHG(KCalculationBase):
     def __call__(self, data):
         #using OceanFlux GHG kt approach
         function = "(rate_parameterisation.py: kt_OceanFluxGHG.__call__)";
-        print "%s Using the OceanFluxGHG kt parameterisation (kt = kd_backscatter + kb)" % (function)
+        print("%s Using the OceanFluxGHG kt parameterisation (kt = kd_backscatter + kb)" % (function))
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -285,8 +285,8 @@ class kt_OceanFluxGHG(KCalculationBase):
             data["k"].standardName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
             data["k"].longName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2, self.sstskinC, self.pco2_sw, self.scskin);
@@ -309,7 +309,7 @@ class k_Wanninkhof1992(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Wanninkhof1992.__call__)";
-        print "%s Using the Wanninkhof 1992 (W92) k parameterisation" % (function)
+        print("%s Using the Wanninkhof 1992 (W92) k parameterisation" % (function))
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
@@ -317,8 +317,8 @@ class k_Wanninkhof1992(KCalculationBase):
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide";
             data["k"].longName="Wanninkhof, 1992 (W92) gas transfer velocity";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #determine the Wanninkhof 1992 k relationship
@@ -347,7 +347,7 @@ class k_McGillis2001(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_McGillis2001.__call__)";
-        print "%s Using the McGillis et al., 2001 (M01) k parameterisation" % (function)
+        print("%s Using the McGillis et al., 2001 (M01) k parameterisation" % (function))
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
@@ -355,8 +355,8 @@ class k_McGillis2001(KCalculationBase):
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide";
             data["k"].longName="McGillis et al., 2001 (M01) gas transfer velocity";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #determine the Wanninkhof and McGillis 1999 k relationship
@@ -384,7 +384,7 @@ class k_Ho1997(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Ho1997.__call__)";
-        print "%s Using the Ho1997 et al., 2000 (N00) k parameterisation" % (function)
+        print("%s Using the Ho1997 et al., 2000 (N00) k parameterisation" % (function))
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
@@ -392,11 +392,11 @@ class k_Ho1997(KCalculationBase):
             data["k"].standardName="gas_transfer_velocity_of_carbon_dioxide_due_to_rain";
             data["k"].longName="Ho et al., 1997 (H97) gas transfer velocity";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
 
-        print "%s Using the Ho et al., 1997 (H97) k parameterisation (rain driven k)" % (function)
+        print("%s Using the Ho et al., 1997 (H97) k parameterisation (rain driven k)" % (function))
         #Ho et al, Tellus, 1997 rain component of k
         #note based on rain rate (Rn), but filtered based on wind component so still looking at the same datapoints
         for i in arange(len(self.k)):   
@@ -427,7 +427,7 @@ class kd_OceanFluxGHG_backscatter(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: kd_OceanFluxGHG_backscatter.__call__)";
-        print "%s Using the OceanFluxGHG kd-backscatter (direct component) parameterisation" % (function);
+        print("%s Using the OceanFluxGHG kd-backscatter (direct component) parameterisation" % (function));
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -436,8 +436,8 @@ class kd_OceanFluxGHG_backscatter(KCalculationBase):
             data["k"].standardName="direct_gas_transfer_velocity_of_carbon_dioxide_from_backscatter";
             data["k"].longName="direct component of gas transfer velocity of carbon dioxide derived from radar backscatter";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #direct component of k using OceanFluxGHG radar backscatter parameterisation
@@ -458,7 +458,7 @@ class kb_OceanFluxGHG(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: kb_OceanFluxGHG.__call__)";
-        print "%s Using the OceanFluxGHG kb (bubble mediated) parameterisation" % (function);
+        print("%s Using the OceanFluxGHG kb (bubble mediated) parameterisation" % (function));
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -467,8 +467,8 @@ class kb_OceanFluxGHG(KCalculationBase):
             data["k"].standardName="bubble_gas_transfer_velocity_of_carbon_dioxide";
             data["k"].longName="bubble mediated component of gas transfer velocity of carbon dioxide";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
 
         #bubble mediated component of k using OceanFluxGHG parameterisation   
@@ -498,7 +498,7 @@ class k_generic(KCalculationBase):
     
     def __call__(self, data):
         function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
-        print "%s Using the general cubic form of k with user specified values (k_generic_a0:%lf k_generic_a1:%lf k_generic_a2:%lf k_generic_a3:%lf k_generic_sc:%lf)" % (function, self.k_generic_a0, self.k_generic_a1, self.k_generic_a2, self.k_generic_a3, self.k_generic_sc)
+        print("%s Using the general cubic form of k with user specified values (k_generic_a0:%lf k_generic_a1:%lf k_generic_a2:%lf k_generic_a3:%lf k_generic_sc:%lf)" % (function, self.k_generic_a0, self.k_generic_a1, self.k_generic_a2, self.k_generic_a3, self.k_generic_sc))
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -507,8 +507,8 @@ class k_generic(KCalculationBase):
             data["k"].standardName="generic_gas_transfer_velocity_formulation";
             data["k"].longName="User defined generic formulation of k (a0:%lf a1:%lf a2:%lf a3:%lf sc:%lf)" % (self.k_generic_a0, self.k_generic_a1, self.k_generic_a2, self.k_generic_a3, self.k_generic_sc);
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         # general form
@@ -541,7 +541,7 @@ class kd_OceanFluxGHG_wind(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: kd_OceanFluxGHG_wind.__call__)";
-        print "%s Using the Goddijn-Murphy et al., 2012 kd-wind (direct-component) parameterisation" % (function);
+        print("%s Using the Goddijn-Murphy et al., 2012 kd-wind (direct-component) parameterisation" % (function));
         
         try:
              #for ease of access, simply assign attributes to each input/output.
@@ -550,8 +550,8 @@ class kd_OceanFluxGHG_wind(KCalculationBase):
             data["k"].standardName="direct_gas_transfer_velocity_of_carbon_dioxide_from_wind_speed";
             data["k"].longName="direct component of gas transfer velocity of carbon dioxide derived from wind speed (Goddijn-Murphy et al., 2012)";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
     
         #direct component of k using OceanFluxGHG kd-wind parameterisation
@@ -577,7 +577,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
     def __call__(self, data):
         # using OceanFlux GHG kt approach with kd based on the wind parameterisation of Goddijn-Murphy et al., 2015
         function = "(rate_parameterisation.py: kt_OceanFluxGHG_kd_wind.__call__)";
-        print "%s Using the OceanFluxGHG kt parameterisation (kt = kd_wind_speed + kb)" % (function);
+        print("%s Using the OceanFluxGHG kt parameterisation (kt = kd_wind_speed + kb)" % (function));
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -586,8 +586,8 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
             data["k"].standardName = "total_gas_transfer_velocity_of_carbon_dioxide";
             data["k"].longName="total (direct_from_wind_speed plus bubble mediated) component of gas transfer velocity of carbon dioxide";
         except KeyError as e:
-            print "%s: Required data layer for selected k parameterisation was not found." % function;
-            print type(e), e.args;
+            print("%s: Required data layer for selected k parameterisation was not found." % function);
+            print(type(e), e.args);
             return False;
         
         #kb portion will be discarded
@@ -616,7 +616,7 @@ class k_Wanninkhof2014(KCalculationBase):
         # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
         # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
         function = "(rate_parameterisation.py: k_Wanninkhof2014.__call__)";
-        print "%s Using the Wanninkhof 2014 k parameterisation" % (function);
+        print("%s Using the Wanninkhof 2014 k parameterisation" % (function));
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -625,8 +625,8 @@ class k_Wanninkhof2014(KCalculationBase):
             data["k"].standardName="W14" 
             data["k"].longName="Wanninkhof 2014, Limnol. Oceanogr.: Methods 12, 2014, 351-362"#IGA
         except KeyError as e:
-           print "%s: Required data layer for selected k parameterisation was not found." % function;
-           print type(e), e.args;
+           print("%s: Required data layer for selected k parameterisation was not found." % function);
+           print(type(e), e.args);
            return False;
         
         #determine the k relationship
@@ -660,7 +660,7 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Nightingale2000_with_surfactant_suppression.__call__)";
-        print "%s Using the Nightingale 2000 with surfactant suppression k parameterisation" % (function);
+        print("%s Using the Nightingale 2000 with surfactant suppression k parameterisation" % (function));
         
         #Calculate Nightingale2000 k
         nightingaleFunctor = k_Nightingale2000();
@@ -674,8 +674,8 @@ class k_Nightingale2000_with_surfactant_suppression(KCalculationBase):
             data["k"].longName="Nightingale 2000 with surfactant surpression: Pereira, R. et al., Nature Geoscience";
             self.k = data["k"].fdata; #Contains Nightingale parameterisation
         except KeyError as e:
-           print "%s: Required data layer for selected k parameterisation was not found." % function;
-           print type(e), e.args;
+           print("%s: Required data layer for selected k parameterisation was not found." % function);
+           print(type(e), e.args);
            return False;
         
         #Apply surfactant suppression
@@ -707,7 +707,7 @@ class k_Zappa2007(KCalculationBase):
         # using OceanFlux GHG kt approach with kd based on Wanninkhof2014
         # Wanninkhof, Rik. "Relationship between wind speed and gas exchange over the ocean revisited." Limnology and Oceanography: Methods 12.6 (2014): 351-362.
         function = "(rate_parameterisation.py: k_Zappa2007.__call__)";
-        print "%s Using the Zappa 2007 k parameterisation" % (function);
+        print("%s Using the Zappa 2007 k parameterisation" % (function));
         
         try:
             #for ease of access, simply assign attributes to each input/output.
@@ -716,8 +716,8 @@ class k_Zappa2007(KCalculationBase):
             data["k"].standardName="Zappa2007" 
             data["k"].longName="Zappa 2007: using the dissipation rate of turbulent kinetic energy. Zappa, Christopher J., Wade R. McGillis, Peter A. Raymond, James B. Edson, Eric J. Hintsa, Hendrik J. Zemmelink, John WH Dacey, and David T. Ho. Environmental turbulent mixing controls on air‐water gas exchange in marine and aquatic systems. Geophysical Research Letters 34, no. 10 (2007). The dissipation rate of turbulent kinetic energy was scaled by calibration factor: "+str(self.k_Zappa2007_epsilon_calibration);
         except KeyError as e:
-           print "%s: Required data layer for selected k parameterisation was not found." % function;
-           print type(e), e.args;
+           print("%s: Required data layer for selected k parameterisation was not found." % function);
+           print(type(e), e.args);
            return False;
         
         #determine the k relationship
@@ -769,14 +769,14 @@ class AddKRainLinearHo1997(KCalculationExtension):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py, "+self.name+".__call__)";
-        print "Adding linear rain component to k parameterisation (Ashton2016)";
+        print("Adding linear rain component to k parameterisation (Ashton2016)");
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
         except KeyError as e:
-           print "%s: Required data layer for selected k parameterisation was not found." % function;
-           print type(e), e.args;
+           print("%s: Required data layer for selected k parameterisation was not found." % function);
+           print(type(e), e.args);
            return False;
         
         for i in arange(len(self.k)):
@@ -810,14 +810,14 @@ class AddKRainNonlinearHarrison2012(KCalculationExtension):
     
     def __call__(self, data):
         function = "(rate_parameterisation.py, "+self.name+".__call__)";
-        print "Adding non-linear rain component to k parameterisation (Ashton2016)";
+        print("Adding non-linear rain component to k parameterisation (Ashton2016)");
         try:
             #for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata);
         except KeyError as e:
-           print "%s: Required data layer for selected k parameterisation was not found." % function;
-           print type(e), e.args;
+           print("%s: Required data layer for selected k parameterisation was not found." % function);
+           print(type(e), e.args);
            return False;
 
         alpha_r = 0.3677 # from Harrison et al., 2012, equation 12

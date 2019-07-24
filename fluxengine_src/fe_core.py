@@ -32,9 +32,9 @@ from random import normalvariate
 import logging;
 from os import path;
 
-from datalayer import DataLayer, DataLayerMetaData;
-from settings import Settings;
-from debug_tools import calc_mean; #calculate mean ignoring missing values.
+from .datalayer import DataLayer, DataLayerMetaData;
+from .settings import Settings;
+from .debug_tools import calc_mean; #calculate mean ignoring missing values.
 
 from datetime import timedelta, datetime;
 
@@ -94,9 +94,9 @@ function = "(ofluxghg-flux-calc, main)"
 #Stores a set of parameters required to run the FluxEngine, allowing easy centralised access.
 class RunParameters:
     def set_parameters(self, parameterDict):
-        for key in vars(self).keys(): #remove all previously stored values
+        for key in list(vars(self).keys()): #remove all previously stored values
             delattr(self, key);
-        for key in parameterDict.keys(): #Create instance variables for every key:value pair
+        for key in list(parameterDict.keys()): #Create instance variables for every key:value pair
             setattr(self, key, parameterDict[key]);
 
 
@@ -214,17 +214,17 @@ def write_netcdf(fluxEngineObject, verbose=False):
         for dataLayerName in dataLayers:
             try:
                 if verbose:
-                    print "Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName;
+                    print("Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName);
                 variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
                 data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
                 variable[outputChunk, :, :] = data;
             except AttributeError as e:
-                print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
+                print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
                 raise e;
             except ValueError as e:
-                print type(e), e.args;
-                print "%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name);
+                print(type(e), e.args);
+                print("%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name));
                 raise e;
             
             variable.missing_value = missing_value;
@@ -235,31 +235,31 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 if dataLayers[dataLayerName].units != None:
                     variable.units = dataLayers[dataLayerName].units;
             except AttributeError:
-                print "%s: No units found for datalayer named '%s'." % (function, dataLayerName);
+                print("%s: No units found for datalayer named '%s'." % (function, dataLayerName));
             
             try:
                 if dataLayers[dataLayerName].minBound != None:
                     variable.valid_min = dataLayers[dataLayerName].minBound;
             except AttributeError:
-                print "%s: No minBound found for datalayer named '%s'." % (function, dataLayerName);
+                print("%s: No minBound found for datalayer named '%s'." % (function, dataLayerName));
             
             try:
                 if dataLayers[dataLayerName].maxBound != None:
                     variable.valid_max = dataLayers[dataLayerName].maxBound;
             except AttributeError:
-                print "%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName);
+                print("%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName));
             
             try:
                 if dataLayers[dataLayerName].standardName != None:
                     variable.standard_name = dataLayers[dataLayerName].standardName;
             except AttributeError:
-                print "%s: No standardName found for datalayer named '%s'." % (function, dataLayerName);
+                print("%s: No standardName found for datalayer named '%s'." % (function, dataLayerName));
             
             try:
                 if dataLayers[dataLayerName].longName != None:
                     variable.long_name = dataLayers[dataLayerName].longName;
             except AttributeError:
-                print "%s: No longName found for datalayer named '%s'." % (function, dataLayerName);
+                print("%s: No longName found for datalayer named '%s'." % (function, dataLayerName));
         
         #set some global attributes
         setattr(ncfile, 'Conventions', 'CF-1.6') 
@@ -267,7 +267,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         setattr(ncfile, 'Contact', 'email: j.d.shutler@exeter.ac.uk')
         
         #Output all the parameters used in this run.
-        for paramName in vars(runParams).keys():
+        for paramName in list(vars(runParams).keys()):
             paramValue = getattr(runParams, paramName);
             if paramValue is not None:
                 if type(paramValue) is bool: #netCDF does not support bool types.
@@ -300,13 +300,13 @@ def write_netcdf(fluxEngineObject, verbose=False):
         for dataLayerName in dataLayers:
             try:
                 if verbose:
-                    print "Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName;
+                    print("Writing datalayer '"+dataLayerName+"' to netCDF file as "+dataLayers[dataLayerName].netCDFName);
                 #variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
                 data = dataLayers[dataLayerName].fdata; #fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
                 ncfile.variables[dataLayers[dataLayerName].netCDFName][outputChunk,:,:] = data;
             except AttributeError:
-                print "%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName);
+                print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
         
         #Update data range
         setattr(ncfile, "end_year", fluxEngineObject.runParams.year);
@@ -725,7 +725,7 @@ def average_pixels(datalayer, nx, ny, missing_value):
         raise ValueError("%s: Unexpected number of dimensions (%d) when trying to resize data layer." % (function, len(data.shape)));
     
     if datany%ny != 0 and datanx%nx != 0:
-        print datanx, datany
+        print(datanx, datany)
         raise ValueError("%s: Cannot rescale data layer because global data layer dimensions are not a whole multiple of the data layer's dimensions." % function);
     n = (datanx/nx);
     n2 = (datany/ny);
@@ -737,12 +737,12 @@ def average_pixels(datalayer, nx, ny, missing_value):
     nj0, ni0 = data.shape
     nj, ni = [nj0 / n, ni0 / n]
     if nj * n != nj0 or ni * n != ni0:
-       print "Dimensions ", nj0, ni0, " indivisible by ", n;
+       print("Dimensions ", nj0, ni0, " indivisible by ", n);
     out = resize(missing_value, [nj, ni])
-    for j in xrange(nj):
+    for j in range(nj):
        j0 = j * n
        j1 = j0 + n
-       for i in xrange(ni):
+       for i in range(ni):
           i0 = i * n
           a = data[j0:j1, i0:i0 + n]
           w = nonzero(a != missing_value)
@@ -758,10 +758,10 @@ def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
    function = "(check_dimensions, main)"
    if dataLayer.data.shape[1] == ref_nx and dataLayer.data.shape[0] == ref_ny:
       if DEBUG:
-         print "\n%s Input data (%s) have identical dimensions to reference values (%s, %s) "% (function, dataLayer.name, dataLayer.nx, dataLayer.ny)
+         print("\n%s Input data (%s) have identical dimensions to reference values (%s, %s) "% (function, dataLayer.name, dataLayer.nx, dataLayer.ny))
          return True;
    else:
-      print "\n%s Input data ('%s') dimensions are non-identical to reference (new: %s, %s is not equal to: %s, %s)." % (function, dataLayer.name, dataLayer.nx, dataLayer.ny, ref_nx, ref_ny)
+      print("\n%s Input data ('%s') dimensions are non-identical to reference (new: %s, %s is not equal to: %s, %s)." % (function, dataLayer.name, dataLayer.nx, dataLayer.ny, ref_nx, ref_ny))
       return False;
 
 
@@ -792,8 +792,8 @@ class FluxEngine:
             self._add_single_data_layer(name, infile, prod, transposeData, preprocessing=preprocessing);
             
         except KeyError as e:
-            print "\n%s: Data variable '%s' is missing from %s input (%s)" % (function, prod, name, infile);
-            print e, e.args;
+            print("\n%s: Data variable '%s' is missing from %s input (%s)" % (function, prod, name, infile));
+            print(e, e.args);
             raise e;
            # return False;
 #        except ValueError as e: #E.g. incorrect number of dimensions
@@ -812,10 +812,10 @@ class FluxEngine:
                 copy_missing_values(self.data[name], self.data[name+"_stddev"]); #Any missing values in 'name' should be copied to the stddev dataset for consistency.
             #except TypeError:
             except KeyError as e:
-                print "here", type(e), e.args;
-                print "%s: Did not find stddev variable ('%s') in netCDF file for %s." % (function, stddevProd, name);
+                print("here", type(e), e.args);
+                print("%s: Did not find stddev variable ('%s') in netCDF file for %s." % (function, stddevProd, name));
             except ValueError as e: #E.g. incorrect number of dimensions
-                print "\n%s: %s" % (function, e.args);
+                print("\n%s: %s" % (function, e.args));
                 return False;
         
         if countProd != None:
@@ -825,9 +825,9 @@ class FluxEngine:
                 self._add_single_data_layer(name+"_count", infile, countProd, transposeData=transposeData);
                 copy_missing_values(self.data[name], self.data[name+"_count"]); #Any missing values in 'name' should be copied to the count dataset for consistency.
             except KeyError:
-                print "%s: Did not find stddev variable ('%s') in netCDF file for %s." % (function, countProd, name);
+                print("%s: Did not find stddev variable ('%s') in netCDF file for %s." % (function, countProd, name));
             except ValueError as e: #E.g. incorrect number of dimensions
-                print "\n%s: %s" % (function, e.args);
+                print("\n%s: %s" % (function, e.args));
                 return False;
             
         #Datalayer was successfully added.
@@ -905,7 +905,7 @@ class FluxEngine:
         if status == True:
             return self._run_fluxengine(self.runParams);
         else:
-            print "Not all datalayers are consistent (check dimensions of data).";
+            print("Not all datalayers are consistent (check dimensions of data).");
             return status;
     
     #Reads longitude, latitude, time and dimension sizes (nx, ny).
@@ -916,15 +916,15 @@ class FluxEngine:
         try:
             axesDatalayerInfile = getattr(self.runParams, self.runParams.axes_data_layer+"_infile");
         except ValueError as e:
-            print "Couldn't find file path for axes_data_layer (%s). Check that this is correctly defined in the config file (it must match the name of another datalayer)." % self.runParams.axes_data_layer;
-            print e.args;
+            print("Couldn't find file path for axes_data_layer (%s). Check that this is correctly defined in the config file (it must match the name of another datalayer)." % self.runParams.axes_data_layer);
+            print(e.args);
         
         #Read longitude, latitude and time data from the sstskin infile, so open this file.
         try:
             dataset = Dataset(axesDatalayerInfile);
         except IOError as e:
-            print "\n%s: axes_data_layer (%s) inputfile %s does not exist" % (function, self.runParams.axes_data_layer, axesDatalayerInfile);
-            print type(e), e.args;
+            print("\n%s: axes_data_layer (%s) inputfile %s does not exist" % (function, self.runParams.axes_data_layer, axesDatalayerInfile));
+            print(type(e), e.args);
         
         #Read lat and lat
         try:
@@ -953,7 +953,7 @@ class FluxEngine:
 
         #set dimensions
         self.ny, self.nx = self.latitude_grid.shape;
-        print "%s: Grid dimensions set to: (%d, %d)" % (function, self.ny, self.nx);
+        print("%s: Grid dimensions set to: (%d, %d)" % (function, self.ny, self.nx));
 
     #Ran after each datalayer is read in. Checks for consistency between datalayers.
     #Rescales data layers which can be rescaled.
@@ -964,13 +964,13 @@ class FluxEngine:
             if check_dimensions(self.data[key], self.nx, self.ny, DEBUG) == False:
                 #Dimensions don't match, so try to rescale it.
                 try:
-                    print "Attempting to rescale datalayer '%s'."%key;
+                    print("Attempting to rescale datalayer '%s'."%key);
                     self.data[key].data = average_pixels(self.data[key], self.nx, self.ny, DataLayer.missing_value);
                     self.data[key].ny, self.data[key].nx = self.data[key].data.shape;
                     self.data[key].calculate_fdata();
-                    print "Successfully rescaled datalayer '%s' to"%key, self.data[key].data.shape;
+                    print("Successfully rescaled datalayer '%s' to"%key, self.data[key].data.shape);
                 except ValueError as e:
-                    print e.args;
+                    print(e.args);
                     return False;
         return True;
     
@@ -1001,7 +1001,7 @@ class FluxEngine:
             else:
                 self.logger.setLevel(logging.DEBUG);
         except:
-            print "\n%s Couldn't initialise logger at path %s" % (function, runParams.LOG_PATH);
+            print("\n%s Couldn't initialise logger at path %s" % (function, runParams.LOG_PATH));
         
         #TODO: Replace directly with self.nx, self.ny, no need to use local variables here.
         nx = self.nx;
@@ -1061,7 +1061,7 @@ class FluxEngine:
                 self.data["salinity"].fdata[i] = missing_value
                 self.data["salinity_skin"].fdata[i] = missing_value
         if (runParams.saline_skin_value != 0.0):
-            print "%s Using the saline skin model (%lf psu added to skin salinities)" % (function, runParams.saline_skin_value)
+            print("%s Using the saline skin model (%lf psu added to skin salinities)" % (function, runParams.saline_skin_value))
         
         #conversion of rain data from mm day-1 to mm hr^-1
         if "rain" in self.data:
@@ -1080,7 +1080,7 @@ class FluxEngine:
         #using sstfnd, so copy sstfnd into sstskin
         #sstskin = sstfnd
         if runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-           print "%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function)
+           print("%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function))
            #actually copy sstfnd data into the sstskin dataset to make sure
            for i in arange(nx * ny):
                if self.data["sstfnd"].fdata[i] != missing_value:
@@ -1095,7 +1095,7 @@ class FluxEngine:
         #IGA added for the case where only foundation is provided and gradients are on------------------------------
         #must estimate sstskin (= sstfnd - runParams.cool_skin_difference)
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-            print "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %d)(ignoring SSTskin data in configuration file)." % (function, runParams.cool_skin_difference)
+            print("%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %d)(ignoring SSTskin data in configuration file)." % (function, runParams.cool_skin_difference))
             #actually copy sstfnd data into the sstskin dataset to make sure
             if "sstskin" not in self.data: #Must add the sstskin layer first!
                 self.add_empty_data_layer("sstskin");
@@ -1113,7 +1113,7 @@ class FluxEngine:
         
         #Using sstskin, so calculate it from sstfnd.
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print "%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %d) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference)
+           print("%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %d) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference))
            #setting sstfnd_ data fields to skin values
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
@@ -1127,7 +1127,7 @@ class FluxEngine:
                  self.data["sstskin"].fdata[i] = missing_value
                  
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print "%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %d for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference)
+           print("%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %d for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference))
             #setting sstfnd_ data fields to skin values  
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
@@ -1137,23 +1137,23 @@ class FluxEngine:
               else:
                  self.data["sstfnd"].fdata[i] = missing_value
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 1:
-           print "%s SST gradient handling is off, using SSTfnd and SSTskin from the configuration file." % (function)        
+           print("%s SST gradient handling is off, using SSTfnd and SSTskin from the configuration file." % (function))        
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 1:
-           print "%s SST gradient handling is on, using SSTfnd and SSTskin from the configuration file." % (function)
+           print("%s SST gradient handling is on, using SSTfnd and SSTskin from the configuration file." % (function))
         else:
-           print "\n%s sst_gradients_switch (%d), use_sstskin_switch (%d) and use_sstfnd_switch (%d) combination in configuration not recognised, exiting." % (function, runParams.sst_gradients_switch, runParams.use_sstskin_switch, runParams.use_sstfnd_switch)
+           print("\n%s sst_gradients_switch (%d), use_sstskin_switch (%d) and use_sstfnd_switch (%d) combination in configuration not recognised, exiting." % (function, runParams.sst_gradients_switch, runParams.use_sstskin_switch, runParams.use_sstfnd_switch))
            return 1;
        
         
         #If there is no pco2_sst data, we need to get it / generate it.
         if "pco2_sst" not in self.data: #SOCATv4
             try:
-                print "No pco2_sst data was supplied. sstfnd will be used instead."
+                print("No pco2_sst data was supplied. sstfnd will be used instead.")
                 self.add_empty_data_layer("pco2_sst");
                 self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
             except (IOError, KeyError, ValueError) as e:
-                print "pco2_sst data not available and could read sstfnd so cannot proceed.";
-                print type(e), "\n"+e.args;
+                print("pco2_sst data not available and could read sstfnd so cannot proceed.");
+                print(type(e), "\n"+e.args);
                 return 1;
        
 
@@ -1174,20 +1174,20 @@ class FluxEngine:
            add_noise(self.data["windu10"].fdata, 0.44, 0.0, nx*ny)
            add_noise(self.data["windu10_moment2"].fdata, 0.44, 0.0, nx*ny)
            add_noise(self.data["windu10_moment3"].fdata, 0.44, 0.0, nx*ny)
-           print "%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function)
+           print("%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function))
         
         if (runParams.random_noise_sstskin_switch == 1):
            add_noise(self.data["sstskin"].fdata, 0.14, 0.0, nx*ny)
-           print "%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function)
+           print("%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function))
         
         if (runParams.random_noise_sstfnd_switch == 1):
            add_noise(self.data["sstfnd"].fdata, 0.6, 0.0, nx*ny)
-           print "%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function)
+           print("%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function))
         
         if (runParams.random_noise_pco2_switch == 1):
-           print "/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape
+           print("/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape)
            add_noise(self.data["pco2_sw"].fdata, 6, 0.0, nx*ny)
-           print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function)
+           print("%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function))
            #print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 2.0 uatm - assuming using SOCAT flag A and flag B data)" % (function)
         
         #Ians rain noise test
@@ -1204,19 +1204,19 @@ class FluxEngine:
            add_bias(self.data["windu10"].fdata, runParams.bias_windu10_value, nx*ny)
             # makes no sense to add bias to second and third order moments, as any bias in the system 
             # would only impact on the mean (which is the 1st order moment)
-           print "%s Adding bias to windu10_mean (not to second and third order moments) (value %lf ms^-1)" % (function, runParams.bias_windu10_value)
+           print("%s Adding bias to windu10_mean (not to second and third order moments) (value %lf ms^-1)" % (function, runParams.bias_windu10_value))
         
         if (runParams.bias_sstskin_switch == 1):
            add_bias(self.data["sstskin"].fdata, runParams.bias_sstskin_value, nx*ny)
-           print "%s Adding bias noise to sstskin (value %lf ^oC)" % (function, runParams.bias_sstskin_value)
+           print("%s Adding bias noise to sstskin (value %lf ^oC)" % (function, runParams.bias_sstskin_value))
         
         if (runParams.bias_sstfnd_switch == 1):
            add_bias(self.data["sstfnd"].fdata, runParams.bias_sstfnd_value, nx*ny)
-           print "%s Adding bias noise to sstfnd (value %lf ^oC)" % (function, runParams.bias_sstfnd_value)
+           print("%s Adding bias noise to sstfnd (value %lf ^oC)" % (function, runParams.bias_sstfnd_value))
         
         if (runParams.bias_pco2_switch == 1):
            add_bias(self.data["pco2_sw"].fdata, runParams.bias_pco2_value, nx*ny)
-           print "%s Adding bias noise to pco2w (value %lf uatm)" % (function, runParams.bias_pco2_value)
+           print("%s Adding bias noise to pco2w (value %lf uatm)" % (function, runParams.bias_pco2_value))
         
         
          # bias based on change in sstskin due to rain
@@ -1277,7 +1277,7 @@ class FluxEngine:
                 for i in arange(nx * ny):
                     if (self.data["pressure"].fdata[i] != missing_value):
                         self.data["pressure"].fdata[i] = self.data["pressure"].fdata[i] * 0.01
-                print "Converted pressure data to mbar from Pa"
+                print("Converted pressure data to mbar from Pa")
         # ------------------------------------------------------IGA_SOCATv4 - Was removed as using pressure data in mbar.-------------END
         # -                                                                                                                                     -
         # ---------------------------------------------------------------------------------------------------------------------------------------
@@ -1293,19 +1293,19 @@ class FluxEngine:
         DeltaT_fdata = array([missing_value] * nx*ny)
         
         if runParams.flux_calc == 1:
-           print "%s Using the RAPID model (from Woolf et al., 2016)" % (function)
+           print("%s Using the RAPID model (from Woolf et al., 2016)" % (function))
         elif runParams.flux_calc == 2:
-           print "%s Using the EQUILIBRIUM model (from Woolf et al., 2016)" % (function)
+           print("%s Using the EQUILIBRIUM model (from Woolf et al., 2016)" % (function))
            for i in arange(nx * ny):
               if ( (self.data["sstfndC"].fdata[i] != missing_value) & (self.data["sstskinC"].fdata[i] != missing_value) ):
                  DeltaT_fdata[i] = self.data["sstfndC"].fdata[i] - self.data["sstskinC"].fdata[i]
               else:
                  DeltaT_fdata[i] = missing_value
         elif runParams.flux_calc == 3:
-            print "%s Using the BULK model (ie Flux = k*S*delta_pCO2)" % (function)
-            print "%s Note: this assumes that the SSTskin dataset is the only temperature dataset, and so this is what will be used to calculate k and the solubility" % (function)
+            print("%s Using the BULK model (ie Flux = k*S*delta_pCO2)" % (function))
+            print("%s Note: this assumes that the SSTskin dataset is the only temperature dataset, and so this is what will be used to calculate k and the solubility" % (function))
         else:
-           print "\n%s runParams.flux_calc from configuration not recognised, exiting." % (function)
+           print("\n%s runParams.flux_calc from configuration not recognised, exiting." % (function))
            return 1;
         
         #Calculating the schmidt number at the skin and fnd
@@ -1497,9 +1497,9 @@ class FluxEngine:
         if (runParams.bias_k_switch == 1):
            add_bias_k_biology_wind(self.data["k"].fdata, runParams.bias_k_value, self.data["biology"].fdata, runParams.bias_k_biology_value, self.data["windu10"].fdata, runParams.bias_k_wind_value, nx*ny, runParams.bias_k_percent_switch)
            if runParams.bias_k_percent_switch==0:
-              print "\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of %lf ms^-1 added, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value)
+              print("\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of %lf ms^-1 added, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
            else:
-              print "\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of - %lf percent being used, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value)
+              print("\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of - %lf percent being used, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
 
 
          ############################
@@ -1545,7 +1545,7 @@ class FluxEngine:
                                            runParams.rain_wet_deposition_switch, self.data["sstskin"], DeltaT_fdata, self.nx, self.ny);
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
-           print "%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation)
+           print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation))
            if runParams.flux_calc == 3:
                raise ValueError("kb_asymmetry is not supported for the 'bulk' calculation. Try using 'rapid' or 'equilibrium' instead.");
 
@@ -1689,8 +1689,8 @@ class FluxEngine:
                     #Execute the process indicator layer functor.
                     piFunctor(self.data);
                 except ValueError as e:
-                    print e.args;
-                    print "Exiting...";
+                    print(e.args);
+                    print("Exiting...");
                     return 1;
         
         #
@@ -1705,7 +1705,7 @@ class FluxEngine:
         
         #write out the final ouput to netcdf
         write_netcdf(self);        
-        print "%s SUCCESS writing file %s" % (function, runParams.output_path)
+        print("%s SUCCESS writing file %s" % (function, runParams.output_path))
 #        
 #        #Finally, close the logger
         handlers = self.logger.handlers[:];

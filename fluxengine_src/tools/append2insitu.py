@@ -25,7 +25,7 @@ def find_nearest(val, arr):
 
 
 def parse_cl_arguments():
-    description = unicode("""Converts netCDF3 data produced as output from FluxEngine into text data (e.g. csv, tsv).
+    description = str("""Converts netCDF3 data produced as output from FluxEngine into text data (e.g. csv, tsv).
     The text output will contain one column for each data layer, and one row for each cell of the grid (if there is no missing data).
     One text file will be created for each netCDF3 file.
     """, 'utf-8');
@@ -67,7 +67,7 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
     
     #Process each input netCDF file and produce a text file
     if verbose:
-        print "Combining files at ", feOutputPath, "and", insituDataPath;
+        print("Combining files at ", feOutputPath, "and", insituDataPath);
     
     #Read in situ data file
     insituData = pd.read_table(insituDataPath, sep=delim, skiprows=rowsToSkip, parse_dates=[dateIndex], encoding=encoding);
@@ -96,7 +96,7 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
             if np.ma.is_masked(value):
                 newVectors[variable][i] = missingValue;
                 if verbose:
-                    print "Row", i, "Warning: No data found for lat", lat, "lon", str(lon)+".", missingValue, "inserted instead";
+                    print("Row", i, "Warning: No data found for lat", lat, "lon", str(lon)+".", missingValue, "inserted instead");
             else:
                 newVectors[variable][i] = float(value);
     
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     #append selected variables as columns to the in situ data file
     append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend, delim, latCol, lonCol, dateIndex, rowsToSkip, missingValue, encoding, verbose=True);
     
-    print "Finished merging", varsToAppend, "from", feOutputPath, "with", insituDataPath;
-    print "Output written to", outputPath;
+    print("Finished merging", varsToAppend, "from", feOutputPath, "with", insituDataPath);
+    print("Output written to", outputPath);
 
 
 

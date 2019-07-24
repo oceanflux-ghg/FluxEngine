@@ -29,11 +29,11 @@ def calc_net_budget_percentages(outputPath, referencePath, verbose=False):
     
     percentages = {};
     if verbose:
-        print "Percentage difference between reference and new output:";
+        print("Percentage difference between reference and new output:");
     for i, colName in enumerate(colNames):
         percent = float(refGlobal[i])/float(curGlobal[i]) * 100.0;
         if verbose:
-            print "\t"+colName+": ", percent, "(%)";
+            print("\t"+colName+": ", percent, "(%)");
         percentages[colName] = percent;
     
     return percentages;
@@ -42,7 +42,7 @@ def calc_net_budget_percentages(outputPath, referencePath, verbose=False):
 
 if __name__ == "__main__":
     if len(argv != 3):
-        print "Usage: compare_net_budgets newOutputPath referenceOutputPath";
+        print("Usage: compare_net_budgets newOutputPath referenceOutputPath");
     else:
         outputPath = argv[1];
         referencePath = argv[2];    

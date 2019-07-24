@@ -57,17 +57,17 @@ def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgets
 
     validationSuccessful = True; #Assume validation was successful until something goes wrong.
     rootPath = path.abspath(path.join(__file__, "../../..")); #TODO: Should be replaced with a proper resource manager
-    print "\n\nRunning validation run (year "+str(year)+") for:", name;  
+    print("\n\nRunning validation run (year "+str(year)+") for:", name);  
     
     
     #Does the flux engine need running? if so run it
     if runFluxEngine:
-        print "Running FluxEngine... (%s)" % name;
+        print("Running FluxEngine... (%s)" % name);
         runStatus, fe = run_fluxengine(configFilePath, year, year, processLayersOff=True, takahashiDriver=takahashiRun, verbose=False);
     
     #extract output directory from config file
     validationOutputPath = path.join(read_config_file(configFilePath, verbose=False)["output_dir"], ''); #Add '/' to the end (required for flux_budgets)
-    print validationOutputPath;
+    print(validationOutputPath);
     
     
     #Do the flux-budgets need to be calculated?
@@ -83,7 +83,7 @@ def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgets
     
     #Compare flux budgets between validation and reference?
     if validateFluxBudgets:
-        print "Comparing flux-budgets between validation run and reference data set (%s)." % name;
+        print("Comparing flux-budgets between validation run and reference data set (%s)." % name);
         newBudgetsOutputFilePath = path.join(validationOutputPath, "_global.txt");
         referenceBudgetsOutputFile = path.join(referencePath, referenceFluxBudgetsFilename);
         failedVariables = validate_flux_budgets_output(newBudgetsOutputFilePath, referenceBudgetsOutputFile, failThreshold=failThresholdFluxBudgetsOutput, verbose=verbose);
@@ -93,7 +93,7 @@ def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgets
     
     #Compare netCDF variables
     if validateNetCDFOutput:
-        print "Validating netCDF output for '%s' against reference:" % name;
+        print("Validating netCDF output for '%s' against reference:" % name);
         failedMonths = validate_netCDF_output(validationOutputPath, referencePath, year, failThreshold=failThresholdNetCDFOutput, verbose=verbose);
         
         if len(failedMonths) != 0:
@@ -111,15 +111,15 @@ def validate_flux_budgets_output(newBudgetsOutputFilePath, referenceBudgetsOutpu
     failedVariables = [];
     for key in diffsFEv1:
         if diffsFEv1[key] > (100.0+failThreshold) or diffsFEv1[key] < (100.0-failThreshold):
-            print key, "percentage difference from reference:", diffsFEv1[key];
+            print(key, "percentage difference from reference:", diffsFEv1[key]);
             failedVariables.append(key);
     
     if len(failedVariables) == 0:
-        print "All flux-budget values are within threshold limits:";
+        print("All flux-budget values are within threshold limits:");
         for key in diffsFEv1:
-            print "\t"+key+": "+str(diffsFEv1[key])+"%";
+            print("\t"+key+": "+str(diffsFEv1[key])+"%");
     else:
-        print "Validation failed because %d flux-budget values were outside threshold range compared to the reference provided." % len(failedVariables);
+        print("Validation failed because %d flux-budget values were outside threshold range compared to the reference provided." % len(failedVariables));
     
     return failedVariables;
 
@@ -144,9 +144,9 @@ def validate_netCDF_output(newOutputPath, referenceOutputPath, year, failThresho
         diffsMissingRefData = []; #Which data layers exist in the validation dataset but don't exist in the reference dataset?
     
         #Compare the new and old value of each variable
-        varsToCompare = refData.variables.keys();
+        varsToCompare = list(refData.variables.keys());
         for varToCompare in varsToCompare:
-            if varToCompare in [u"time", u"latitude", u"longitude"]:
+            if varToCompare in ["time", "latitude", "longitude"]:
                 continue;
             
             oldVar = refData.variables[varToCompare][:];
@@ -179,17 +179,17 @@ def validate_netCDF_output(newOutputPath, referenceOutputPath, year, failThresho
                     maskedDiff = "na";
 
                 if verbose >= 2:
-                    print varToCompare+":", sumAbsDiff, "    ", maskedDiff;
+                    print(varToCompare+":", sumAbsDiff, "    ", maskedDiff);
                 if sumAbsDiff > failThreshold:
                     failedDiffs.append(varToCompare);
                     if verbose == 1:
-                        print varToCompare+":", sumAbsDiff, "    ", maskedDiff;
+                        print(varToCompare+":", sumAbsDiff, "    ", maskedDiff);
                 
             except KeyError:
                 diffsMissingValiData.append(varToCompare);
                 #print "no new value for: "+varToCompare;
         
-        for v in valiData.variables.keys():
+        for v in list(valiData.variables.keys()):
             if v not in varsToCompare: #if variable in the new output but not in the old reference output
                 #print "no OLD value for: "+v;
                 diffsMissingRefData.append(varToCompare);
@@ -197,18 +197,18 @@ def validate_netCDF_output(newOutputPath, referenceOutputPath, year, failThresho
         #Print number of missing or extra variables.
         if verbose:
             if len(diffsMissingValiData) != 0 or len (diffsMissingRefData) != 0:
-                print "\n"+monthStr+":";
-                print "%d variables exist in reference dataset but are not present in the validation dataset:" % len(diffsMissingValiData);
-                print "\t", diffsMissingValiData;
-                print "%d variables exist in reference dataset but are not present in the validation dataset:" % len(diffsMissingRefData);
-                print "\t", diffsMissingRefData;
+                print("\n"+monthStr+":");
+                print("%d variables exist in reference dataset but are not present in the validation dataset:" % len(diffsMissingValiData));
+                print("\t", diffsMissingValiData);
+                print("%d variables exist in reference dataset but are not present in the validation dataset:" % len(diffsMissingRefData));
+                print("\t", diffsMissingRefData);
     
         #Did this month pass or fail?
         if len(failedDiffs) != 0 or len(failedMaskedDiffs) != 0:
             failedMonths.append(monthStr);
-            print "\tMonth '%s' failed. %d variables differed in their sum of absolute differences and %d differed in the number of masked values." % (monthStr, len(failedDiffs), len(failedMaskedDiffs));
+            print("\tMonth '%s' failed. %d variables differed in their sum of absolute differences and %d differed in the number of masked values." % (monthStr, len(failedDiffs), len(failedMaskedDiffs)));
         else:
-            print "\tMonth '%s' passed." % monthStr;
+            print("\tMonth '%s' passed." % monthStr);
         
         #Store the differences for all variables (useful for interactive debugging)
         diffsByMonth[monthStr] = diffs;
@@ -216,10 +216,10 @@ def validate_netCDF_output(newOutputPath, referenceOutputPath, year, failThresho
     
     #Check for any months which failed:
     if len(failedMonths) != 0:
-        print "\n\n%d months contained datalayers which deviated from the reference values:" % len(failedMonths);
-        print "\t", failedMonths;
+        print("\n\n%d months contained datalayers which deviated from the reference values:" % len(failedMonths));
+        print("\t", failedMonths);
     else:
-        print "Verification netCDF variables match reference run for all months.";
+        print("Verification netCDF variables match reference run for all months.");
     
     return failedMonths; #Return the list of failed months
 

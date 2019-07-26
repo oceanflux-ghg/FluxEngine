@@ -103,11 +103,11 @@ def run_flux_budgets(args):
           print("WARNING: 'global' data restricted to window")
        print('global output file ', outroot + 'global.txt')
        printGlobalArea = True
-       globalLun = open(outroot + 'global.txt', 'wb')
+       globalLun = open(outroot + 'global.txt', 'w')
        globalWriter = csv.writer(globalLun)
        if referencing:
           print('global reference output file ', outroot + 'globalRef.txt')
-          refGlobalLun = open(outroot + 'globalRef.txt', 'wb')
+          refGlobalLun = open(outroot + 'globalRef.txt', 'w')
           refGlobalWriter = csv.writer(refGlobalLun)
     luns = []
     writers = []
@@ -116,12 +116,12 @@ def run_flux_budgets(args):
        refWriters = []
     for region in regions:
        print(region + ' output file ', outroot + region + '.txt')
-       lun = open(outroot + region + '.txt', 'wb')
+       lun = open(outroot + region + '.txt', 'w')
        luns.append(lun)
        writers.append(csv.writer(lun))
        if referencing:
           print(region + ' reference output file ', outroot + region + 'Ref.txt')
-          refLun = open(outroot + region + 'Ref.txt', 'wb')
+          refLun = open(outroot + region + 'Ref.txt', 'w')
           refLuns.append(lun)
           refWriters.append(csv.writer(lun))
     
@@ -238,6 +238,7 @@ def run_flux_budgets(args):
                    mask=False)
                 refExtraData.fill(float('nan'))
              titles = np.append(baseTitles, extraNames)
+             #titles = np.array([title.encode() for title in titles]); #TMH: convert from str to byte array
              if addedGlobal:
                 globalWriter.writerow(titles)
                 if referencing:

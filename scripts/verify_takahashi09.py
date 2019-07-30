@@ -9,23 +9,22 @@ Compares output to a known reference output for verification.
 @author: Tom Holding
 """
 
-#from ofluxghg_run import run_fluxengine;
-from fluxengine_src.fe_setup_tools import run_fluxengine;
-from fluxengine_src.tools.ofluxghg_flux_budgets import run_flux_budgets;
-from fluxengine_src.tools.compare_net_budgets import read_global_core_budgets, calc_net_budget_percentages
-from argparse import Namespace;
 from os import path;
-import inspect;
+
+from fluxengine.core.fe_setup_tools import run_fluxengine, get_fluxengine_root;
+from fluxengine.tools.lib_ofluxghg_flux_budgets import run_flux_budgets;
+from fluxengine.tools.lib_compare_net_budgets import read_global_core_budgets, calc_net_budget_percentages;
+from argparse import Namespace;
+
 
 def run_takahashi09_validation(verbose=True):
-    #Determine the path of the FluxEngine root directory.
-    selfPath = inspect.stack()[0][1];
-    feRoot = path.dirname(selfPath); #Assumes verficiation file is in the root directory
+    #Get the path of the FluxEngine root directory.
+    feRoot = get_fluxengine_root();
     
     #Run flux engine
     if verbose:
         print("Running FluxEngine for year 2000 using takahashi09 validation");
-    configFilePath = path.join("configs", "takahashi09_validation.conf");
+    configFilePath = path.join(feRoot, "configs", "takahashi09_validation.conf");
     runStatus, fe = run_fluxengine(configFilePath, 2000, 2000, processLayersOff=True, takahashiDriver=True, verbose=False);
     
     

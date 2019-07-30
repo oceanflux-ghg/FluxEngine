@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+#Contains functions for converting text-formatted data files into FluxEngine compatible netCDF (.nc) files.
+
 #Created by Peter Land, Plymouth Marine Laboratory.
 #IGA branch to create files with different geographical grids (i.e. not necessarily regular)
 #TMH option for specifying different grid resolutions
@@ -9,74 +11,22 @@ Input inFiles should be csv, or tab delimited text file(s). Headers are interrog
 IGA ??/??/2016 Updated variable names to include CH4 and N20
 IGA 5/5/2016 Updated filenames to allow for Arctic (or other) grid
 IGA 11/5/2016 Updated to include vCO2_air data as req'd in FE
-TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0
-TMH 2018/09/04: Updated to support use of temporal dimension in output files'''
+TMH 2018/05/17: Updated to increase flexibility and reflext new functionality of FluxEngine v3.0 (inc. user-defined variable names)
+TMH 2018/09/04: Updated to support use of temporal dimension in output files
+TMH 2019/07/30: Updated to separate library code from executable script
+'''
 
-
-import numpy as np, argparse;
 from netCDF4 import Dataset;
 from datetime import datetime, timedelta;
 import pandas as pd;
 from glob import glob;
-#import pathlib;
-
-
-#############
-# Function definitions
-#############
-
-#Parse and set variables from command line arguments. Returns an object containing each command line argument as an attribute.
-def parse_cl_arguments():
-    description = str("""Converts text encoded data (e.g. csv, tsv) to netCDF3 data which is compatible for use with FluxEngine.
-    The text input file must have a header containing the column names.
-    Column names must start with a letter (a-z or A-Z) and can only contain letters, numbers, spaces, underscores and certain symbols.
-    For information on allowed symbols consult the netCDF3 documentation.
-    Symbol requirements do not apply to units (e.g. "Temp [°C]" or "fCO2 [µatm]" are valid column name if unit parsing is on.)""", 'utf-8');
-    
-    parser = argparse.ArgumentParser(description=description);
-    parser.add_argument("inFiles", nargs="+", help="list of paths to input text file(s) containing the data you want to use. These must all have the same header configuration and column names. Standard Unix glob patterns are supported.");
-    parser.add_argument("-n", "--ncOutPath", help="Path to the output netCDF file(s). Note that if more than one netCDF file will be created a date/time stamp will be appended to this filename indicating the start of this temporal 'bin'.");
-    parser.add_argument("-s", "--startTime",
-        help="start date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
-    parser.add_argument("-e", "--endTime",
-        help="end date (and time). Format: YYYY[[[-MM-DD] hh:mm]:ss]. If only the year is supplied, the first second of the year is used.");
-    parser.add_argument("-t", "--temporalResolution", default="monthly",
-        help="Temporal resolution to use in the output file. Defaults to monthly. Format required (days hours:minutes): D hh:mm");
-    parser.add_argument("-k", "--temporalChunking", type=int, default=1,
-        help="Temporal chunking: How many time points to store in each file. Defaults to one time point per file.");
-    
-    parser.add_argument("--latProd", default="Latitude",
-        help="latitude product name. This should match the column name in the input text file. Default is 'Latitude'");
-    parser.add_argument("--lonProd", default="Longitude",
-        help="longitude product name. This should match the column name in the input text file. Default is 'Longitude'");
-    parser.add_argument("--latResolution", default=1.0, type=float, help="spatial resolution of the grid (latitude)");
-    parser.add_argument("--lonResolution", default=1.0, type=float, help="spatial resolution of the grid (longitude)");
-    parser.add_argument("--delim", default="\t",
-        help="delimiter token used to seperate data in the input text file. Default is a tab.")
-    parser.add_argument("-d", "--dateIndex", type=int, default=0,
-        help="The column number (starting from 0) which contains the date/time field in your input text file. Default is a 0.");
-    parser.add_argument("-c", "--numCommentLines", nargs="+", type=int, default=[0],
-        help="Number of comment lines before the header to be ignored). Default is a 0.");
-    parser.add_argument("--cols", nargs="+", default=None,
-        help="List of column names or numbers which will be added to the output netCDF file. This should not include longitude, latitude or data/time columns. Default will add all suitable columns.");
-    parser.add_argument("-m", "--missing_value", default="nan", help="Indicates a missing value in the input text file. Default is 'nan'.");
-    parser.add_argument("-u", "--parse_units", action="store_true",
-                          help="will automatically parse units in the header column names if follow the variable name and are formatted between square brackets (e.g. Depth [m])");
-    parser.add_argument("--encoding", default="utf-8", help="Encoding of the input text file. Default it 'utf-8'");
-    parser.add_argument("-l", "--limits", type=float, nargs = 4, default = [-90.0, 90.0, -180.0, 180],
-                        help="Coordinates which define the grid limits given in latitude and longitude: South North West East, e.g. -45 -30 -45 10 Defaults to -90 90 -180 180")
-    
-    parser.add_argument("--dateFormatDayFirst", help="Specifies that the date/time column in the input data is formatted day-first (international/European format).", action="store_true", default=False);
-
-    clArgs = parser.parse_args();
-    
-    return clArgs;
+import numpy as np;
 
 
 #Try to parse a string to create a datatime object using a list of formats.
 #Returns the datetime object and format used.
 #If none of the formats match a ValueError exception is raised.
-def parseDateTimeString(dateString, formats, verbose=False):
+def _parse_date_time_string(dateString, formats, verbose=False):
     dateString = dateString.strip();
     
     #formats = ["%d/%m/%Y", "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y%H:%M:%S", "%d/%m/%y", "%d/%m/%y %H:%M", "%d/%m/%y %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
@@ -96,7 +46,7 @@ def parseDateTimeString(dateString, formats, verbose=False):
 #   lonResolution: spatial resolution in longitude
 #   refLat: reference latitude at 0, 0 grid point
 #   refLon: reference longitude at 0, 0 grid point
-def get_grid_coordinates(latitude, longitude, latResolution, lonResolution, ref0Lat, ref0Lon):
+def _get_grid_coordinates(latitude, longitude, latResolution, lonResolution, ref0Lat, ref0Lon):
     #Difference in lat/long
     #print "lat, lon:", latitude, longitude;
     #print "ref, ref:", ref0Lat, ref0Lon;
@@ -117,7 +67,7 @@ def get_grid_coordinates(latitude, longitude, latResolution, lonResolution, ref0
 #   dateTime: date and time to calculate for
 #   temporalResolution: temporal resolution
 #   refDateTime: reference date time which corresponds to an index/coordinate of 0.
-def get_temporal_coordinate(dateTime, temporalResolution, refDateTime):
+def _get_temporal_coordinate(dateTime, temporalResolution, refDateTime):
     if temporalResolution != "monthly":
         diff = dateTime-refDateTime;
         index = int(np.floor(diff.total_seconds() / temporalResolution.total_seconds()));
@@ -132,7 +82,7 @@ def get_temporal_coordinate(dateTime, temporalResolution, refDateTime):
 #   allValues: array containing a list of each value for each grid point
 #   mask: boolean matrix indicating which grid points to calculate for
 #   outputArray: Array to write output to
-def calc_standard_deviation(allValues, mask, output):
+def _calc_standard_deviation(allValues, mask, output):
     for coords, vals in np.ndenumerate(allValues):
         if mask[coords] == True:
             #print "sd: ", np.std(vals);
@@ -142,7 +92,7 @@ def calc_standard_deviation(allValues, mask, output):
 #   allValues: array containing a list of each value for each grid point
 #   mask: boolean matrix indicating which grid points to calculate for
 #   outputArray: Array to write output to
-def calc_mean(allValues, mask, output):
+def _calc_mean(allValues, mask, output):
     for coords, vals in np.ndenumerate(allValues):
         if mask[coords] == True:
             output[coords] = np.nanmean(vals);
@@ -150,7 +100,7 @@ def calc_mean(allValues, mask, output):
 #Converts column indices to names, converts strings correct encoding. clArgs is modified in place.
 #   dataFrame: data frame containing the full dataset
 #   clArgs: parsed commandline arguments
-def process_cols(dataFrame, columnNames, encoding):
+def _process_cols(dataFrame, columnNames, encoding):
     if columnNames == None: #If no columns are specified, then add them all.
         columnNames = list(dataFrame.keys());
     else: #Convert integers indexed to strings column names
@@ -179,7 +129,7 @@ def process_cols(dataFrame, columnNames, encoding):
 #   temporalDimLength: length of the time dimension
 #   gridDimLengthX: length of the grid (latitude)
 #   gridDimLengthY: length of the grid (longitude)
-def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY):
+def _initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY):
     allArrays = {}; #Store numpy arrays separately until we copy them over to the netCDF variable.
     print("The following columns will be extracted:");
     for colName in colNames:
@@ -201,7 +151,7 @@ def initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDim
 #   netCDFFile: the netCDF file to be written to
 #   latData: latitude data for the grid
 #   lonData: longitude data for the grid
-def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, timeDimLength, temporalResolution):
+def _create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, timeDimLength, temporalResolution):
     if temporalResolution == "monthly":
         raise ValueError("'monthly' temporal resolution not yet supported in create_netCDF_dimensions.");
     
@@ -255,7 +205,7 @@ def create_netCDF_dimensions(netCDFFile, latData, lonData, DIM_NAME_LAT, DIM_NAM
 #   netCDFFile: the netCDF file to be written to
 #   colNames: a list of column names (must match input data header)
 #   parseUnits: if true, units will be split from the column name and set correctly (assumes format is "col name [units]")
-def create_netCDF_variables(netCDFFile, colNames, parseUnits, DIM_NAMES, MISSING_VALUE):
+def _create_netCDF_variables(netCDFFile, colNames, parseUnits, DIM_NAMES, MISSING_VALUE):
     netCDFVariables = {};
     for colName in colNames:
         if parseUnits == True:
@@ -296,7 +246,7 @@ def create_netCDF_variables(netCDFFile, colNames, parseUnits, DIM_NAMES, MISSING
 #   startTime: start of the first timestep
 #   temporalResolution: length of each timestep (must be either deltatime object or the string "monthly")
 #   temporalIndex: current timestep
-def append_timestamp_to_filename(filePath, startTime, temporalResolution, temporalIndex):
+def _append_timestamp_to_filename(filePath, startTime, temporalResolution, temporalIndex):
     if filePath.endswith(".nc") == False:
         filePath += ".nc";
     
@@ -343,13 +293,13 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         
     #Parse start and end times and create datetime objects
     try:
-        startTime, formatUsed = parseDateTimeString(startTime, CL_DATE_FORMATS)
+        startTime, formatUsed = _parse_date_time_string(startTime, CL_DATE_FORMATS)
         startTime = startTime;
     except ValueError as e:
         print(e.clArgs);
         raise SystemExit("Unable to parse start datetime "+startTime);
     try:
-        endTime, formatUsed = parseDateTimeString(endTime, CL_DATE_FORMATS);
+        endTime, formatUsed = _parse_date_time_string(endTime, CL_DATE_FORMATS);
         endTime = endTime;
     except ValueError as e:
         print(e.args);
@@ -388,7 +338,7 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     northLimit = limits[1]; #max lat
     westLimit = limits[2]; #min lon
     eastLimit = limits[3]; #max lon
-    temporalDimLength = get_temporal_coordinate(endTime, temporalResolution, startTime)+1; #Total number of time points (across all output files)
+    temporalDimLength = _get_temporal_coordinate(endTime, temporalResolution, startTime)+1; #Total number of time points (across all output files)
     
     ###########
     # Read and process data
@@ -406,8 +356,8 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         
         #If this is the first input file to be read there are some additional things to setup
         if iFile==0:
-            process_cols(df, colNames, encoding); #Process selected columns to ensure that they are valid column names/indices.
-            allArrays = initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
+            _process_cols(df, colNames, encoding); #Process selected columns to ensure that they are valid column names/indices.
+            allArrays = _initialise_data_storage(colNames, temporalDimLength, gridDimLengthX, gridDimLengthY); #Create arrays to accumulate and process data in.
         
         #Loop through each row in the current file and process data
         print("Processing data in file", inFile);
@@ -424,8 +374,8 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
                 continue;
             
             #Calculate coordinates
-            xCoord, yCoord = get_grid_coordinates(row[latProd], row[lonProd], latResolution, lonResolution, southLimit, westLimit);
-            temporalCoord = get_temporal_coordinate(row[dateIndex], temporalResolution, startTime);
+            xCoord, yCoord = _get_grid_coordinates(row[latProd], row[lonProd], latResolution, lonResolution, southLimit, westLimit);
+            temporalCoord = _get_temporal_coordinate(row[dateIndex], temporalResolution, startTime);
             if temporalCoord < 0:
                 raise IndexError("Trying to use time index of %d. Time index cannot be negative. Are you specifying the correct startTime?"%temporalCoord);
             
@@ -448,10 +398,10 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
         allArrays[colName+"_stddev"][validMask==False] = MISSING_VALUE;
         
         #Calculation standard deviation
-        calc_standard_deviation(allArrays[colName+"_vals"], validMask, allArrays[colName+"_stddev"]);
+        _calc_standard_deviation(allArrays[colName+"_vals"], validMask, allArrays[colName+"_stddev"]);
         
         #Calculate mean
-        calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
+        _calc_mean(allArrays[colName+"_vals"], validMask, allArrays[colName+"_mean"]);
     
 
     ##############
@@ -467,14 +417,14 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
             if temporalDimLength == 1 or temporalDimLength >= temporalChunking: #if only one file
                 outFilePath = ncOutPath;
             else: #must append the start timestamp of the current temporal step to the filename
-                outFilePath = append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
+                outFilePath = _append_timestamp_to_filename(ncOutPath, startTime, temporalResolution, temporalIndex);
             ncOutput = Dataset(outFilePath, 'w');
         
             #Create dimensions set lat/lon data
-            create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, temporalChunking, temporalResolution);
+            _create_netCDF_dimensions(ncOutput, latitudeData, longitudeData, DIM_NAME_LAT, DIM_NAME_LON, DIM_NAME_TIME, startTime, temporalChunking, temporalResolution);
         
             #Create the required netCDF variables (mean, count, stddev)
-            allVariables = create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);
+            allVariables = _create_netCDF_variables(ncOutput, colNames, parseUnits, DIM_NAMES, MISSING_VALUE);
         
         #Copy relevant time slice of each array to the netCDF
         for colName in colNames:
@@ -502,16 +452,4 @@ def convert_text_to_netcdf(inFiles, startTime, endTime, ncOutPath,
     #    print "Rows with missing values:", missingValueRows;
     
     
-
-if __name__ == "__main__":
-    #parse command line arguments
-    print("Parsing command line arguments.");
-    args = parse_cl_arguments();
-    
-    convert_text_to_netcdf(args.inFiles, args.startTime, args.endTime, args.ncOutPath,
-                           limits=args.limits, latResolution=args.latResolution, lonResolution=args.lonResolution,
-                           temporalResolution=args.temporalResolution, temporalChunking=args.temporalChunking,
-                           delim=args.delim, numCommentLines=args.numCommentLines, encoding=args.encoding,
-                           textFileMissingValue=args.missing_value, parseUnits=args.parse_units,
-                           dateIndex=args.dateIndex, colNames=args.cols, latProd=args.latProd, lonProd=args.lonProd, dateFormatDayFirst=args.dateFormatDayFirst); 
 

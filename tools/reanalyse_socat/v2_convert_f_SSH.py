@@ -591,8 +591,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       #Get this month into a datetime object - use the average of year to get a centre point
       #Note in most usual cases the year range is a single year so averaging does nothing strange
       if m!=12:
-         half_days_in_month=(datetime.datetime((year_range[0]+year_range[1])/2,m+1,1)-
-                          datetime.datetime((year_range[0]+year_range[1])/2,m,1)).days/2.0
+         half_days_in_month=(datetime.datetime((year_range[0]+year_range[1])//2,m+1,1)- #TMH: / to // on switch to Python3
+                          datetime.datetime((year_range[0]+year_range[1])//2,m,1)).days/2.0
          fraction=half_days_in_month-int(half_days_in_month)
          hours=int(fraction*24)
          minutes=0 # we wont bother with minutes
@@ -600,7 +600,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       else:
          #December needs to use the next year (as m+1==13) - so simpler to hard code as 15.5 days
          half_days_in_month=15.5
-      datadate=datetime.datetime((year_range[0]+year_range[1])/2,m,int(half_days_in_month),hours,minutes,seconds)
+      datadate=datetime.datetime((year_range[0]+year_range[1])//2,m,int(half_days_in_month),hours,minutes,seconds) #TMH: / to // on switch to Python3
       if ASCIIOUT is False:
          #Now we want to average by cruise first and then bin all the cruises
          #this in effect takes a cruise-weighted average of the data

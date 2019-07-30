@@ -17,7 +17,7 @@ import inspect;
 import time;
 import socket; #for gethostname
 import calendar;
-from datetime import date, timedelta, datetime;
+from datetime import timedelta, datetime;
 import fnmatch; #matching file globs
 from numpy import cumsum;
 
@@ -26,6 +26,12 @@ from . import rate_parameterisation as k_params; #This is where k parameterisati
 from . import data_preprocessing as data_preprocessing; #preprocessing functions
 from . import process_indicator_layers as indicator_layers; #Process indicator layer functors
 
+
+#Gets the root fluxengine directory
+def get_fluxengine_root():
+    selfPath = inspect.stack()[0][1];
+    rootPath = path.dirname(path.dirname(selfPath)); #Assumes this file is in the root/core/ directory.
+    return rootPath;
 
 #Parses .conf files and returns a dictionary containing variable values.
 #Makes no checks of the validity of these variables, simply splits based on '=' sign:
@@ -582,7 +588,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
     configVariables = read_config_file(configPath, verbose=verbose);
     
     #Parse settings file for default metadata about the config variables
-    settingsPath = path.join(rootPath, "fluxengine_src", "settings.xml");
+    settingsPath = path.join(rootPath, "core", "settings.xml");
     metadata = read_config_metadata(settingsPath, verbose=verbose);
     
     #Append custom datalayers to metadata file, this means they will be automatically added as a datalayer

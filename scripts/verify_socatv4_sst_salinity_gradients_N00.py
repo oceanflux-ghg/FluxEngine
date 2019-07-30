@@ -10,18 +10,16 @@ Compares output to a known reference output for verification.
 """
 
 #from ofluxghg_run import run_fluxengine;
-from fluxengine_src.fe_setup_tools import run_fluxengine;
-from fluxengine_src.tools.ofluxghg_flux_budgets import run_flux_budgets;
-from fluxengine_src.tools.compare_net_budgets import calc_net_budget_percentages
+from fluxengine.core.fe_setup_tools import run_fluxengine, get_fluxengine_root;
+from fluxengine.tools.lib_ofluxghg_flux_budgets import run_flux_budgets;
+from fluxengine.tools.lib_compare_net_budgets import calc_net_budget_percentages
 from argparse import Namespace;
 from os import path;
-import inspect;
 
 #Runs the validation proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
 def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
-    #Determine the path of the FluxEngine root directory.
-    selfPath = inspect.stack()[0][1];
-    feRoot = path.dirname(selfPath); #Assumes script is in the root FluxEngine folder.
+    #Get the path of the FluxEngine root directory.
+    feRoot = get_fluxengine_root();
     
     #Run flux engine
     if verbose:
@@ -33,7 +31,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #run net budgets
     if verbose:
         print("\n\nNow calculating flux budgets...");
-    outputFilePath = path.join("output", "validate_socatv4_sst_salinity_N00", "");
+    outputFilePath = path.join(feRoot, "output", "validate_socatv4_sst_salinity_N00", "");
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
                                 dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
@@ -47,8 +45,8 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #compare similarity flux budgets output between new and ref runs
     if verbose:
         print("\n\nComparing output to reference data...");
-    newPath = path.join("output", "validate_socatv4_sst_salinity_N00", "_global.txt");
-    refPath = path.join("data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
+    newPath = path.join(feRoot, "output", "validate_socatv4_sst_salinity_N00", "_global.txt");
+    refPath = path.join(feRoot, "data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;

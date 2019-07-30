@@ -22,7 +22,7 @@ Parses command line arguments, verifies configuration file and runs FluxEngine f
 import argparse; #parsing command line arguments
 import inspect; #stack
 
-import fluxengine_src.fe_setup_tools as setup;
+import fluxengine.core.fe_setup_tools as setup;
                 
 
 if __name__ == "__main__":

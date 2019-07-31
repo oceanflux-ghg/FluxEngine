@@ -1,0 +1,13 @@
+Metadata-Version: 1.0
+Name: FluxEngine
+Version: 4.0.dev0
+Summary: Open-source toolkit for calculating atmosphere-ocean gas transfer
+Home-page: https://github.com/oceanflux-ghg/FluxEngine
+Author: Tom Holding, Jamie Shutler and others
+Author-email: t.m.holding@exeter.ac.uk, j.d.shutler@exeter.ac.uk
+License: UNKNOWN
+Project-URL: Source Code, https://github.com/oceanflux-ghg/FluxEngine
+Project-URL: Ancillary Tools, https://github.com/oceanflux-ghg/FluxEngineAncillaryTools
+Project-URL: More Info, http://www.oceanflux-ghg.org/Products/FluxEngine
+Description: UNKNOWN
+Platform: UNKNOWN

@@ -30,9 +30,9 @@ test_execution.py
 configs/test_execution.conf
 
 ### Tutorial created files ###
-Tutorials/01_introduction/custom_config.conf
-Tutorials/03_fixed_station_data/ostergarnsholm_reanalysed.conf
-Tutorials/03_fixed_station_data/ostergarnsholm_original.conf
-Tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
-Tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
+tutorials/01_introduction/custom_config.conf
+tutorials/03_fixed_station_data/ostergarnsholm_reanalysed.conf
+tutorials/03_fixed_station_data/ostergarnsholm_original.conf
+tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
+tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
 

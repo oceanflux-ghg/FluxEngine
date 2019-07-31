@@ -16,7 +16,7 @@ from fluxengine.tools.lib_compare_net_budgets import calc_net_budget_percentages
 from argparse import Namespace;
 from os import path;
 
-#Runs the validation proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
+#Runs the verification proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
 def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #Get the path of the FluxEngine root directory.
     feRoot = get_fluxengine_root();

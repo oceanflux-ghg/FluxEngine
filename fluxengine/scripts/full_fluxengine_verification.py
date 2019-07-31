@@ -6,8 +6,8 @@ Created on Mon Apr 23 14:12:13 2018
 @author: tomholding
 """
 
-import fluxengine_src;
-from fluxengine_src.tools.validation_tools import validate_run;
+import fluxengine as fluxengine_src;
+from fluxengine.tools.lib_verification_tools import verify_run;
 from os import path;
 
 rootPath = "full_validation";
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     validationOutcome = {}; #A place to store validation outcomes...
     
     name = "SOCATv4 no gradients Nightingale2000 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_no_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_no_gradients-N00.conf")),
                  referencePath=path.join(referencePath, "socatv4_no_gradients_N00_reference_FEv2"),
                  referenceFluxBudgetsFilename="no_gradients-N00_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -51,7 +51,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 no gradients Nightingale2000 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_no_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_no_gradients-N00.conf")),
                  referencePath=path.join(referencePath, "socatv4_no_gradients_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="no_gradients-N00_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST gradients Nightingale2000 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_gradients-N00.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_gradients_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData, #Don't bother regenerating data, this was just done above
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST salinity gradients Nightingale2000 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.join(configPath,"socatv4_sst_salinity_gradients-N00.conf"),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.join(configPath,"socatv4_sst_salinity_gradients-N00.conf"),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_N00_reference_FEv2"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-N00_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 SST salinity gradients Nightingale2000 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-N00.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-N00_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     
     #Note that SMOS data only starts May 2010, so the year 2011 is used instead
     name = "SOCATv4 SST salinity gradients SMOS2011 Nightingale2000 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients_smos2011-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients_smos2011-N00.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_smos2011_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData, #Don't bother regenerating data, this was just done above
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SSTfnd, SST salinity gradients, K parameterisation: Nightingale2000, FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients_sstfnd-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients_sstfnd-N00.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_sstfnd_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData, #Don't bother regenerating data, this was just done above
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST salinity gradients K_generic a0 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K0.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K0.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K0_reference_FEv2"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K0_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -122,7 +122,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 SST salinity gradients K_generic a0 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K0.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K0.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K0_reference_FEv3"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K0_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST salinity gradients K_generic a1 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K1.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K1.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K1_reference_FEv2"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K1_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -142,7 +142,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 SST salinity gradients K_generic a1 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K1.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K1.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K1_reference_FEv3"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K1_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST salinity gradients K_generic a2 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K2.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K2.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K2_reference_FEv2"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K2_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -162,7 +162,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 SST salinity gradients K_generic a2 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K2.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K2.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K2_reference_FEv3"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K2_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     
     
     name = "SOCATv4 SST salinity gradients K_generic a3 FEv2";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K3.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K3.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K3_reference_FEv2"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K3_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -182,7 +182,7 @@ if __name__ == "__main__":
                  takahashiRun=False, verbose=False);
     
     name = "SOCATv4 SST salinity gradients K_generic a3 FEv3";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K3.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"socatv4_sst_salinity_gradients-K3.conf")),
                  referencePath=path.join(referencePath,"socatv4_sst_salinity_gradients_K3_reference_FEv3"),
                  referenceFluxBudgetsFilename="SST_Salinity_gradients-K3_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                      
     
     name = "Takahashi09 all inputs FEv1";
-    validationOutcome[name] = validate_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
+    validationOutcome[name] = verify_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
                  referencePath=path.join(referencePath,"takahashi09_all_inputs_reference_FEv1"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -203,7 +203,7 @@ if __name__ == "__main__":
                  takahashiRun=True, verbose=False);
     
     name = "Takahashi09 all inputs FEv2";
-    validationOutcome[name] = validate_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
+    validationOutcome[name] = verify_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
                  referencePath=path.join(referencePath,"takahashi09_all_inputs_reference_FEv2"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -212,7 +212,7 @@ if __name__ == "__main__":
                  takahashiRun=True, verbose=False);
     
     name = "Takahashi09 all inputs FEv3";
-    validationOutcome[name] = validate_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
+    validationOutcome[name] = verify_run(name, 2000, configFilePath=path.abspath(path.join(configPath,"takahashi09_all_inputs.conf")),
                  referencePath=path.join(referencePath,"takahashi09_all_inputs_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=False, runFluxBudgets=False, #Don't bother regenerating data, this was just done above
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     
     
     name = "Takahashi09 pCO2 no gradients FEv3 Nightingale2000";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"takahashi09_pco2_no_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"takahashi09_pco2_no_gradients-N00.conf")),
                  referencePath=path.join(referencePath,"takahashi09_pco2_no_gradients_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     
     
     name = "Takahashi09 pCO2 SST salinity gradients FEv3 Nightingale2000";
-    validationOutcome[name] = validate_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"takahashi09_pco2_sst_salinity_gradients-N00.conf")),
+    validationOutcome[name] = verify_run(name, 2010, configFilePath=path.abspath(path.join(configPath,"takahashi09_pco2_sst_salinity_gradients-N00.conf")),
                  referencePath=path.join(referencePath,"takahashi09_pco2_sst_salinity_gradients_N00_reference_FEv3"),
                  referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=regenerateData, runFluxBudgets=regenerateData,

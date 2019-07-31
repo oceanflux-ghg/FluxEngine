@@ -1,0 +1,8 @@
+include FE_liscence.txt
+
+recursive-include fluxengine/configs *
+recursive-include fluxengine/data *
+recursive-include fluxengine/tutorials *
+
+#recursive-include fluxengine/scripts *
+#TODO: do this by specifying setuptool.setup's scripts=['scripts/text2ncdf.py'] to copy to the user's PATH. Must check each script works independently of current working directory first.

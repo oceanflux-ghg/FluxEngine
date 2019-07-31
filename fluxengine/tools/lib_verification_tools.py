@@ -49,7 +49,7 @@ def nans_to_missing_value(data, missingValue=-999.0):
 #   failThresholdFLuxBudgetOutput - the threshold for failing flux budgets validation (allowed percentage difference between new and reference).
 #   takahashiRun - set if this is performing a takahashi validation run (using all inputs from takahashi 2009 dataset).
 #   verbose - if true additional output will be printed to stdout.
-def validate_run(name, year, configFilePath, referencePath, referenceFluxBudgetsFilename="_global.txt",
+def verify_run(name, year, configFilePath, referencePath, referenceFluxBudgetsFilename="_global.txt",
                  runFluxEngine=True, runFluxBudgets=True, #these two arguments force the fluxengine / flux-budgets to run overwriting any previous data.
                  validateNetCDFOutput=True, failThresholdNetCDFOutput=0.000001, #Compare netCDF output variables? Threshold is for sum of abs difference
                  validateFluxBudgets=True, failThresholdFluxBudgetsOutput=1.0, #Compare flux budget outputs? Threshold in percent

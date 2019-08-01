@@ -32,14 +32,14 @@ def run_takahashi09_validation(verbose=True):
     #run net budgets
     if verbose:
         print("\n\nNow calculating flux budgets...");
-    outputPath = path.join(feRoot, "output","validate_takahashi09","");
+    outputPath = path.dirname(path.dirname(fe.runParams.output_dir));
     
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC', dir=outputPath,
                                 fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
                                 kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, "data", "onedeg_land.nc"),
                                 maskdatasets=[], maskfile=path.join(feRoot, "data", "World_Seas-final-complete_IGA.nc"),
-                                outroot=outputPath, places=10, ref=None,
+                                outroot=path.join(outputPath, ''), places=10, ref=None,
                                 regions=[], verbosity=0, window=None);
     
     run_flux_budgets(fluxBudgetsArgs);

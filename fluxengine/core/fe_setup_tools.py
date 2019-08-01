@@ -21,10 +21,10 @@ from datetime import timedelta, datetime;
 import fnmatch; #matching file globs
 from numpy import cumsum;
 
-from . import fe_core as fluxengine
-from . import rate_parameterisation as k_params; #This is where k parameterisation logic is kept.
-from . import data_preprocessing as data_preprocessing; #preprocessing functions
-from . import process_indicator_layers as indicator_layers; #Process indicator layer functors
+from fluxengine.core import rate_parameterisation as k_params; #This is where k parameterisation logic is kept.
+from fluxengine.core import data_preprocessing as data_preprocessing; #preprocessing functions
+from fluxengine.core import process_indicator_layers as indicator_layers; #Process indicator layer functors
+from fluxengine.core import fe_core as fluxengine;
 
 
 #Gets the root fluxengine directory
@@ -178,13 +178,13 @@ def verify_config_variables(configVariables, metadata, verbose=False):
     for varName in standardVars:
         #Different data types require processing differently and have different constraints.
         #Paths: Convert all paths to absolute paths.
-        if metadata[varName]["type"] == "path" or metadata[varName]["type"] == "DataLayerPath":
-            if path.isabs(configVariables[varName]) == False:
-                configVariables[varName] = path.abspath(path.expanduser(configVariables[varName]));
+#        if metadata[varName]["type"] == "path" or metadata[varName]["type"] == "DataLayerPath":
+#            if path.isabs(configVariables[varName]) == False:
+#                configVariables[varName] = path.abspath(path.expanduser(configVariables[varName]));
         
         #Multioption: Check that the config value matches at least one option.
         #             Store string value with _name suffix overwrite original with integer value.
-        elif metadata[varName]["type"] == "multioption":
+        if metadata[varName]["type"] == "multioption":
             if configVariables[varName] not in metadata[varName]["options"]:
                 raise ValueError("%s: Invalid option specified in config file for %s. Valid options are: %s" % (function, varName, str(list(metadata[varName]["options"].keys()))));
             configVariables[varName+"_name"] = configVariables[varName]; #name is useful for writing messages to user
@@ -265,6 +265,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
 def substitute_tokens(inputStr, curDatetime):
     year = curDatetime.year;
     month = curDatetime.month;
+    
     day = curDatetime.day;
     hour = curDatetime.hour;
     minute = curDatetime.minute;
@@ -285,6 +286,9 @@ def substitute_tokens(inputStr, curDatetime):
     
     outputStr = outputStr.replace("<hh>", "%02d"%hour); #<hh> hours in 24 hour time.
     outputStr = outputStr.replace("<mm>", "%02d"%minute) #<mm> mintue past the hour
+    
+    #FluxEngine root
+    outputStr = outputStr.replace("<FEROOT>", get_fluxengine_root());
 
     return outputStr;
 
@@ -342,6 +346,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
         if varName in varMetadata:
             if varMetadata[varName]["type"] == varMetadata[varName]["type"] == "DataLayerPath":
                 pathGlob = substitute_tokens(configVariables[varName], curTimePoint); #substitute time tokens into the path/glob
+                pathGlob = path.abspath(path.expanduser(pathGlob)); #Expand to absolute path only AFTER substituting tokens
                 curDir = path.dirname(pathGlob); #Directory to search in.
                 curGlob = path.basename(pathGlob); #File glob to match against.
                 #print "path:", curPath
@@ -395,7 +400,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
     #runParams["output_chunk"] = int(outputChunk); #if 0 a new file will be created, otherwise it will be append to previous chunk
     
     if outputChunk == 0: #Will need to create a new file
-        outputRoot = configVariables["output_dir"];
+        outputRoot = substitute_tokens(configVariables["output_dir"], curTimePoint);
         outputStructure = substitute_tokens(configVariables["output_structure"], curTimePoint);
         outputFile = substitute_tokens(configVariables["output_file"], curTimePoint);
     
@@ -647,10 +652,10 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
                 runParameters["TAKAHASHI_DRIVER"] = False;
         except ValueError as e:
             print(e.args);
-            return;
+            raise e;
         except OSError as e:
             print(e.args);
-            return;
+            raise e;
         
         #Create output file path
         try:

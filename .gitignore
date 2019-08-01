@@ -27,7 +27,7 @@ fluxengine/tools/reanalyse_socat/output/**
 
 ### ignore distribution files
 dist
-fluxengine/FluxEngine.egg-info/**
+FluxEngine.egg-info
 
 ### test execution script and configuration file ###
 fluxengine/test_execution.py

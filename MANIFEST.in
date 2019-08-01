@@ -1,5 +1,6 @@
 include FE_liscence.txt
 include FluxEngineV4_instructions.pdf
+include fluxengine/core/settings.xml
 
 recursive-include fluxengine/configs *
 recursive-include fluxengine/data *
@@ -11,5 +12,3 @@ exclude fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_original.conf
 exclude fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
 exclude fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
 
-#recursive-include fluxengine/scripts *
-#TODO: do this by specifying setuptool.setup's scripts=['scripts/text2ncdf.py'] to copy to the user's PATH. Must check each script works independently of current working directory first.

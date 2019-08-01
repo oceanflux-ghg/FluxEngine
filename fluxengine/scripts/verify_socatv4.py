@@ -31,13 +31,13 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #run net budgets
     if verbose:
         print("\n\nNow calculating flux budgets...");
-    outputFilePath = path.join(feRoot, "output", "validate_socatv4_sst_salinity_N00", "");
+    outputFilePath = path.dirname(path.dirname(fe.runParams.output_dir));
     fluxBudgetsArgs = Namespace(LooseIce=False, cidataset='OIC1', cwdataset='OSFC',
-                                dir=path.join(feRoot, outputFilePath, ''), fluxdataset='OF', gridarea=0,
+                                dir=path.join(outputFilePath, ''), fluxdataset='OF', gridarea=0,
                                 gridareadataset='area', gridareafile='no_file', icePercent=False, icedataset='P1',
                                 kwdataset='OK3', landdataset='land_proportion', landfile=path.join(feRoot, 'data/onedeg_land.nc'),
                                 maskdatasets=[], maskfile=path.join(feRoot, 'data/World_Seas-IHO-mask.nc'),
-                                outroot=path.join(feRoot, outputFilePath, ''), places=10, ref=None,
+                                outroot=path.join(outputFilePath, ''), places=10, ref=None,
                                 regions=[], verbosity=0, window=None);
     run_flux_budgets(fluxBudgetsArgs);
     
@@ -45,7 +45,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     #compare similarity flux budgets output between new and ref runs
     if verbose:
         print("\n\nComparing output to reference data...");
-    newPath = path.join(feRoot, "output", "validate_socatv4_sst_salinity_N00", "_global.txt");
+    newPath = path.join(outputFilePath, "_global.txt");
     refPath = path.join(feRoot, "data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     

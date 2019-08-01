@@ -10,12 +10,12 @@ import setuptools;
 import os.path as path;
 
 #List the standalone scripts
-scripts = ["append2insitu.py", "compare_net_budgets.py",
-           "fluxengine_tutorials.py", "ncdf2text.py",
-           "ofluxghg_flux_budgets.py", "ofluxghg_run.py",
-           "reanalyse_socat_driver.py", "resample_netcdf.py",
-           "full_fluxengine_verification.py", "text2ncdf.py",
-           "verify_socatv4.py", "verify_takahashi09.py"];
+scripts = ["fe_append2insitu.py", "fe_compare_net_budgets.py",
+           "fe_tutorials.py", "fe_ncdf2text.py",
+           "fe_calc_budgets.py", "fe_run.py",
+           "fe_reanalyse_socat_driver.py", "fe_resample_netcdf.py",
+           "fe_full_verification.py", "fe_text2ncdf.py",
+           "fe_verify_socatv4.py", "fe_verify_takahashi09.py"];
 for i in range(len(scripts)): #Append the directory to each script name
     scripts[i] = "fluxengine/scripts/"+scripts[i];
 

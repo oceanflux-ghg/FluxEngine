@@ -1,0 +1,14 @@
+include FE_liscence.txt
+include FluxEngineV4_instructions.pdf
+include fluxengine/core/settings.xml
+
+recursive-include fluxengine/configs *
+recursive-include fluxengine/data *
+recursive-include fluxengine/tutorials *
+
+exclude fluxengine/tutorials/01_introduction/custom_config.conf
+exclude fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_reanalysed.conf
+exclude fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_original.conf
+exclude fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
+exclude fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
+

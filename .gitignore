@@ -17,14 +17,26 @@ Thumbs.db
 *.log
 
 ### Output directory ###
-output/**
+fluxengine/output/**
 
 ### Full validation suite files ###
-full_validation/**
+fluxengine/full_validation/**
 
 ### reanalyse_socat tool's default output directory ###
-fluxengine_src/tools/reanalyse_socat/output/**
+fluxengine/tools/reanalyse_socat/output/**
+
+### ignore distribution files
+dist
+FluxEngine.egg-info
 
 ### test execution script and configuration file ###
-test_execution.py
+fluxengine/test_execution.py
 configs/test_execution.conf
+
+### Tutorial created files ###
+fluxengine/tutorials/01_introduction/custom_config.conf
+fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_reanalysed.conf
+fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_original.conf
+fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
+fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
+

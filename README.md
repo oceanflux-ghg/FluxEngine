@@ -3,9 +3,10 @@ FluxEngine
 
 
 v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019)
-Version 3.0 fixed as of 02 August 2019.
+
+Version 3.0 fixed (static) as of 02 August 2019.
 ----
-These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (in-review) and can be found here https://www.ocean-sci-discuss.net/os-2019-45/ . The FluxEngine v3.0 updates and extensions were funded by the European Space Agency and two European Union research projects, Ringo and Integral, which are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 extensions to the toolbox include:
+These updates have been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (in-review) and can be found here https://www.ocean-sci-discuss.net/os-2019-45/ . The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
 
     •   A more flexible way of specifying input data in the configuration files.
     •   Data pre-processing options (e.g. unit conversion).

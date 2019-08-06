@@ -46,8 +46,9 @@ The FluxEngine software was originally developed by The European Space Agency Oc
 
 News articles
 ----
-'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
-'Invisible scum on sea cuts Co2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
+1. 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+
+2. 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
 
 
 Animation 

@@ -44,14 +44,20 @@ Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exete
 The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
 
 
-Publications which use FluxEngine and/or FluxEngine outputs:
+News articles
 ----
+'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+'Invisible scum on sea cuts Co2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
 
-News Article: 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
 
-Animation explaining the concepts of atmosphere-ocean gas exchange, why this is important and what the FluxEngine enables 
+Animation 
+----
+Explaining the concepts of atmosphere-ocean gas exchange, why this is important, and what the FluxEngine enables 
 http://due.esrin.esa.int/stse/videos/page_video013.php
 
+
+Journal publications which use FluxEngine and/or FluxEngine outputs:
+----
 1. Holding, T., Ashton, I. G., Shutler, J. D., Land, P. E., Nightingale, P. D., Rees, A. P., Brown, I., Piolle, J.-F., Kock, A., Bange, H. W., Woolf, D. K., Goddijn-Murphy, L., Pereira, R., Paul, F., Girand-Ardhuin, F., Chapron, B., Rehder, G., Ardhuin, F., Donlon, C. J. (in-review) The FluxEngine air-sea gas flux toolbox: simplified interface and extensions for in situ analyses and multiple sparingly soluble gases, Ocean Sci. Discuss., https://doi.org/10.5194/os-2019-45
 
 2. Henson SA, Humphreys MP, Land PE, Shutler JD, Goddijn-Murphy L, Warren M (2018). Controls on open-ocean North Atlantic ΔpCO2 at seasonal and interannual timescales are different. Geophysical Research Letters, doi:10.1029/2018GL078797

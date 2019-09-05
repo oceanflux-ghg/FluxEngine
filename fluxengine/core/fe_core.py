@@ -1114,12 +1114,17 @@ class FluxEngine:
         #Using sstskin, so calculate it from sstfnd.
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
            print("%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %d) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference))
+           #In this case SST gradients are not used and only sstskin is provided. sstfnd is needed for the flux calculation, so:
+           #    Calculate sstfnd from sstskin
+           #    Copy sstfnd over sstskin to prevent accidental use of sst gradients
+           #    TODO: Infer sst_gradients from flux equation, infer use_sstskin and use_sstfnd from data input sources.
+           
            #setting sstfnd_ data fields to skin values
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
                  
-                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference
-                 self.data["sstskin"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference
+                 self.data["sstfnd"].fdata[i] = self.data["sstskin"].fdata[i] + runParams.cool_skin_difference #calculate sstfnd from sstskin for use in bulk equation
+                 self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i] #Copy sstfnd over sstskin to prevent accidental use of sst_gradients
                  self.data["sstfnd_stddev"].fdata[i] = self.data["sstskin_stddev"].fdata[i]
                  self.data["sstfnd_count"].fdata[i] = self.data["sstskin_count"].fdata[i]
               else:

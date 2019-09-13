@@ -59,7 +59,7 @@ http://due.esrin.esa.int/stse/videos/page_video013.php
 
 Journal publications (which use FluxEngine and/or FluxEngine outputs)
 ----
-1. Woolf DK, Shutler JD, Goddijn‐Murphy L, Watson AJ, Chapron B, Nightingale PD, Donlon CJ, Piskozub J, Yelland MJ, Ashton I, et al (2019). Key Uncertainties in the Recent Air‐Sea Flux of CO. 2. Global Biogeochemical Cycles, https://doi.org/10.1029/2018GB006041
+1. Woolf DK, Shutler JD, Goddijn‐Murphy L, Watson AJ, Chapron B, Nightingale PD, Donlon CJ, Piskozub J, Yelland MJ, Ashton I, et al (2019). Key Uncertainties in the Recent Air‐Sea Flux of CO2. Global Biogeochemical Cycles, https://doi.org/10.1029/2018GB006041
 
 2. Holding, T., Ashton, I. G., Shutler, J. D., Land, P. E., Nightingale, P. D., Rees, A. P., Brown, I., Piolle, J.-F., Kock, A., Bange, H. W., Woolf, D. K., Goddijn-Murphy, L., Pereira, R., Paul, F., Girand-Ardhuin, F., Chapron, B., Rehder, G., Ardhuin, F., Donlon, C. J. (in-review) The FluxEngine air-sea gas flux toolbox: simplified interface and extensions for in situ analyses and multiple sparingly soluble gases, Ocean Sci. Discuss., https://doi.org/10.5194/os-2019-45
 

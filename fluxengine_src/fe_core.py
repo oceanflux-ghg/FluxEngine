@@ -105,7 +105,6 @@ class RunParameters:
 #
 # writing the final netcdf output
 def write_netcdf(fluxEngineObject, verbose=False):
-    
     timeData = fluxEngineObject.time_data;
     dataLayers = fluxEngineObject.data;
     runParams = fluxEngineObject.runParams;
@@ -1081,7 +1080,13 @@ class FluxEngine:
         #sstskin = sstfnd
         if runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
            print "%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function)
-           #actually copy sstfnd data into the sstskin dataset to make sure
+           #copy sstfnd data into the sstskin dataset to make sure
+           if "sstskin" not in self.data: #Must add the sstskin layer first!
+                self.add_empty_data_layer("sstskin");
+                if "sstfnd_stddev" in self.data:
+                    self.add_empty_data_layer("sstskin_stddev");
+                if "sstfnd_count" in self.data:    
+                    self.add_empty_data_layer("sstskin_count");
            for i in arange(nx * ny):
                if self.data["sstfnd"].fdata[i] != missing_value:
                    self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i]

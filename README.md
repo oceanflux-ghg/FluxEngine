@@ -4,7 +4,7 @@ FluxEngine
 
 Version 3.0 fixed (static) as of 02 August 2019.
 ----
-v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, fixed 02 August 2019)
+v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
 
 
 Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (in-review) and can be found here https://www.ocean-sci-discuss.net/os-2019-45/ . The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
@@ -46,9 +46,11 @@ The FluxEngine software was originally developed by The European Space Agency Oc
 
 News articles (resulting from research performed using the FluxEngine)
 ----
-1. BBC News, 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+1. ESA news, 'Can oceans turn the tide on the climate crisis' https://www.esa.int/Our_Activities/Observing_the_Earth/Can_oceans_turn_the_tide_on_the_climate_crisis
 
-2. The Guardian, 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
+2. BBC News, 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+
+3. The Guardian, 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
 
 
 Animation 

@@ -2,7 +2,7 @@ FluxEngine
 ==========
 
 
-Version 3.0 fixed (static) as of 02 August 2019.
+Version 3.0 (static as of 02 August 2019).
 ----
 v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
 

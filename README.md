@@ -44,7 +44,7 @@ Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exete
 The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
 
 
-News articles (resulting from research performed using the FluxEngine)
+Example news articles (resulting from research performed using the FluxEngine)
 ----
 1. ESA news (2019), 'Can oceans turn the tide on the climate crisis' https://www.esa.int/Our_Activities/Observing_the_Earth/Can_oceans_turn_the_tide_on_the_climate_crisis
 

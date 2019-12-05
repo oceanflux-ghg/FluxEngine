@@ -1390,7 +1390,7 @@ class FluxEngine:
         for i in arange(nx * ny):
             #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
             if (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value):
-                #Equation A1 in McGillis, Wade R., and Rik Wanninkhof. "Aqueous CO2 gradients for air–sea flux estimates." Marine Chemistry 98.1 (2006): 100-108.
+                #Equation A1 in McGillis, Wade R., and Rik Wanninkhof. "Aqueous CO2 gradients for air-sea flux estimates." Marine Chemistry 98.1 (2006): 100-108.
                 self.data["pH2O"].fdata[i] = 1013.25 * exp(24.4543 - (67.4509 * (100.0/self.data["sstskin"].fdata[i])) - (4.8489 * log(self.data["sstskin"].fdata[i]/100.0)) - 0.000544 * self.data["salinity_skin"].fdata[i])
             else:
                 self.data["pH2O"].fdata[i] = missing_value

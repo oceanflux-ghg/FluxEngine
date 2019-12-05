@@ -34,7 +34,7 @@ from os import path;
 
 from datalayer import DataLayer, DataLayerMetaData;
 from settings import Settings;
-from debug_tools import calc_mean; #calculate mean ignoring missing values.
+#from debug_tools import calc_mean; #calculate mean ignoring missing values.
 
 from datetime import timedelta, datetime;
 
@@ -368,6 +368,28 @@ def add_noise(data, rmse_value, mean_value, no_elements):
       value = value + noise
       data[i] = exp(value)
   return data
+
+
+def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, biasValue, numElements):
+    # randomly adding noise to wind data layer, based log normal distribution
+    # rmse value is used as the standard deviation of the noise function
+    # noise is added to wind moment2 and moment3 scaled by power 2 or power 3
+    
+    print "Warning: Adding noise to wind overwrites windu10_moment2 and windu10_moment3 with (windu10+epsilon)^2 and (windu10+epsilon)^3.";
+    # intialise the random number generator
+    for i in arange(numElements):
+        if ( (winduData[i] != missing_value) and (winduData[i] != 0.0) ):
+            orig = winduData[i]
+            stddev = float(rmseValue/orig)
+            noise = normalvariate(0,stddev) # determines the random noise value based on the input data and the standard deviation of the uncertainty
+            value = log(winduData[i])
+            value = value + noise
+            winduData[i] = exp(value) + biasValue;
+            moment2[i] = winduData[i]**2;
+            moment3[i] = winduData[i]**3;
+    
+    return (winduData, moment2, moment3);
+
 
 ######Ians alternative version (thanks PLand) - Untested#############
 
@@ -1069,6 +1091,36 @@ class FluxEngine:
                    self.data["rain"].fdata[i] /= 24.0;
         
         
+        # ability to randomly perturb the input datasets
+         # needed for the ensemble analyses
+         # stddev of noise is using published RMSE for each dataset
+         # all datasets are considered to have bias=0, hence mean of noise=0
+        if (runParams.random_noise_windu10_switch == 1):
+           #add_noise(self.data["windu10"].fdata, 0.44, 0.0, nx*ny)
+           #For the 0.8 value, see: https://podaac.jpl.nasa.gov/Cross-Calibrated_Multi-Platform_OceanSurfaceWindVectorAnalyses
+           add_noise_and_bias_wind(self.data["windu10"].fdata, self.data["windu10_moment2"].fdata, self.data["windu10_moment3"].fdata, runParams.windu10_noise, 0.0, runParams.windu10_bias, nx*ny);
+#           add_noise(self.data["windu10_moment2"].fdata, 0.44, 0.0, nx*ny)
+#           add_noise(self.data["windu10_moment3"].fdata, 0.44, 0.0, nx*ny)
+           print "%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function)
+        
+        if (runParams.random_noise_sstskin_switch == 1):
+           #add_noise(self.data["sstskin"].fdata, 0.14, 0.0, nx*ny)
+           add_noise(self.data["sstskin"].fdata, runParams.sstskin_noise, 0.0, nx*ny)
+           print "%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function)
+        
+        if (runParams.random_noise_sstfnd_switch == 1):
+           #add_noise(self.data["sstfnd"].fdata, 0.6, 0.0, nx*ny)
+           add_noise(self.data["sstfnd"].fdata, runParams.sstfnd_noise, 0.0, nx*ny)
+           print "%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function)
+        
+        if (runParams.random_noise_pco2_switch == 1):
+           print "/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape
+           #add_noise(self.data["pco2_sw"].fdata, 6, 0.0, nx*ny)
+           add_noise(self.data["pco2_sw"].fdata, runParams.pco2_noise, 0.0, nx*ny) #SOCAT uncertainty
+           print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function)
+           #print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 2.0 uatm - assuming using SOCAT flag A and flag B data)" % (function)
+        
+        
         #interpreting fnd_data option
         ####Derive sstskin as necessary.
         #Two possible datasets: sstskin and sstfnd, from different parts of the water column.
@@ -1176,30 +1228,7 @@ class FluxEngine:
                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15;
                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i] - 273.15;
         
-         # ability to randomly perturb the input datasets
-         # needed for the ensemble analyses
-         # stddev of noise is using published RMSE for each dataset
-         # all datasets are considered to have bias=0, hence mean of noise=0
-        if (runParams.random_noise_windu10_switch == 1):
-           add_noise(self.data["windu10"].fdata, 0.44, 0.0, nx*ny)
-           add_noise(self.data["windu10_moment2"].fdata, 0.44, 0.0, nx*ny)
-           add_noise(self.data["windu10_moment3"].fdata, 0.44, 0.0, nx*ny)
-           print "%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function)
-        
-        if (runParams.random_noise_sstskin_switch == 1):
-           add_noise(self.data["sstskin"].fdata, 0.14, 0.0, nx*ny)
-           print "%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function)
-        
-        if (runParams.random_noise_sstfnd_switch == 1):
-           add_noise(self.data["sstfnd"].fdata, 0.6, 0.0, nx*ny)
-           print "%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function)
-        
-        if (runParams.random_noise_pco2_switch == 1):
-           print "/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape
-           add_noise(self.data["pco2_sw"].fdata, 6, 0.0, nx*ny)
-           print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function)
-           #print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 2.0 uatm - assuming using SOCAT flag A and flag B data)" % (function)
-        
+         
         #Ians rain noise test
         #if (random_noise_rain == 1):
         # self.data["rain"].data = reshape(self.data["rain"].data,self.data["rain"].data.shape[0]*self.data["rain"].data.shape[1])
@@ -1361,6 +1390,7 @@ class FluxEngine:
         for i in arange(nx * ny):
             #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
             if (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value):
+                #Equation A1 in McGillis, Wade R., and Rik Wanninkhof. "Aqueous CO2 gradients for air–sea flux estimates." Marine Chemistry 98.1 (2006): 100-108.
                 self.data["pH2O"].fdata[i] = 1013.25 * exp(24.4543 - (67.4509 * (100.0/self.data["sstskin"].fdata[i])) - (4.8489 * log(self.data["sstskin"].fdata[i]/100.0)) - 0.000544 * self.data["salinity_skin"].fdata[i])
             else:
                 self.data["pH2O"].fdata[i] = missing_value
@@ -1411,7 +1441,7 @@ class FluxEngine:
                         self.data["pco2_air"].fdata[i] = self.data["vco2_air"].fdata[i]
         
         #Now calculate corrected values for pCO2 at the interface/air
-        ###Converts from ppm to microatm THc
+        ###Converts from ppm to microatm TH
         self.add_empty_data_layer("pco2_air_cor");
         #If statement added below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
         if runParams.TAKAHASHI_DRIVER == False: #Different for takahashi run to maintain compatability with verification run. This will be updated when verification runs are updated

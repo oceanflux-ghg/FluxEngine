@@ -354,20 +354,29 @@ def calculate_whitecapping(windu10, whitecap):
     return whitecap.fdata;
 
 
-def add_noise(data, rmse_value, mean_value, no_elements):
+def add_noise(data, rmse_value, mean_value, no_elements, clipNegative=False):
 # randomly adding noise to data array, based log normal distribution
 # rmse value is used as the standard deviation of the noise function
-
-   # intialise the random number generator
-  for i in arange(no_elements):
-     if ( (data[i] != missing_value) and (data[i] != 0.0) ):
-      orig = data[i]
-      value = log(data[i])
-      stddev = float(rmse_value/orig)
-      noise = normalvariate(0,stddev) # determines the random noise value based on the input data and the standard deviation of the uncertainty
-      value = value + noise
-      data[i] = exp(value)
-  return data
+    #Add noise
+    numClipped = 0;
+    totalClipped = 0.0;
+    for i in arange(no_elements):
+        if ( (data[i] != missing_value) and (data[i] != 0.0) ):
+            newVal = data[i] + normalvariate(0, rmse_value);
+            data[i] = newVal;
+            if clipNegative and newVal < 0: #Clip negative values to 0.
+                data[i] = 0.0;
+                numClipped += 1;
+                totalClipped -= newVal;
+    
+    #If noise was greater than 20% of the mean value, print warning and report clipping.
+    if clipNegative:
+        meanVal = mean(data[where(data != missing_value)]);
+        if rmse_value/abs(meanVal) > 0.2:
+            print "WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.";
+        print "INFO: A total of %d grid cells were clipped resulting in an approximate bias of %f." % (numClipped, totalClipped/no_elements);
+    
+    return data;
 
 
 def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, biasValue, numElements):
@@ -375,18 +384,27 @@ def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, b
     # rmse value is used as the standard deviation of the noise function
     # noise is added to wind moment2 and moment3 scaled by power 2 or power 3
     
-    print "Warning: Adding noise to wind overwrites windu10_moment2 and windu10_moment3 with (windu10+epsilon)^2 and (windu10+epsilon)^3.";
+    print "INFO: Adding noise to wind overwrites windu10_moment2 and windu10_moment3 with (windu10+epsilon)^2 and (windu10+epsilon)^3.";
     # intialise the random number generator
+    numClipped = 0;
+    totalClipped = 0.0;
     for i in arange(numElements):
         if ( (winduData[i] != missing_value) and (winduData[i] != 0.0) ):
-            orig = winduData[i]
-            stddev = float(rmseValue/orig)
-            noise = normalvariate(0,stddev) # determines the random noise value based on the input data and the standard deviation of the uncertainty
-            value = log(winduData[i])
-            value = value + noise
-            winduData[i] = exp(value) + biasValue;
+            newVal = winduData[i] + normalvariate(0, rmseValue) + biasValue;
+            winduData[i] = newVal;
+            if newVal < 0: #Clip negative values to 0
+                winduData[i] = 0.0;
+                numClipped += 1;
+                totalClipped -= newVal;
+
             moment2[i] = winduData[i]**2;
             moment3[i] = winduData[i]**3;
+    
+    #If noise was greater than 20% of the mean value, print warning and report clipping.
+    meanVal = mean(winduData[where(winduData != missing_value)]);
+    if rmseValue/meanVal > 0.2:
+        print "WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.";
+        print "WARNING: A total of %d grid cells were clipped resulting in an approximate additional bias of %f." % (numClipped, totalClipped/numElements);
     
     return (winduData, moment2, moment3);
 
@@ -1116,7 +1134,7 @@ class FluxEngine:
         if (runParams.random_noise_pco2_switch == 1):
            print "/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape
            #add_noise(self.data["pco2_sw"].fdata, 6, 0.0, nx*ny)
-           add_noise(self.data["pco2_sw"].fdata, runParams.pco2_noise, 0.0, nx*ny) #SOCAT uncertainty
+           add_noise(self.data["pco2_sw"].fdata, runParams.pco2_noise, 0.0, nx*ny, clipNegative=True) #SOCAT uncertainty
            print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function)
            #print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 2.0 uatm - assuming using SOCAT flag A and flag B data)" % (function)
         

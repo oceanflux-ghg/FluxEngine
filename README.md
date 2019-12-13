@@ -7,7 +7,7 @@ Version 3.0 (static as of 02 August 2019).
 v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
 
 
-Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (in-review) and can be found here https://www.ocean-sci-discuss.net/os-2019-45/ . The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
+Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (2019) and can be found here https://doi.org/10.5194/os-15-1707-2019. The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
 
     •   A more flexible way of specifying input data in the configuration files.
     •   Data pre-processing options (e.g. unit conversion).
@@ -46,6 +46,8 @@ The FluxEngine software was originally developed by The European Space Agency Oc
 
 Example news articles (resulting from research performed using the FluxEngine)
 ----
+1. Phys.org (2019) 'Satellites are key to monitoring ocean carbon' https://phys.org/news/2019-11-satellites-key-ocean-carbon.html
+
 1. ESA news (2019), 'Can oceans turn the tide on the climate crisis' https://www.esa.int/Our_Activities/Observing_the_Earth/Can_oceans_turn_the_tide_on_the_climate_crisis
 
 2. The Guardian (2018), 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50

@@ -1,6 +1,7 @@
 FluxEngine
 ==========
 
+The opensource FluxEngine has so far contributed to 12 different journal publications, resulting in 4 press releases. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
 
 Version 3.0 (static as of 02 August 2019).
 ----

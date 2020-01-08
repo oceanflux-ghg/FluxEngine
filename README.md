@@ -7,8 +7,11 @@ Version 3.0 (static as of 02 August 2019).
 ----
 v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
 
+Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (2019) and can be found here https://doi.org/10.5194/os-15-1707-2019. 
 
-Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (2019) and can be found here https://doi.org/10.5194/os-15-1707-2019. The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
+Please reference these journal publications when using this toolbox and presenting its output in any publications.
+
+The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
 
     •   A more flexible way of specifying input data in the configuration files.
     •   Data pre-processing options (e.g. unit conversion).
@@ -19,31 +22,6 @@ Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and
     •   Automatic verification scripts that use SOCATv4 and Takahashi09 reference datasets.
     •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations).
     •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format).
-
-
-v2.0 (July 2016)
-----
-These updates have been verified against Takahashi (2009) using the verification options within the code. All results were identical to those derived from v1.0.
-The updates included contribute to further publications in preparation and further details will be posted here following publication.
-The updates include improved:
-
-    •   handling for irregular grids,
-    •   handling for different gases including O2, N2O and CH4, 
-    •   handling for in-situ data.
-
-Specifically, data on irregular grids can now be handled through the main flux calculations. Note: the ofluxghg-flux-budgets.py tool is only valid for regular (1deg x 1deg) grids. 
-In-situ data should be put in separate netCDF files and the last two digits of the filename needs to represent the month of interest as a two digit number. e.g. January -> ’01’. 
-To operate the system with different gases, the appropriate switch should be changed in ofluxghg-flux-calc.py. Please use ofluxghg-flux-calc.py --help for further information.
-
-
-v1.0 (09 March 2016)
-----
-The FluxEngine open source atmosphere-ocean gas flux data processing tools. The license for this software toolbox can be found within this github repository.
-Please reference the publication linked below when using this toolbox and presenting its output in any publications.
-A journal paper describing the toolbox has been published here: Shutler et al., (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1
-Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exeter.ac.uk
-The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
-
 
 Example news articles (resulting from research performed using the FluxEngine)
 ----
@@ -87,3 +65,32 @@ Journal publications (which use FluxEngine and/or FluxEngine outputs)
 11. Shutler JD, Land PE, Piolle J-F, Woolf DK, Goddijn-Murphy L, Paul F, Girard-Ardhuin F, Chapron B, Donlon CJ (2016), FluxEngine: a flexible processing system for calculating atmosphere-ocean carbon dioxide gas fluxes and climatologies, Journal of Atmospheric and Oceanic Technology, doi: 10.1175/JTECH-D-14-00204.1
 
 12. Rödenbeck C, Bakker DCE, Gruber N, Iida Y, Jacobson AR, Jones S, Landschützer P, Metzl N, Nakaoka S, Olsen A, Park G-H, Peylin P, Rodgers KB, Sasse TP, Schuster U, Shutler JD, Valsala V, Wanninkhof R, and Zeng J (2015) Data-based estimates of the ocean carbon sink variability – first results of the Surface Ocean pCO2 Mapping intercomparison (SOCOM), Biogeosciences, 12, 7251-7278, doi: 10.5194/bg-12-7251-2015.
+
+
+
+Information about older versions of the FluxEngine toolbox
+----
+
+v2.0 (July 2016)
+----
+These updates have been verified against Takahashi (2009) using the verification options within the code. All results were identical to those derived from v1.0.
+The updates included contribute to further publications in preparation and further details will be posted here following publication.
+The updates include improved:
+
+    •   handling for irregular grids,
+    •   handling for different gases including O2, N2O and CH4, 
+    •   handling for in-situ data.
+
+Specifically, data on irregular grids can now be handled through the main flux calculations. Note: the ofluxghg-flux-budgets.py tool is only valid for regular (1deg x 1deg) grids. 
+In-situ data should be put in separate netCDF files and the last two digits of the filename needs to represent the month of interest as a two digit number. e.g. January -> ’01’. 
+To operate the system with different gases, the appropriate switch should be changed in ofluxghg-flux-calc.py. Please use ofluxghg-flux-calc.py --help for further information.
+
+
+v1.0 (09 March 2016)
+----
+The FluxEngine open source atmosphere-ocean gas flux data processing tools. The license for this software toolbox can be found within this github repository.
+Please reference the publication linked below when using this toolbox and presenting its output in any publications.
+A journal paper describing the toolbox has been published here: Shutler et al., (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1
+Please send any feedback and comments to Jamie Shutler, email: j.d.shutler@exeter.ac.uk
+The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
+

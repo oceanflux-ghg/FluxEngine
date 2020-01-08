@@ -1,7 +1,7 @@
-FluxEngine - Open source atmosphere-ocean gas flux data processing tools
+FluxEngine
 ==========
 
-The opensource FluxEngine has so far contributed to 12 different journal publications, resulting in 4 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
+The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 12 different journal publications, resulting in 4 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
 
 Version 3.0 (static as of 02 August 2019).
 ----

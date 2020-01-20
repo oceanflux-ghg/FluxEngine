@@ -292,7 +292,7 @@ def run_flux_budgets(args):
     #IGA----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #gridArea, gridAreafile, gridAreaName
              if gridArea == 0 and gridAreafile == 'no_file':
-                print('No grid areas given - assuming  a1deg x 1deg grid and calculating net flux accordingly.')
+                print('No grid areas given - assuming a 1deg x 1deg grid and calculating net flux accordingly.')
                 cellAreas = np.empty(ny)
                 cellAreas.fill(float('nan'))
                 for j in xrange(y0,y1):

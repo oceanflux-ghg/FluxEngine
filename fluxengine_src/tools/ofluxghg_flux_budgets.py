@@ -407,6 +407,8 @@ def run_flux_budgets(args):
           ice = variable[0, :, :]
           
           try:
+             if isinstance(ice.mask, np.bool_): #If the mask is a single boolean value, convert it to a filled matrix of that value (otherwise window subsetting does not work)
+                 ice.mask = np.full(ice.data.shape, np.bool_(ice.mask));
              iceMask = ice.mask[y0:y1, x0:x1]
           except AttributeError:
              ice = ice[:].view(np.ma.MaskedArray)

@@ -34,7 +34,7 @@ from os import path;
 
 from .datalayer import DataLayer, DataLayerMetaData;
 from .settings import Settings;
-from .debug_tools import calc_mean; #calculate mean ignoring missing values.
+#from .debug_tools import calc_mean; #calculate mean ignoring missing values.
 
 from datetime import timedelta, datetime;
 
@@ -326,7 +326,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 #overwrites solubilityDistilled with the calculated value.
 #TODO: no need to pass nx, ny into all these functions.
 #TODO: rain_wet_deposition_switch isn't used!
-def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny):
+def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny, schmidtParameterisation):
     #First create a 0 salinity dataset
     salDistil = array([missing_value] * len(salinity))
     for i in arange(nx * ny):
@@ -336,7 +336,10 @@ def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_depos
             salDistil[i] = missing_value
     
     #Next calculate the solubility using the zero salinity 'distilled water' dataset
-    solubilityDistilled = solubility(sstskin, salDistil, deltaT, nx, ny, True);
+    if schmidtParameterisation == "schmidt_Wanninkhof2014":
+        solubilityDistilled = solubility_Wanninkhof2014(sstskin, salDistil, deltaT, nx, ny, True);
+    elif schmidtParameterisation == "schmidt_Wanninkhof1992":
+        solubilityDistilled = solubility_Wanninkhof1992(sstskin, salDistil, deltaT, nx, ny, True);
     return solubilityDistilled;
 
 #whitecapping data using relationship from TS and parameters from table 1 of Goddijn-Murphy et al., 2010, equation r1
@@ -355,20 +358,60 @@ def calculate_whitecapping(windu10, whitecap):
     return whitecap.fdata;
 
 
-def add_noise(data, rmse_value, mean_value, no_elements):
+def add_noise(data, rmse_value, mean_value, no_elements, clipNegative=False):
 # randomly adding noise to data array, based log normal distribution
 # rmse value is used as the standard deviation of the noise function
+    #Add noise
+    numClipped = 0;
+    totalClipped = 0.0;
+    for i in arange(no_elements):
+        if ( (data[i] != missing_value) and (data[i] != 0.0) ):
+            newVal = data[i] + normalvariate(0, rmse_value);
+            data[i] = newVal;
+            if clipNegative and newVal < 0: #Clip negative values to 0.
+                data[i] = 0.0;
+                numClipped += 1;
+                totalClipped -= newVal;
+    
+    #If noise was greater than 20% of the mean value, print warning and report clipping.
+    if clipNegative:
+        meanVal = mean(data[where(data != missing_value)]);
+        if rmse_value/abs(meanVal) > 0.2:
+            print("WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.");
+        print("INFO: A total of %d grid cells were clipped resulting in an approximate bias of %f." % (numClipped, totalClipped/no_elements));
+    
+    return data;
 
-   # intialise the random number generator
-  for i in arange(no_elements):
-     if ( (data[i] != missing_value) and (data[i] != 0.0) ):
-      orig = data[i]
-      value = log(data[i])
-      stddev = float(rmse_value/orig)
-      noise = normalvariate(0,stddev) # determines the random noise value based on the input data and the standard deviation of the uncertainty
-      value = value + noise
-      data[i] = exp(value)
-  return data
+
+def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, biasValue, numElements):
+    # randomly adding noise to wind data layer, based log normal distribution
+    # rmse value is used as the standard deviation of the noise function
+    # noise is added to wind moment2 and moment3 scaled by power 2 or power 3
+    
+    print("INFO: Adding noise to wind overwrites windu10_moment2 and windu10_moment3 with (windu10+epsilon)^2 and (windu10+epsilon)^3.");
+    # intialise the random number generator
+    numClipped = 0;
+    totalClipped = 0.0;
+    for i in arange(numElements):
+        if ( (winduData[i] != missing_value) and (winduData[i] != 0.0) ):
+            newVal = winduData[i] + normalvariate(0, rmseValue) + biasValue;
+            winduData[i] = newVal;
+            if newVal < 0: #Clip negative values to 0
+                winduData[i] = 0.0;
+                numClipped += 1;
+                totalClipped -= newVal;
+
+            moment2[i] = winduData[i]**2;
+            moment3[i] = winduData[i]**3;
+    
+    #If noise was greater than 20% of the mean value, print warning and report clipping.
+    meanVal = mean(winduData[where(winduData != missing_value)]);
+    if rmseValue/meanVal > 0.2:
+        print("WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.");
+        print("WARNING: A total of %d grid cells were clipped resulting in an approximate additional bias of %f." % (numClipped, totalClipped/numElements));
+    
+    return (winduData, moment2, moment3);
+
 
 ######Ians alternative version (thanks PLand) - Untested#############
 
@@ -932,7 +975,7 @@ class FluxEngine:
             self.longitude_data = dataset.variables[self.runParams.longitude_prod][:];
             if self.latitude_data[0]<0: #IGA - it is a vector that is in opposite orientation to 'taka'
                 self.latitude_data = flipud(self.latitude_data);
-        except KeyError as e:
+        except KeyError:
             raise ValueError ("%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (function, self.runParams.longitude_prod, self.runParams.latitude_prod, axesDatalayerInfile));
 
         #Determine if already a grid, if not calculate lon and lat grids.
@@ -948,7 +991,7 @@ class FluxEngine:
             curDatetime = datetime(self.runParams.year, self.runParams.month, self.runParams.day, self.runParams.hour, self.runParams.minute, self.runParams.second);
             self.time_data = (curDatetime - datetime(1970, 1, 1)).total_seconds();
             #self.time_data = dataset.variables[self.runParams.time_prod][:];
-        except KeyError as e:
+        except KeyError:
             raise ValueError("%s: Couldn't find time (%s%) variables in %s. Have you set time_prod correctly in your configuration file?" % (function, self.runParams.time_prod, self.runParams.sstskin_infile));
 
         #set dimensions
@@ -1069,6 +1112,38 @@ class FluxEngine:
                if (self.data["rain"].fdata[i] != DataLayer.missing_value):
                    self.data["rain"].fdata[i] /= 24.0;
         
+		#ability to randomly perturb the input datasets
+        #needed for the ensemble analyses
+        #stddev of noise is using published RMSE for each dataset
+        #all datasets are considered to have bias=0, hence mean of noise=0
+        if (runParams.random_noise_windu10_switch == 1):
+           #add_noise(self.data["windu10"].fdata, 0.44, 0.0, nx*ny)
+           #For the 0.8 value, see: https://podaac.jpl.nasa.gov/Cross-Calibrated_Multi-Platform_OceanSurfaceWindVectorAnalyses
+           add_noise_and_bias_wind(self.data["windu10"].fdata, self.data["windu10_moment2"].fdata, self.data["windu10_moment3"].fdata, runParams.windu10_noise, 0.0, runParams.windu10_bias, nx*ny);
+           print("%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function))
+        
+        if (runParams.random_noise_sstskin_switch == 1):
+           add_noise(self.data["sstskin"].fdata, runParams.sstskin_noise, 0.0, nx*ny)
+           print("%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function))
+        
+        if (runParams.random_noise_sstfnd_switch == 1):
+           add_noise(self.data["sstfnd"].fdata, runParams.sstfnd_noise, 0.0, nx*ny)
+           print("%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function))
+        
+        if (runParams.random_noise_pco2_switch == 1):
+           print("/n%s Shape of pco2 data", self.data["pco2_sw"].fdata.shape)
+           add_noise(self.data["pco2_sw"].fdata, runParams.pco2_noise, 0.0, nx*ny, clipNegative=True) #SOCAT uncertainty
+           print("%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function))
+        
+        
+        #Ians rain noise test
+        #if (random_noise_rain == 1):
+        # self.data["rain"].data = reshape(self.data["rain"].data,self.data["rain"].data.shape[0]*self.data["rain"].data.shape[1])
+        # rain_err_data = reshape(rain_err_data,rain_err_data.shape[0]*rain_err_data.shape[1])
+        # add_noise(self.data["rain"].data, rain_err_data, 0.0, rain_nx*rain_ny)
+        # print "%s Adding random noise to rain data using variance field" % (function)
+        
+        #Ians rain noise test end
         
         #interpreting fnd_data option
         ####Derive sstskin as necessary.
@@ -1080,8 +1155,14 @@ class FluxEngine:
         #using sstfnd, so copy sstfnd into sstskin
         #sstskin = sstfnd
         if runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-           print("%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function))
-           #actually copy sstfnd data into the sstskin dataset to make sure
+           print "%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function)
+           #copy sstfnd data into the sstskin dataset to make sure
+           if "sstskin" not in self.data: #Must add the sstskin layer first!
+                self.add_empty_data_layer("sstskin");
+                if "sstfnd_stddev" in self.data:
+                    self.add_empty_data_layer("sstskin_stddev");
+                if "sstfnd_count" in self.data:    
+                    self.add_empty_data_layer("sstskin_count");
            for i in arange(nx * ny):
                if self.data["sstfnd"].fdata[i] != missing_value:
                    self.data["sstskin"].fdata[i] = self.data["sstfnd"].fdata[i]
@@ -1095,7 +1176,7 @@ class FluxEngine:
         #IGA added for the case where only foundation is provided and gradients are on------------------------------
         #must estimate sstskin (= sstfnd - runParams.cool_skin_difference)
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-            print("%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %d)(ignoring SSTskin data in configuration file)." % (function, runParams.cool_skin_difference))
+            print("%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %f)(ignoring SSTskin data in configuration file)." % (function, runParams.cool_skin_difference));
             #actually copy sstfnd data into the sstskin dataset to make sure
             if "sstskin" not in self.data: #Must add the sstskin layer first!
                 self.add_empty_data_layer("sstskin");
@@ -1113,7 +1194,7 @@ class FluxEngine:
         
         #Using sstskin, so calculate it from sstfnd.
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print("%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %d) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference))
+           print("%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %f) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference));
            #In this case SST gradients are not used and only sstskin is provided. sstfnd is needed for the flux calculation, so:
            #    Calculate sstfnd from sstskin
            #    Copy sstfnd over sstskin to prevent accidental use of sst gradients
@@ -1132,7 +1213,7 @@ class FluxEngine:
                  self.data["sstskin"].fdata[i] = missing_value
                  
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 0:
-           print("%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %d for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference))
+           print("%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %f for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference));
             #setting sstfnd_ data fields to skin values  
            for i in arange(nx * ny):
               if self.data["sstskin"].fdata[i] != missing_value:
@@ -1142,7 +1223,7 @@ class FluxEngine:
               else:
                  self.data["sstfnd"].fdata[i] = missing_value
         elif runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 1:
-           print("%s SST gradient handling is off, using SSTfnd and SSTskin from the configuration file." % (function))        
+           print("%s SST gradient handling is off, using SSTfnd and SSTskin from the configuration file." % (function))
         elif runParams.sst_gradients_switch == 1 and runParams.use_sstskin_switch == 1 and runParams.use_sstfnd_switch == 1:
            print("%s SST gradient handling is on, using SSTfnd and SSTskin from the configuration file." % (function))
         else:
@@ -1171,45 +1252,15 @@ class FluxEngine:
                 self.data["sstskinC"].fdata[i] = self.data["sstskin"].fdata[i] - 273.15;
                 self.data["sstfndC"].fdata[i] = self.data["sstfnd"].fdata[i] - 273.15;
         
-         # ability to randomly perturb the input datasets
-         # needed for the ensemble analyses
-         # stddev of noise is using published RMSE for each dataset
-         # all datasets are considered to have bias=0, hence mean of noise=0
-        if (runParams.random_noise_windu10_switch == 1):
-           add_noise(self.data["windu10"].fdata, 0.44, 0.0, nx*ny)
-           add_noise(self.data["windu10_moment2"].fdata, 0.44, 0.0, nx*ny)
-           add_noise(self.data["windu10_moment3"].fdata, 0.44, 0.0, nx*ny)
-           print("%s Adding random noise to windu10_mean, windu10_moment2 and windu10_moment3 (mean 0.0, stddev 0.44 ms^-1 - assuming using ESA GlobWave data)" % (function))
         
-        if (runParams.random_noise_sstskin_switch == 1):
-           add_noise(self.data["sstskin"].fdata, 0.14, 0.0, nx*ny)
-           print("%s Adding random noise to sstskin (mean 0.0, stddev 0.14 ^oC - assuming using ESA CCI ARC data)" % (function))
         
-        if (runParams.random_noise_sstfnd_switch == 1):
-           add_noise(self.data["sstfnd"].fdata, 0.6, 0.0, nx*ny)
-           print("%s Adding random noise to sstfnd (mean 0.0, stddev 0.6 ^oC - assuming using OSTIA data)" % (function))
-        
-        if (runParams.random_noise_pco2_switch == 1):
-           print("/n%s Shape of pco2 data",self.data["pco2_sw"].fdata.shape)
-           add_noise(self.data["pco2_sw"].fdata, 6, 0.0, nx*ny)
-           print("%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 6 uatm - Using Candyfloss data, value provided by J Shutler)" % (function))
-           #print "%s Adding random noise to pco2/fco2 data (mean 0.0, stddev 2.0 uatm - assuming using SOCAT flag A and flag B data)" % (function)
-        
-        #Ians rain noise test
-        #if (random_noise_rain == 1):
-        # self.data["rain"].data = reshape(self.data["rain"].data,self.data["rain"].data.shape[0]*self.data["rain"].data.shape[1])
-        # rain_err_data = reshape(rain_err_data,rain_err_data.shape[0]*rain_err_data.shape[1])
-        # add_noise(self.data["rain"].data, rain_err_data, 0.0, rain_nx*rain_ny)
-        # print "%s Adding random noise to rain data using variance field" % (function)
-        
-        #Ians rain noise test end
-        
-         # bias values to be added here
-        if (runParams.bias_windu10_switch == 1):
-           add_bias(self.data["windu10"].fdata, runParams.bias_windu10_value, nx*ny)
-            # makes no sense to add bias to second and third order moments, as any bias in the system 
-            # would only impact on the mean (which is the 1st order moment)
-           print("%s Adding bias to windu10_mean (not to second and third order moments) (value %lf ms^-1)" % (function, runParams.bias_windu10_value))
+        #Note: wind bias added with noise now before calculating new first and second moments
+#         # bias values to be added here
+#        if (runParams.bias_windu10_switch == 1):
+#           add_bias(self.data["windu10"].fdata, runParams.bias_windu10_value, nx*ny)
+#            # makes no sense to add bias to second and third order moments, as any bias in the system 
+#            # would only impact on the mean (which is the 1st order moment)
+#           print("%s Adding bias to windu10_mean (not to second and third order moments) (value %lf ms^-1)" % (function, runParams.bias_windu10_value))
         
         if (runParams.bias_sstskin_switch == 1):
            add_bias(self.data["sstskin"].fdata, runParams.bias_sstskin_value, nx*ny)
@@ -1356,6 +1407,7 @@ class FluxEngine:
         for i in arange(nx * ny):
             #if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vco2_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pco2_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
             if (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value):
+                #Equation A1 in McGillis, Wade R., and Rik Wanninkhof. "Aqueous CO2 gradients for air-sea flux estimates." Marine Chemistry 98.1 (2006): 100-108.
                 self.data["pH2O"].fdata[i] = 1013.25 * exp(24.4543 - (67.4509 * (100.0/self.data["sstskin"].fdata[i])) - (4.8489 * log(self.data["sstskin"].fdata[i]/100.0)) - 0.000544 * self.data["salinity_skin"].fdata[i])
             else:
                 self.data["pH2O"].fdata[i] = missing_value
@@ -1406,7 +1458,7 @@ class FluxEngine:
                         self.data["pco2_air"].fdata[i] = self.data["vco2_air"].fdata[i]
         
         #Now calculate corrected values for pCO2 at the interface/air
-        ###Converts from ppm to microatm THc
+        ###Converts from ppm to microatm TH
         self.add_empty_data_layer("pco2_air_cor");
         #If statement added below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
         if runParams.TAKAHASHI_DRIVER == False: #Different for takahashi run to maintain compatability with verification run. This will be updated when verification runs are updated
@@ -1547,7 +1599,7 @@ class FluxEngine:
             self.add_empty_data_layer("FKo07");
             self.add_empty_data_layer("solubility_distilled");
             calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
-                                           runParams.rain_wet_deposition_switch, self.data["sstskin"], DeltaT_fdata, self.nx, self.ny);
+                                           runParams.rain_wet_deposition_switch, self.data["sstskin"], DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation);
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
            print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation))

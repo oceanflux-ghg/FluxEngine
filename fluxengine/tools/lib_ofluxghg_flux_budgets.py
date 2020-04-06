@@ -18,7 +18,7 @@
 
 from netCDF4 import Dataset
 from glob import glob
-import numpy as np, sys, csv, argparse, calendar
+import numpy as np, sys, csv, calendar
 from numpy import zeros
 from math import sqrt, cos, sin, radians
 from scipy.integrate import quad
@@ -293,7 +293,7 @@ def run_flux_budgets(args):
     #IGA----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #gridArea, gridAreafile, gridAreaName
              if gridArea == 0 and gridAreafile == 'no_file':
-                print('No grid areas given - assuming  a1deg x 1deg grid and calculating net flux accordingly.')
+                print('No grid areas given - assuming a 1deg x 1deg grid and calculating net flux accordingly.')
                 cellAreas = np.empty(ny)
                 cellAreas.fill(float('nan'))
                 for j in range(y0,y1):
@@ -408,7 +408,9 @@ def run_flux_budgets(args):
           ice = variable[0, :, :]
           
           try:
-             iceMask = ice.mask[y0:y1, x0:x1]
+              if isinstance(ice.mask, np.bool_): #If the mask is a single boolean value, convert it to a filled matrix of that value (otherwise window subsetting does not work)
+                  ice.mask = np.full(ice.data.shape, np.bool_(ice.mask));
+              iceMask = ice.mask[y0:y1, x0:x1]
           except AttributeError:
              ice = ice[:].view(np.ma.MaskedArray)
              ice.mask = zeros(ice.shape)

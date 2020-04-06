@@ -508,7 +508,7 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, v
     ###Add additional k parameterisation components:                      
     #linear additive k/krain for rain case - adding rain component to the results from the existing choice of parameterisation
     if (runParameters["k_rain_linear_ho1997_switch"] == 1):
-        fe.add_k_parameterisation_component(k_params.AddKRainLinearHo19997());
+        fe.add_k_parameterisation_component(k_params.AddKRainLinearHo1997());
     
     #nonlinear changes to k/krain for rain and wind - parameterisation from Harrison et al., JGR 2012, equations 11, 12, 13, 14
     if (runParameters["k_rain_nonlinear_h2012_switch"] == 1 and runParameters["k_parameterisation"] == 9): #9==generic_k

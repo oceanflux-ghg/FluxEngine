@@ -380,7 +380,7 @@ class k_Ho1997(KCalculationBase):
         return ["windu10", "windu10_moment2", "windu10_moment3", "scskin", "rain"];
         
     def output_names(self):
-        return ["k_", "krain"];
+        return ["k", "krain"];
     
     def __call__(self, data):
         function = "(rate_parameterisation.py: k_Ho1997.__call__)";

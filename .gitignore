@@ -18,6 +18,8 @@ Thumbs.db
 
 ### Output directory ###
 fluxengine/output/**
+### Default output path for verification if ran from root
+verification_output/**
 
 ### Full validation suite files ###
 fluxengine/full_validation/**
@@ -26,6 +28,7 @@ fluxengine/full_validation/**
 fluxengine/tools/reanalyse_socat/output/**
 
 ### ignore distribution files
+build
 dist
 FluxEngine.egg-info
 

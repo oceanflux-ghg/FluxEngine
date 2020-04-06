@@ -1155,7 +1155,7 @@ class FluxEngine:
         #using sstfnd, so copy sstfnd into sstskin
         #sstskin = sstfnd
         if runParams.sst_gradients_switch == 0 and runParams.use_sstskin_switch == 0 and runParams.use_sstfnd_switch == 1:
-           print "%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function)
+           print("%s SST gradient handling is off, using SSTfnd data selection in configuration file for all components of the flux calculation (this will ignore any SSTskin data in configuration file)." % (function))
            #copy sstfnd data into the sstskin dataset to make sure
            if "sstskin" not in self.data: #Must add the sstskin layer first!
                 self.add_empty_data_layer("sstskin");

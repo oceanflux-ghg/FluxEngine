@@ -17,7 +17,7 @@ from argparse import Namespace;
 from os import path;
 
 #Runs the verification proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
-def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
+def run_socat_sst_salinity_gradients_N00_verification(verbose=True):
     #Get the path of the FluxEngine root directory.
     feRoot = get_fluxengine_root();
     
@@ -46,7 +46,7 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if verbose:
         print("\n\nComparing output to reference data...");
     newPath = path.join(outputFilePath, "_global.txt");
-    refPath = path.join(feRoot, "data", "validation_data", "validation_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
+    refPath = path.join(feRoot, "data", "verification_data", "verification_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;
@@ -59,18 +59,18 @@ def run_socat_sst_salinity_gradients_N00_validation(verbose=True):
     if numFailed == 0:
         if verbose:
             print("Verification successful! All values are within threshold limits:");
-            validationSuccessful = True;
+            verificationSuccessful = True;
         for key in diffs:
             if verbose:
                 print("\t"+key+": "+str(diffs[key])+"%");
     else:
         if verbose:
             print("\Verification failed because %d values were outside threshold limits." % numFailed);
-            validationSuccessful = True;
+            verificationSuccessful = True;
     
     return {"run status":runStatus, "number of net budgets exceeding threshold":numFailed,
-            "verification successful?":validationSuccessful, "percentage difference from reference (dictionary)":diffs};
+            "verification successful?":verificationSuccessful, "percentage difference from reference (dictionary)":diffs};
     
 if __name__ == "__main__":
-    run_socat_sst_salinity_gradients_N00_validation(verbose=True);
+    run_socat_sst_salinity_gradients_N00_verification(verbose=True);
 

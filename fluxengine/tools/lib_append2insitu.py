@@ -76,7 +76,7 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
         #calculate time in seconds since 1970-01-01 for this row
         timeSecs = (datetime(row[dateIndex].year, row[dateIndex].month, row[dateIndex].day, row[dateIndex].hour, row[dateIndex].minute, row[dateIndex].second) - datetime(1970, 1, 1)).total_seconds();
 
-        if len(timeArr > 1):
+        if len(timeArr) > 1:
             t = find_timestep(timeSecs, temporalResolutionSecs, startTime); #indices of time step containing this row
         else:
             t = 0;

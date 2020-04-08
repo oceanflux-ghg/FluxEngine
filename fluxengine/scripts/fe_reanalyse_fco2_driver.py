@@ -53,14 +53,12 @@ if __name__ == "__main__":
     
     
     #Setup command line parser, and parse arguments.
-    description = """Utility which allows reanalysis of SOCAT data to a consistent temperature and depth.
+    description = """Utility which allows reanalysis of in situ data to a consistent temperature and depth.
         (under continual development, use with care)
         
-        This tool uses previously developed code by ???.
-        
-        AUTHOR
+        AUTHORS:
         Python driver script by Tom Holding <t.m.holding@exeter.ac.uk> 2018
-        Everything else is from the reanalyse_socat open source project (see the reanalyse_socat directory in the FE tools folder).
+        Everything else is directly modified from the reanalyse_socat open source project (see the reanalyse_fco2 directory in the FE tools folder).
         """;
     clParser = argparse.ArgumentParser(description=description, epilog="Both this script and the FluxEngine are in continual development. Use with care.");
     
@@ -119,7 +117,7 @@ if __name__ == "__main__":
     
     
     exitCode = rs.RunReanalyseSocat(socatdir=clArgs.input_dir,
-                         inputfiles=clArgs.input_files,
+                         socatfiles=clArgs.input_files,
                          sstdir=clArgs.sst_dir,
                          ssttail=clArgs.sst_tail,
                          regions=clArgs.regions,

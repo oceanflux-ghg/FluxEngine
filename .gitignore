@@ -7,39 +7,32 @@
 ehthumbs.db
 Thumbs.db
 
-### TEMP ignore tutorials!
-#Tutorials/**
-
 ### Compiled source: ###
 *.pyc
-
 ### Log files: ###
 *.log
 
-### Output directory ###
-fluxengine/output/**
-### Default output path for verification if ran from root
-verification_output/**
-
-### Full validation suite files ###
-fluxengine/full_validation/**
-
-### reanalyse_socat tool's default output directory ###
-fluxengine/tools/reanalyse_socat/output/**
-
-### ignore distribution files
+### ignore package distribution and build files
 build
 dist
 FluxEngine.egg-info
 
-### test execution script and configuration file ###
-fluxengine/test_execution.py
-configs/test_execution.conf
+### Default output directory ###
+fluxengine/output/**
+### Default output path for verification if ran from root
+verification_output/**
+### reanalyse_socat tool's default output directory7 ###
+fluxengine/tools/reanalyse_socat/output/**
 
-### Tutorial created files ###
+### Full validation suite files ###
+fluxengine/full_validation/**
+
+### Files created by the tutorials ###
 fluxengine/tutorials/01_introduction/custom_config.conf
 fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_reanalysed.conf
 fluxengine/tutorials/03_fixed_station_data/ostergarnsholm_original.conf
 fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00.conf
 fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
 
+### test/scratchpad configuration file ###
+configs/scratchpad.conf

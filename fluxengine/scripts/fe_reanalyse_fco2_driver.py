@@ -8,43 +8,43 @@ Drives the reanalyse_socat tool and provides access via commandline.
 
 #Example options:
 #Single small region test run, ascii output, no coastal file.
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6_Indian.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 6 -usereynolds -startyr 2008 -endyr 2015 -keepduplicates -keeptempfiles -asciioutput
-#   -socat_dir ~/Desktop/PostDoc/Backup/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6_Indian.tsv -sst_dir ~/Desktop/PostDoc/Backup/data/uptodate/reynolds_avhrr_only_monthly_calculated_tmh -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS_TMH.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 6 -usereynolds -startyr 2008 -endyr 2015 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6_Indian.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 6 -usereynolds -startyr 2008 -endyr 2015 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/Desktop/PostDoc/Backup/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6_Indian.tsv -sst_dir ~/Desktop/PostDoc/Backup/data/uptodate/reynolds_avhrr_only_monthly_calculated_tmh -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS_TMH.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 6 -usereynolds -startyr 2008 -endyr 2015 -keepduplicates -keeptempfiles -asciioutput
 
 #Single global input file, gridded output, no coastal file:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv4/ -socat_files SOCATv4.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv4/ -input_files SOCATv4.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
 #Multiple regions, gridded output, no coastal file:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv4/ -socat_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv -regions NA IN -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv4/ -input_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv -regions NA IN -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
 #Multiple regions, gridded output, with coastal file:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv4/ -socat_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv SOCATv4_Coastal.tsv -regions NA IN CO -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -withcoastal CO
+#   -input_dir ~/data/SOCAT_ascii/SOCATv4/ -input_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv SOCATv4_Coastal.tsv -regions NA IN CO -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -withcoastal CO
 #Multiple regions, ascii output, no coastal file:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv4/ -socat_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv -regions NA IN -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/data/SOCAT_ascii/SOCATv4/ -input_files SOCATv4_NorthAtlantic.tsv SOCATv4_Indian.tsv -regions NA IN -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
 #
 #Using SOCATv5:
 #SOCATv5 ASCII:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv5/ -socat_files SOCATv5.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/data/SOCAT_ascii/SOCATv5/ -input_files SOCATv5.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
 #SOCATv5 gridded:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv5/ -socat_files SOCATv5.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv5/ -input_files SOCATv5.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
 #
 #Using SOCATv6:
 #SOCATv6 ASCII:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles -asciioutput
 #SOCATv6 gridded, 2009:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2009 -endyr 2009 -keepduplicates -keeptempfiles
 #SOCATv6 gridded, 2016:
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2016 -endyr 2016 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 2016 -endyr 2016 -keepduplicates -keeptempfiles
 
 #Whole global SOCATv6 reanalysis (gridded)
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles
 #Whole global SOCATv6 reanalysis (ASCII)
-#   -socat_dir ~/data/SOCAT_ascii/SOCATv6/ -socat_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles -asciioutput
+#   -input_dir ~/data/SOCAT_ascii/SOCATv6/ -input_files SOCATv6.tsv -sst_dir ~/data/ocean_flux_ftp/SST_reynolds_avhrr/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir ~/Files/fluxengine_v3/FluxEngine/output/reanalysis_socat_output_gridded -socatversion 4 -usereynolds -startyr 1957 -endyr 2017 -keepduplicates -keeptempfiles -asciioutput
 
 import inspect;
 import argparse;
 from os import path, makedirs;
 import shutil; #move desired output from reanalyse_socat to the specified output folder and delete undesired output
 
-import fluxengine.tools.reanalyse_socat.reanalyse_socat_v2 as rs;
+import fluxengine.tools.reanalyse_fco2.reanalyse_socat_v2 as rs;
 
 
 if __name__ == "__main__":
@@ -65,8 +65,8 @@ if __name__ == "__main__":
     clParser = argparse.ArgumentParser(description=description, epilog="Both this script and the FluxEngine are in continual development. Use with care.");
     
     argParsePathGroup = clParser.add_argument_group(title='Data paths');
-    argParsePathGroup.add_argument("-socat_dir", help="Path to the directory containing tsv formatted SOCAT data.", default="");
-    argParsePathGroup.add_argument("-socat_files", type=str, nargs='*', help='A list of region codes to process (e.g. NA for North Atlantic). If no region codes are specified the global database is assumed.', default=None);
+    argParsePathGroup.add_argument("-input_dir", help="Path to the directory containing tsv formatted input data (for example SOCAT data).", default="");
+    argParsePathGroup.add_argument("-input_files", type=str, nargs='*', help='A list of input file names (for example "SOCATv5.tsv")', default=None);
     argParsePathGroup.add_argument("-sst_dir", help="Path to the directory containing netCDF formatted sea sureface temperature (either Reynolds or AATSR).", default="");
     argParsePathGroup.add_argument("-sst_tail", help="The SST file name which follows yyyymm. Do not include the year or month digits.", default="");
     argParsePathGroup.add_argument("-output_dir", help="Path to the output directory", default="~/socat_reanalysis_output/");
@@ -110,16 +110,16 @@ if __name__ == "__main__":
     
     clArgs = clParser.parse_args();
     
-    if clArgs.socat_dir == None or clArgs.socat_files == None or clArgs.sst_dir == None or clArgs.sst_tail == None:
-        raise SystemExit("Error: -socat_dir, -socat_files, -sst_dir and -sst_tail are all mandatory arguments. At least one of these has not been specified.");
+    if clArgs.input_dir == None or clArgs.input_files == None or clArgs.sst_dir == None or clArgs.sst_tail == None:
+        raise SystemExit("Error: -input_dir, -input_files, -sst_dir and -sst_tail are all mandatory arguments. At least one of these has not been specified.");
     
     #Check no temporary output was left in place from a previous run (if it is, delete it)
     if path.exists(temporaryOutputPath) == True:
         shutil.rmtree(temporaryOutputPath);
     
     
-    exitCode = rs.RunReanalyseSocat(socatdir=clArgs.socat_dir,
-                         socatfiles=clArgs.socat_files,
+    exitCode = rs.RunReanalyseSocat(socatdir=clArgs.input_dir,
+                         inputfiles=clArgs.input_files,
                          sstdir=clArgs.sst_dir,
                          ssttail=clArgs.sst_tail,
                          regions=clArgs.regions,

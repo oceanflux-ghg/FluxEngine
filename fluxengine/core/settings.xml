@@ -97,14 +97,14 @@
 			longName="Precipitation Estimate from EO and/or satellite/gauge combined data set">
 		</DataLayer>
 
-		<DataLayer name="vco2_air" netCDFName="VCO2" units="micromol mol-1" minBound="0.0" maxBound="500.0"
-			standardName="dry_molecular_fraction_of_carbon_dioxide_in_atmosphere"
-			longName="Concentration CO2 in dry air (ppm) or dry molecular fraction of carbon dioxide in the atmosphere (umol mol-1)">
+		<DataLayer name="vgas_air" netCDFName="V_gas" units="micromol mol-1" minBound="0.0" maxBound="500.0"
+			standardName="dry_molecular_fraction_of_${GAS}_in_atmosphere"
+			longName="Concentration ${GAS} in dry air (ppm) or dry molecular fraction of ${GAS} in the atmosphere (umol mol-1)">
 		</DataLayer>
 
-		<DataLayer name="pco2_air" netCDFName="pco2_air" units="microatm" minBound="0.0" maxBound="500.0"
-			standardName="partial_pressure_of_CO2_in_air"
-			longName="partial pressure of CO2 in air">
+		<DataLayer name="pgas_air" netCDFName="pgas_air" units="microatm" minBound="0.0" maxBound="500.0"
+			standardName="partial_pressure_of_${GAS}_in_air"
+			longName="partial pressure of ${GAS} in air">
 		</DataLayer>
 
 		<DataLayer name="sstgrad" netCDFName="OFA05" units="count" minBound="0.0" maxBound="100.0"
@@ -147,26 +147,26 @@
 			longName="Longhurst provinces">
 		</DataLayer>
 
-		<DataLayer name="pco2_sw" netCDFName="SFUG_krig" units="microatm" minBound="0.0" maxBound="1000.0"
-			 standardName="surface_partial_pressure_of_carbon_dioxide_in_sea_water"
-			 longName="pCO2 in sea water from climtology">
+		<DataLayer name="pgas_sw" netCDFName="SFUG_krig" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="surface_partial_pressure_of_${GAS}_in_sea_water"
+			 longName="p${GAS} in sea water from climtology">
 		</DataLayer>
 
 		<DataLayer name="pco2_sst" units="degreeC" minBound="-1.8" maxBound="30.5"></DataLayer>
 
-		<DataLayer name="pco2_sw_stddev" netCDFName="SFUG_stddev" units="microatm" minBound="0.0" maxBound="1000.0"
-			 standardName="surface_partial_pressure_of_carbon_dioxide_in_sea_water"
-			 longName="pCO2 in sea water from climtology">
+		<DataLayer name="pgas_sw_stddev" netCDFName="SFUG_stddev" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="surface_partial_pressure_of_${GAS}_in_sea_water"
+			 longName="p${GAS} in sea water from climtology">
 		</DataLayer>
 
-		<DataLayer name="pco2_air_cor" netCDFName="OAPC1" units="microatm" minBound="0.0" maxBound="500.0"
-			 standardName="water_surface_partial_pressure_of_carbon_dioxide_in_air"
-			 longName="Water surface partial pressure (pCO2) in air from climtology corrected using modelled sea level pressure">
+		<DataLayer name="pgas_air_cor" netCDFName="OAPC1" units="microatm" minBound="0.0" maxBound="500.0"
+			 standardName="water_surface_partial_pressure_of_${GAS}_in_air"
+			 longName="Water surface partial pressure of ${GAS} in air from climtology corrected using modelled sea level pressure">
 		</DataLayer>
 
-		<DataLayer name="pco2_sw_cor" netCDFName="OBPC" units="microatm" minBound="0.0" maxBound="1000.0"
-			 standardName="sub_skin_partial_pressure_of_carbon_dioxide_in_sea_water"
-			 longName="Sub skin partial pressure (pCO2) of carbon dioxide">
+		<DataLayer name="pgas_sw_cor" netCDFName="OBPC" units="microatm" minBound="0.0" maxBound="1000.0"
+			 standardName="sub_skin_partial_pressure_of_${GAS}_in_sea_water"
+			 longName="Sub skin partial pressure of ${GAS}">
 		</DataLayer>
 
 		<DataLayer name="scskin" netCDFName="SC" units="count" minBound="0.0" maxBound="4000.0"
@@ -176,8 +176,8 @@
 
 		<!--<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-0.75" maxBound="0.6"-->
 		<DataLayer name="FH06" netCDFName="OF" units="g C m-2 day-1" minBound="-1000.0" maxBound="1000.0"
-			 standardName="air_to_sea_carbon_dioxide_flux"
-			 longName="Air-sea CO2 flux using the %s gas transfer velocity (k)">
+			 standardName="air_to_sea_${GAS}_flux"
+			 longName="Air-sea ${GAS} flux using the %s gas transfer velocity (k)">
 			 </DataLayer> <!-- Oddly minBoundmaxBound is overwritten in flux engine to -1000+1000 -->
 
 		<DataLayer name="kt" netCDFName="OK1" units="cm h-1" minBound="0.0" maxBound="100.0"
@@ -352,7 +352,6 @@
 	<!-- Default values and metadata for config file parameters
 		 Valid types: path, multioption, switch (yes/no), float, string, DataLayer-->
 	<ConfigParameters>
-		<Variable name="src_home" required="true" type="path" default="fluxengine_src"></Variable>
 		<Variable name="output_dir" required="true" type="path"></Variable>
 		<Variable name="flux_calc" required="true" type="multioption">
 			<Option value="1" str="rapid"></Option>
@@ -364,8 +363,6 @@
 		<Variable name="lon_grid_size" required="true" type="integer"></Variable> -->
 
 		<Variable name="sst_gradients" required="true" type="switch"></Variable>
-		<Variable name="use_sstskin" required="true" type="switch"></Variable>
-		<Variable name="use_sstfnd" required="true" type="switch"></Variable>
 
 		<Variable name="axes_data_layer" required="true" type="string"></Variable>
 		<Variable name="latitude_prod" required="true" type="string"></Variable>
@@ -423,7 +420,6 @@
 
 
 		<!-- these should be optional and/or moved to datalayer attributes: -->
-
 		<Variable name="bias_k" required="true" type="switch" default="no"></Variable>
 		<Variable name="bias_k_percent" required="true" type="switch" default="no"></Variable>
 		<Variable name="bias_k_value" required="true" type="float" default="0.0"></Variable>

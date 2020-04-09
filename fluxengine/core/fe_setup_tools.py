@@ -249,13 +249,6 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             configVariables[varName] = float(configVariables[varName]);
         except ValueError:
             pass; #Leave it as a string.
-    
-    #Various misc. checks
-    if (configVariables["use_sstfnd"]==True) and ("sstfnd_path" not in configVariables):
-        raise ValueError("%s: use_sstfnd is set but no sstfnd inputfile (sstfnd_path was specified in the config file." % function);
-    
-    if (configVariables["use_sstskin"]==True) and ("sstskin_path" not in configVariables):
-        raise ValueError("%s: use_sstskin is set but no sstskin inputfile (sstskin_path) was specified in the config file." % function);
 
 
 #Substitutes various time tokens into the input string.
@@ -310,7 +303,7 @@ def match_filenames(givenPath, glob):
 
 #Creates a dictionary of parameters needed to run the flux engine for a particular month and year.
 #Generates paths to input files using supplied globs
-#Converts between inconsistencies in the config file naming convention and FluxEngine nameing convention, e.g.:
+#Converts between inconsistencies in the config file naming convention and FluxEngine naming convention, e.g.:
 #   path -> infile
 #   appending _switch to bool variables
 #Arguments:
@@ -333,10 +326,11 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
     runParams["run_count"] = executionCount;
     runParams["hostname"] = socket.gethostname();
     runParams["config_file"] = configFile;
-    runParams["src_home"] = configVariables["src_home"];
     runParams["processing_time"] = processTimeStr;
     runParams["monthyear_processing_time"] = time.strftime("%d/%m/%Y %H:%M:%S");
     runParams["process_layers_off"] = int(processIndicatorLayersOff);
+    
+    #infer whether each sst
     
     #Copy over all config parameters:
     missingFiles = []; #Much more useful to the user to have a complete list of missing files instead of one at a time.
@@ -344,7 +338,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
         #Different variable types need to be copied differently
         #DataLayerPaths: These can change based on month and year.
         if varName in varMetadata:
-            if varMetadata[varName]["type"] == varMetadata[varName]["type"] == "DataLayerPath":
+            if varMetadata[varName]["type"] == "DataLayerPath":
                 pathGlob = substitute_tokens(configVariables[varName], curTimePoint); #substitute time tokens into the path/glob
                 pathGlob = path.abspath(path.expanduser(pathGlob)); #Expand to absolute path only AFTER substituting tokens
                 curDir = path.dirname(pathGlob); #Directory to search in.
@@ -411,6 +405,7 @@ def create_run_parameters(configVariables, varMetadata, curTimePoint, executionC
         runParams["output_path"] = previousRunParams["output_path"];
     
     return runParams;
+    
 
 def list_input_datalayers(runParameters, metadata):
     dataLayers = [];
@@ -675,7 +670,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
         
         #Check for successful run, if one fails don't run the rest.
         if returnCode != 0:
-            print(("%s: There was an error running flux engine:\n\n"%function), e.args[0]);
+            print(("There was an error running flux engine: "+returnCode+"\n"%function));
             print("Exiting...");
             return (returnCode, fe);
         else:

@@ -181,7 +181,7 @@
 			 </DataLayer> <!-- Oddly minBoundmaxBound is overwritten in flux engine to -1000+1000 -->
 
 		<DataLayer name="kt" netCDFName="OK1" units="cm h-1" minBound="0.0" maxBound="100.0"
-			 standardName="total_gas_transfer_velocity_of_carbon_dioxide"
+			 standardName="total_gas_transfer_velocity_of_${GAS}"
 			 longName="OceanFluxGHG total (kd+kb) gas transfer velocity">
 			 </DataLayer>
 
@@ -194,7 +194,7 @@
 			 </DataLayer>
 
 		<DataLayer name="kd" netCDFName="OKD" units="cm h-1" minBound="0.0" maxBound="100.0"
-			 standardName="direct_gas_transfer_velocity_of_carbon_dioxide_from_backscatter"
+			 standardName="direct_gas_transfer_velocity_of_${GAS}_from_backscatter"
 			 longName="Direct gas transfer velocity">
 		</DataLayer>
 		<DataLayer name="kb" netCDFName="OKB1" units="cm h-1" minBound="0.0" maxBound="100.0"

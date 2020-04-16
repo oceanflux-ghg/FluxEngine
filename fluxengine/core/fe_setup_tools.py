@@ -70,6 +70,14 @@ def read_config_file(configPath, verbose=False):
     return configVariables;
 
 
+#Given a string, parse if for configuration file version information
+def parse_config_version_tag(line):
+    if "#?FluxEngineConfigVersion:" in line:
+        return float(line.split(":")[1]);
+    else:
+        return 3.0;
+
+
 #Load and return metadata about the variables contained in config files.
 #Returns a dictionary of dictionarys allowing indexing by variablename then attribute, e.g.:
 #   varMetadata[varName][attribute]

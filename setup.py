@@ -15,7 +15,8 @@ scripts = ["fe_append2insitu.py", "fe_compare_net_budgets.py",
            "fe_calc_budgets.py", "fe_run.py",
            "fe_reanalyse_fco2_driver.py", "fe_resample_netcdf.py",
            "fe_full_verification.py", "fe_text2ncdf.py",
-           "fe_verify_socatv4.py", "fe_verify_takahashi09.py"];
+           "fe_verify_socatv4.py", "fe_verify_takahashi09.py",
+           "fe_update_config.py"];
 for i in range(len(scripts)): #Append the directory to each script name
     scripts[i] = "fluxengine/scripts/"+scripts[i];
 

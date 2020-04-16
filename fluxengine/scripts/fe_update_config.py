@@ -10,6 +10,7 @@ the configuration file updated for FluxEngine 4.0
 """
 
 import argparse;
+from sys import exit;
 import fluxengine;
 import fluxengine.core.fe_setup_tools as setup;
 
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     clParser.add_argument("inputPath", help="path to a FluxEngine configuration file to be updated");
     clParser.add_argument("outputPath", help="path to write the updated FluxEngine configuration file to");
     clParser.add_argument("-alwayswrite", help="Forces the output file to be written even if no changes were made to the input configuration file.", action="store_true", default=False);
+    clParser.add_argument("-oldversion", help="FluxEngine version that the old configuration file was designed for (e.g. 3.1). This is only used if the version cannot be determined from the configuration file itself.", type=float, default=None);
     clArgs = clParser.parse_args();
     
     #Read input
@@ -35,7 +37,15 @@ if __name__ == "__main__":
     file.close();
     
     #extract config version
-    inputVersion = setup.parse_config_version_tag(config[0]);
+    try:
+        inputVersion = setup.parse_config_version_tag(config[0]);
+    except ValueError as e:
+        print(e);
+        if clArgs.oldversion is not None:
+            inputVersion = clArgs.oldversion;
+        else:
+            print("Error extracting input configuration file version. Either add this information to the old configuration file or specify it using the -oldversion flag.");
+            exit(0);
     
     #Check that the input file is actually an old version
     if inputVersion == fluxengine.__version__:

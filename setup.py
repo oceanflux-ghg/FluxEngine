@@ -42,13 +42,19 @@ for i in range(len(allPackageDataPaths)): #remove the "fluxengine" parent direct
 allPackageDataPaths.append("core/settings.xml");
 
 
+#Read description
+with open(path.join('README.md'), encoding='utf-8') as f:
+    longDescription = f.read()
+
 #Main setup object.
 setuptools.setup(
-    name="FluxEngine",
-    version="4.0.dev0",
+    name="fluxengine",
+    version="4.0.dev2",
     author="Tom Holding, Jamie Shutler and others",
     author_email="t.m.holding@exeter.ac.uk, j.d.shutler@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",
+    long_description=longDescription,
+    long_description_content_type="text/markdown",
     url="https://github.com/oceanflux-ghg/FluxEngine",
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
     project_urls={"Source Code":"https://github.com/oceanflux-ghg/FluxEngine",

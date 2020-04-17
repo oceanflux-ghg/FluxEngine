@@ -1,4 +1,5 @@
-include FE_liscence.txt
+include LICENSE
+inlude README.md
 include FluxEngineV4_instructions.pdf
 include fluxengine/core/settings.xml
 

@@ -3,6 +3,16 @@ FluxEngine
 
 The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 12 different journal publications, resulting in 4 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
 
+
+Version 4.0.
+----
+v4.0.1 released May 2020.
+
+Version 4.0 is updated for Python 3 and is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). Configuration file format has changed slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs and is consistent with version 3.0. See Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1 for details on verification. All results were identical to those produced using v3.0. A description of recent updates can be found here https://doi.org/10.5194/os-15-1707-2019 For full documentation see the PDF documentation on the GitHub page.
+
+Please reference these journal publications when using this toolbox and presenting its output in any publications.
+
+
 Version 3.0 (static as of 02 August 2019).
 ----
 v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
@@ -11,7 +21,7 @@ Version 3 (v3.0) has been verified against reference runs using SOCATv4 pCO2 and
 
 Please reference these journal publications when using this toolbox and presenting its output in any publications.
 
-The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).  v3.0 additions to the toolbox include:
+The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS). v3.0 additions to the toolbox include:
 
     •   A more flexible way of specifying input data in the configuration files.
     •   Data pre-processing options (e.g. unit conversion).

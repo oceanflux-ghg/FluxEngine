@@ -15,7 +15,8 @@ Thumbs.db
 ### ignore package distribution and build files
 build
 dist
-FluxEngine.egg-info
+fluxengine.egg-info
+
 
 ### Default output directory ###
 fluxengine/output/**

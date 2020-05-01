@@ -28,7 +28,7 @@ dependencies = ["numpy>=1.16.4",
                 "argparse>=1.1",
                 "scipy>=1.3.0",
                 "jupyter>=1.0.0",
-                ]
+                ];
 
 #Create a list of package data files
 dataPaths = setuptools.findall(dir="fluxengine/data"); #list all data files
@@ -44,13 +44,13 @@ allPackageDataPaths.append("core/settings.xml");
 
 #Read description
 with open(path.join('README.md'), encoding='utf-8') as f:
-    longDescription = f.read()
+    longDescription = f.read();
 
 #Main setup object.
 setuptools.setup(
     name="fluxengine",
     version="4.0.dev2",
-    author="Tom Holding, Jamie Shutler and others",
+    author="Tom Holding and Jamie Shutler",
     author_email="t.m.holding@exeter.ac.uk, j.d.shutler@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",
     long_description=longDescription,
@@ -68,28 +68,4 @@ setuptools.setup(
     package_data={"fluxengine": allPackageDataPaths},
     
     install_requires=dependencies,
-)
-
-
-
-#from distutils.core import setup;
-#
-#scripts = ["append2insity.py", "compare_net_budgets.py",
-#           "ofluxghg_flux_budgets.py", "ofluxghg_run.py",
-#           "reanalyse_fco2_driver.py","text2ncdf.py", "text2ncdf_examples.sh",
-#           "verify_socat4_sst_salinity_gradients_N00.py",
-#           "verify_takahashi09.py"];
-#for i in range(len(scripts)): #Append the directory to each script name
-#    scripts[i] = "fluxengine/scripts/"+scripts[i];
-#
-#setup(
-#    name='FluxEngine',
-#    version='4.0dev',
-#    packages=['fluxengine',],
-#    scripts=[scripts],
-#    license='Creative Commons Attribution-Noncommercial-Share Alike license',
-#    long_description=open('README.md').read(),
-#    include_package_data=True,
-#    install_requires=[],
-#    
-#)
+    );

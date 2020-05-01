@@ -8,7 +8,7 @@ Version 4.0.
 ----
 v4.0.1 released May 2020.
 
-Version 4.0 is updated for Python 3 and is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). Configuration file format has changed slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs and is consistent with version 3.0. See Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1 for details on verification. All results were identical to those produced using v3.0. A description of recent updates can be found here https://doi.org/10.5194/os-15-1707-2019 For full documentation see the PDF documentation on the GitHub page.
+Version 4.0 is updated for Python 3 and contains all of the updates described in version 3.0. Version 4.0 is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). The configuration file format has changed slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs using SOCATv4 pCO2 and Takahashi et al (2009) data sets, as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were consistent with those produced using v3.0. A description of the recent updates can be found here https://doi.org/10.5194/os-15-1707-2019 and full documentation/usage instructions are included as a PDF documentation on the GitHub page.
 
 Please reference these journal publications when using this toolbox and presenting its output in any publications.
 

@@ -253,7 +253,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
 #             'Pequ [hPa]',
 #             'd2l [km]',
 #             'fCO2rec [uatm]'];
-        elif socatversion in [3, 4, 5, 6]:
+        elif socatversion in [3, 4, 5, 6, 2019]:
             colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '23', '25'];
             #colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '18', '14', '15', '16', '19', '17', '23', '25'];
 #            return ['yr',
@@ -273,8 +273,10 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
 #             'NCEP_SLP [hPa]',
 #             'fCO2rec [uatm]',
 #             'fCO2rec_flag']
+        elif socatversion in [2020]:
+            colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '29', '31'];
         else:
-            raise ValueError("No value columns could be generated. Only socat version 2, 3, 4, 5, and 6 are supported.");
+            raise ValueError("No value columns could be generated. Only socat version 2, 3, 4, 5, 6, 2019, and 2020 are supported.");
         
     columnInfo = [];
     for i in range(len(colIdentifiers)):

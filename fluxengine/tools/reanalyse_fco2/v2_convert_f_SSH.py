@@ -727,8 +727,8 @@ def CreateBinnedData(month_data):
    else:
       #edge case where w only has 1 element - in which case ilons/ilats are scalars not arrays
       #to fix it we convert them to a list of 1 element
-      ilons=[ilons]
-      ilats=[ilats]
+      ilons=[ilons[0]]
+      ilats=[ilats[0]]
    #update these data points to 0 (from -999) for all output arrays
    dTs[ilats,ilons]=0
    fCO2_Tyms[ilats, ilons] = 0.

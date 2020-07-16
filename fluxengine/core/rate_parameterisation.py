@@ -854,7 +854,7 @@ class AddKRainNonlinearHarrison2012(KCalculationExtension):
               winddrag_fdata[i] = DataLayer.missing_value
         
         for i in arange(length):
-            if ( (self.k[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.rain[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) and (self.windu10[i] != DataLayer.missing_value) and (self.windu10_moment2[i] != DataLayer.missing_value) and (self.windu10_moment3[i] != DataLayer.missing_value) and (self.pressure[i] != DataLayer.missing_value) and (self.sstskin[i] != DataLayer.missing_value) and (self.windstress_fdata[i] != DataLayer.missing_value)):
+            if ( (self.k[i] != DataLayer.missing_value) and (self.scskin[i] != DataLayer.missing_value) and (self.rain[i] != DataLayer.missing_value) and (self.scskin[i] > 0.0) and (self.windu10[i] != DataLayer.missing_value) and (self.windu10_moment2[i] != DataLayer.missing_value) and (self.windu10_moment3[i] != DataLayer.missing_value) and (self.pressure[i] != DataLayer.missing_value) and (self.sstskin[i] != DataLayer.missing_value) and (windstress_fdata[i] != DataLayer.missing_value)):
                 #guts in here
                 # data["pressure"].fdata are in mb, need it in Pascals, so *100 to get Pascals (ie convert from mb to P)
                 rho_a = (self.pressure[i]*100.0) /(R*self.sstskin[i])    

@@ -513,7 +513,7 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, v
         fe.add_k_parameterisation_component(k_params.AddKRainLinearHo1997());
     
     #nonlinear changes to k/krain for rain and wind - parameterisation from Harrison et al., JGR 2012, equations 11, 12, 13, 14
-    if (runParameters["k_rain_nonlinear_h2012_switch"] == 1 and runParameters["k_parameterisation"] == 9): #9==generic_k
+    if runParameters["k_rain_nonlinear_h2012_switch"] == 1:# and runParameters["k_parameterisation"] == 9): #9==generic_k
         fe.add_k_parameterisation_component(k_params.AddKRainNonlinearHarrison2012());
     
     

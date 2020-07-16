@@ -61,5 +61,3 @@ if __name__ == "__main__":
                    pco2DirOverride=clArgs.pco2_dir_override,
                    outputDirOverride=clArgs.output_dir_override);
 
-
-

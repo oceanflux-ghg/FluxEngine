@@ -319,7 +319,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 #overwrites solubilityDistilled with the calculated value.
 #TODO: no need to pass nx, ny into all these functions.
 #TODO: rain_wet_deposition_switch isn't used!
-def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny, schmidtParameterisation):
+def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny, schmidtParameterisation, gasStr):
     #First create a 0 salinity dataset
     salDistil = array([missing_value] * len(salinity))
     for i in arange(nx * ny):
@@ -330,9 +330,9 @@ def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_depos
     
     #Next calculate the solubility using the zero salinity 'distilled water' dataset
     if schmidtParameterisation == "schmidt_Wanninkhof2014":
-        solubilityDistilled = solubility_Wanninkhof2014(sstskin, salDistil, deltaT, nx, ny, True);
+        solubilityDistilled = solubility_Wanninkhof2014(sstskin, salDistil, deltaT, nx, ny, True, gasStr);
     elif schmidtParameterisation == "schmidt_Wanninkhof1992":
-        solubilityDistilled = solubility_Wanninkhof1992(sstskin, salDistil, deltaT, nx, ny, True);
+        solubilityDistilled = solubility_Wanninkhof1992(sstskin, salDistil, deltaT, nx, ny, True, gasStr);
     return solubilityDistilled;
 
 #whitecapping data using relationship from TS and parameters from table 1 of Goddijn-Murphy et al., 2010, equation r1
@@ -1589,7 +1589,7 @@ class FluxEngine:
             self.add_empty_data_layer("FKo07");
             self.add_empty_data_layer("solubility_distilled");
             calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
-                                           runParams.rain_wet_deposition_switch, self.data["sstskin"], DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation);
+                                           runParams.rain_wet_deposition_switch, self.data["sstskin"].fdata, DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation, runParams.GAS.lower());
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
            print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation))

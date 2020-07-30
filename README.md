@@ -6,6 +6,9 @@ The FluxEngine is an open source atmosphere-ocean gas flux data processing toolb
 
 Version 4.0.
 ----
+v4.0.2 released July 2020 - released at major FluxEngine v4 release
+ - small updates for re-analysis tool compatbility with SOCATv2020 release.
+
 v4.0.1 released May 2020.
 
 Version 4.0.1 uses Python 3 (but still contains all of the functionality of FluxEngine v3.0). Version 4.0 is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). This update means that the FluxEngine is now a standard Python package and this has simplified the installation process. For example, you can now install the FluxEngine by using the Python Package Installer, pip, using the command 'pip install fluxengine'.  Whilst providing this update we also removed some functionality that was no longer needed which resulted in the FluxEngine configuration file format changing slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs using SOCATv4 pCO2 and Takahashi et al (2009) data sets, as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were consistent with those produced using v3.0. The description of all FluxEngine functionality can be found in Shutler et al., (2016) and Holding et al., (2019) https://doi.org/10.5194/os-15-1707-2019 and full documentation/usage instructions are included as a PDF documentation on the GitHub page.

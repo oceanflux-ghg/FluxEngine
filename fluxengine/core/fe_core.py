@@ -319,7 +319,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 #overwrites solubilityDistilled with the calculated value.
 #TODO: no need to pass nx, ny into all these functions.
 #TODO: rain_wet_deposition_switch isn't used!
-def calculate_solubility_distilled(solubilityDistilled, salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny, schmidtParameterisation, gasStr):
+def calculate_solubility_distilled(salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny, schmidtParameterisation, gasStr):
     #First create a 0 salinity dataset
     salDistil = array([missing_value] * len(salinity))
     for i in arange(nx * ny):
@@ -1590,8 +1590,8 @@ class FluxEngine:
         if runParams.rain_wet_deposition_switch:
             self.add_empty_data_layer("FKo07");
             self.add_empty_data_layer("solubility_distilled");
-            calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
-                                           runParams.rain_wet_deposition_switch, self.data["sstskin"].fdata, DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation, runParams.GAS.lower());
+            self.data["solubility_distilled"].fdata = calculate_solubility_distilled(self.data["salinity"].fdata, runParams.rain_wet_deposition_switch, self.data["sstskin"].fdata,
+                     DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation, runParams.GAS.lower());
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
            print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (function, runParams.kb_asymmetry, runParams.k_parameterisation))

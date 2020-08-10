@@ -1602,7 +1602,7 @@ class FluxEngine:
         if runParams.rain_wet_deposition_switch:
             self.add_empty_data_layer("FKo07");
             self.add_empty_data_layer("solubility_distilled");
-            calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
+            self.data["solubility_distilled"].fdata = calculate_solubility_distilled(self.data["solubility_distilled"].fdata, self.data["salinity"].fdata,
                                            runParams.rain_wet_deposition_switch, self.data["sstskin"].fdata, DeltaT_fdata, self.nx, self.ny, runParams.schmidt_parameterisation, runParams.GAS.lower());
         
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):

@@ -1142,7 +1142,6 @@ class FluxEngine:
         #One option: sst gradients
         #If using only one dataset then copy that over the other. Otherwise keep both.
         #runParams.cool_skin_difference is the assumed temperature difference between the skin and foundation layer
-        
         #using sstfnd, so copy sstfnd into sstskin
         #sstskin = sstfnd
         if runParams.sst_gradients_switch == 0 and (self._input_data_provided("sstskin")==False) and (self._input_data_provided("sstfnd")==True):
@@ -1183,6 +1182,7 @@ class FluxEngine:
                 else:
                     self.data["sstskin"].fdata[i] = missing_value;
         
+
         #Using sstskin, so calculate it from sstfnd.
         elif runParams.sst_gradients_switch == 0 and (self._input_data_provided("sstskin")==True) and (self._input_data_provided("sstfnd")==False):
            print("%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %f) for flux calculation (ignoring SSTfnd data in configuration file)." % (function, runParams.cool_skin_difference));
@@ -1221,6 +1221,7 @@ class FluxEngine:
            print("\n%s sst_gradients_switch (%s), sstskin provided (%s), sstfnd provided (%s) combination not recognised, exiting." % (function, runParams.sst_gradients_switch==1, self._input_data_provided("sstskin"), self._input_data_provided("sstfnd")))
            return 1;
        
+       
         
         #If there is no pco2_sst data, we need to get it / generate it.
         if "pco2_sst" not in self.data: #SOCATv4
@@ -1232,7 +1233,7 @@ class FluxEngine:
                 print("pco2_sst data not available and could read sstfnd so cannot proceed.");
                 print(type(e), "\n"+e.args);
                 return 1;
-       
+        
 
         #quality filtering and conversion of SST datasets
         #Calculate sstskinC and sstfndC
@@ -1269,6 +1270,7 @@ class FluxEngine:
         if (runParams.bias_sstskin_due_rain_switch == 1):
            add_sst_rain_bias(self.data["sstskin"].fdata, runParams.bias_sstskin_due_rain_value, runParams.bias_sstskin_due_rain_intensity, self.data["rain"].fdata, runParams.bias_sstskin_due_rain_wind, self.data["windu10"].fdata, nx*ny)
         
+        
          # quality filtering of wind and Hs data
         for i in arange(nx * ny):
            if (self.data["windu10"].fdata[i] != missing_value):
@@ -1297,16 +1299,17 @@ class FluxEngine:
               else:
                  self.data["pco2_sst"].fdata[i] = missing_value
         
+        
         # quality control/contrain all SST data
         # check all SST data are within -1.8 - 30.5^oC (or 271.35 - 303.65K)
-        for i in arange(nx * ny):
-           if ((self.data["sstskin"].fdata[i] != missing_value) and (self.data["sstskinC"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["sstfndC"].fdata[i] != missing_value)):
-              if ( (self.data["sstskinC"].fdata[i] > 30.5) or (self.data["sstfndC"].fdata[i] > 30.5) or (self.data["sstskinC"].fdata[i] < -1.8) or (self.data["sstfndC"].fdata[i] < -1.8)):
-                 self.data["sstfnd"].fdata[i] = missing_value
-                 self.data["sstskin"].fdata[i] = missing_value
-                 self.data["sstfndC"].fdata[i] = missing_value
-                 self.data["sstskinC"].fdata[i] = missing_value
-                 
+        # for i in arange(nx * ny):
+        #    if ((self.data["sstskin"].fdata[i] != missing_value) and (self.data["sstskinC"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["sstfndC"].fdata[i] != missing_value)):
+        #       if ( (self.data["sstskinC"].fdata[i] > 30.5) or (self.data["sstfndC"].fdata[i] > 30.5) or (self.data["sstskinC"].fdata[i] < -1.8) or (self.data["sstfndC"].fdata[i] < -1.8)):
+        #          self.data["sstfnd"].fdata[i] = missing_value
+        #          self.data["sstskin"].fdata[i] = missing_value
+        #          self.data["sstfndC"].fdata[i] = missing_value
+        #          self.data["sstskinC"].fdata[i] = missing_value
+        
         # ensure that the different SST data all cover the same spatial regions
         # convert all missing values into standard value, rather than variations that seem to exist in some of these data
         #note this is an intersect operation (compared to the above)
@@ -1335,7 +1338,7 @@ class FluxEngine:
         # pCO2/fCO2 extrapolation (if turned on) from reference year
         pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_correction;
         pco2_increment_air = pco2_increment;
-            
+        
         DeltaT_fdata = array([missing_value] * nx*ny)
         
         if runParams.flux_calc == 1:
@@ -1364,6 +1367,7 @@ class FluxEngine:
         else:
             raise ValueError("Unrecognised schmidt/solubility parameterisation selected: "+runParams.schmidtParameterisation);
         
+        
         #Calculate solubility
         if runParams.schmidt_parameterisation == "schmidt_Wanninkhof2014":
             #calculating the skin solubility, using skin sst and salinity
@@ -1388,7 +1392,6 @@ class FluxEngine:
          # T_tak = Takahashi temperature
         
         sys.stdout.flush();
-
         
         ###############################
         # Calculate:                  #
@@ -1517,7 +1520,6 @@ class FluxEngine:
                     pH2O_diff_fdata[i] = missing_value;
 
 
-
         #######################################
         # Calculating gas transfer velocity k #
         #######################################
@@ -1611,7 +1613,6 @@ class FluxEngine:
         if "conca" not in self.data:
             self.add_empty_data_layer("conca");
             calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_cor"].fdata, self.data["conca"].fdata); #calculate conca
-        
         
         ##############################
         # Main flux calculation loop # #assume corrected pco2 data at the moment #################################

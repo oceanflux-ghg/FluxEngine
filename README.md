@@ -39,13 +39,15 @@ The FluxEngine v3.0 updates and extensions were funded by the European Space Age
 
 Example news articles (resulting from research performed using the FluxEngine)
 ----
-1. Phys.org (2019) 'Satellites are key to monitoring ocean carbon' https://phys.org/news/2019-11-satellites-key-ocean-carbon.html
+1. The Daily Mail 'World's oceans soak up 900 million tonnes of CO2 a year MORE than previously thought — the amount emitted by 2.2 billion petrol cars' https://www.dailymail.co.uk/sciencetech/article-8698067/Worlds-oceans-soak-carbon-previously-thought.html
 
-1. ESA news (2019), 'Can oceans turn the tide on the climate crisis' https://www.esa.int/Our_Activities/Observing_the_Earth/Can_oceans_turn_the_tide_on_the_climate_crisis
+2. Phys.org (2019) 'Satellites are key to monitoring ocean carbon' https://phys.org/news/2019-11-satellites-key-ocean-carbon.html
 
-2. The Guardian (2018), 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
+3. ESA news (2019), 'Can oceans turn the tide on the climate crisis' https://www.esa.int/Our_Activities/Observing_the_Earth/Can_oceans_turn_the_tide_on_the_climate_crisis
 
-3. BBC News (2016), 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
+4. The Guardian (2018), 'Invisible scum on sea cuts CO2 exchange with air by up to 50%' https://www.theguardian.com/environment/2018/may/28/invisible-scum-on-sea-cuts-co2-exchange-with-air-by-up-to-50
+
+5. BBC News (2016), 'How Northern European waters soak up carbon dioxide' https://www.bbc.co.uk/news/science-environment-35654938
 
 
 Animation 

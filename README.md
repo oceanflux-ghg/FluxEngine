@@ -62,7 +62,7 @@ Journal publications (which use FluxEngine and/or FluxEngine outputs)
 
 2. Kitidis, V., Shutler, JD., Ashton, I. et al (2020) Winter weather controls net influx of atmospheric CO2 on the north-west European shelf, Scientific Reports, 9(20153), https://www.nature.com/articles/s41598-019-56363-5
 
-3. Shutler, JD, Wanninkhof, R, Nightingale, PD, Woolf, DK, Bakker, DCE, Watson, A, Ashton, I, Holding, T, Chapron, B, Quilfen, Y, Fairall, C, Schuster, U, Nakajima, M, Donlon, D (2019) Satellites are critical for addressing critical science priorities for quantifying ocean carbon, Frontiers in Ecology and Environment,  https://doi.org/10.1002/fee.2129
+3. Shutler, JD, Wanninkhof, R, Nightingale, PD, Woolf, DK, Bakker, DCE, Watson, A, Ashton, I, Holding, T, Chapron, B, Quilfen, Y, Fairall, C, Schuster, U, Nakajima, M, Donlon, D (2019) Satellites are critical for addressing critical science priorities for quantifying ocean carbon, Frontiers in Ecology and the Environment,  https://doi.org/10.1002/fee.2129
 
 4. Woolf DK, Shutler JD, Goddijn‐Murphy L, Watson AJ, Chapron B, Nightingale PD, Donlon CJ, Piskozub J, Yelland MJ, Ashton I, et al (2019). Key Uncertainties in the Recent Air‐Sea Flux of CO2. Global Biogeochemical Cycles, https://doi.org/10.1029/2018GB006041
 

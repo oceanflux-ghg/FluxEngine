@@ -1,7 +1,7 @@
 FluxEngine
 ==========
 
-The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 12 different journal publications, resulting in 4 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
+The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 13 different journal publications, resulting in 5 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
 
 
 Version 4.0.
@@ -16,26 +16,6 @@ Version 4.0.1 uses Python 3 (but still contains all of the functionality of Flux
 
 Please reference these journal publications when using this toolbox and presenting its output in any publications.
 
-
-Version 3.0 (static as of 02 August 2019).
-----
-v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
-
-Version 3 (v3.0) uses Python 2.7 and has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (2019) and can be found here https://doi.org/10.5194/os-15-1707-2019. 
-
-Please reference these journal publications when using this toolbox and presenting its output in any publications.
-
-The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS). v3.0 additions to the toolbox include:
-
-    •   A more flexible way of specifying input data in the configuration files.
-    •   Data pre-processing options (e.g. unit conversion).
-    •   Python is used for all tools, allowing a more streamlined workflow.
-    •   A move toward an API-like toolkit, beyond a simple set of commandline tools.
-    •   A more modularised structure to the code including modular k parameterisation and data pre-processing options.
-    •   Metadata and default options specified in an xml file (settings.xml).
-    •   Automatic verification scripts that use SOCATv4 and Takahashi09 reference datasets.
-    •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations).
-    •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format).
 
 Example news articles (resulting from research performed using the FluxEngine)
 ----
@@ -88,6 +68,26 @@ Journal publications (which use FluxEngine and/or FluxEngine outputs)
 
 Information about older versions of the FluxEngine toolbox
 ----
+
+Version 3.0 (static as of 02 August 2019).
+----
+v3.0 (first release April 2018, updated September 2018, February 2019, April 2019, June 2019, July 2019, static 02 August 2019)
+
+Version 3 (v3.0) uses Python 2.7 and has been verified against reference runs using SOCATv4 pCO2 and all results were identical to those produced using FluxEngine v2.0. A more comprehensive verification has been performed using references runs of the Takahashi et al. (2009) dataset as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were identical to those produced using v1.0 and v2.0. A journal paper describing the v3.0 updates is now available, Holding et al., (2019) and can be found here https://doi.org/10.5194/os-15-1707-2019. 
+
+Please reference these journal publications when using this toolbox and presenting its output in any publications.
+
+The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS). v3.0 additions to the toolbox include:
+
+    •   A more flexible way of specifying input data in the configuration files.
+    •   Data pre-processing options (e.g. unit conversion).
+    •   Python is used for all tools, allowing a more streamlined workflow.
+    •   A move toward an API-like toolkit, beyond a simple set of commandline tools.
+    •   A more modularised structure to the code including modular k parameterisation and data pre-processing options.
+    •   Metadata and default options specified in an xml file (settings.xml).
+    •   Automatic verification scripts that use SOCATv4 and Takahashi09 reference datasets.
+    •   Tools for simplifying analysis of in situ data (e.g. SOCAT format data from research cruises and fixed stations).
+    •   Improvements for calculating N2O and CH4 gas fluxes (now using MOMENTO data format).
 
 v2.0 (July 2016)
 ----

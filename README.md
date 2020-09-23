@@ -16,6 +16,19 @@ Version 4.0.1 uses Python 3 (but still contains all of the functionality of Flux
 
 Please reference these journal publications when using this toolbox and presenting its output in any publications.
 
+Re-analysed SOCAT datasets
+----
+We routinely re-analyse the entire Surface Ocean CO2 Atlas (SOCAT) database, providing the re-analysis a few weeks after the new release of the database.
+
+v2020
+Available on request. We have these data and are waiting for the data archived doi to be provided by Pangaea.
+
+v2019
+
+
+v2
+
+
 
 Example news articles (resulting from research performed using the FluxEngine)
 ----

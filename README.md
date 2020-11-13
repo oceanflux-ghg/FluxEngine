@@ -24,7 +24,7 @@ Please read the dataset metadata when using these data and please follow the gui
 
 1. Holding T, Ashton I, Shutler, J (2020) Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2020, doi:10.18160/VMT4-4563
 
-2. Holding T, Ashton I, Shutler, J (2019). Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2019, Pangaea, doi: doi:10.1594/PANGAEA.905316 
+2. Holding T, Ashton I, Shutler, J (2019). Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2019, Pangaea, doi:10.1594/PANGAEA.905316 
 
 
 

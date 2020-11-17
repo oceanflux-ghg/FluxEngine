@@ -22,7 +22,7 @@ Each year we used the FluxEngine to reanalyse the latest version of the Surface 
 
 Please read the dataset metadata when using these data and please follow the guidelines in the metadata when referencing and acknowleging their use. 
 
-1. Holding T, Ashton I, Shutler, J (2020) Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2020, https://doi.org/10.18160/vmt4-4563
+1. Holding T, Ashton I, Shutler, J (2020) Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2020, ICOS carbon portal, https://doi.org/10.18160/vmt4-4563
 
 2. Holding T, Ashton I, Shutler, J (2019). Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2019, Pangaea, https://doi.pangaea.de/10.1594/PANGAEA.905316
 

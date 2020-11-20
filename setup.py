@@ -49,9 +49,9 @@ with open(path.join('README.md'), encoding='utf-8') as f:
 #Main setup object.
 setuptools.setup(
     name="fluxengine",
-    version="4.0.3",
+    version="4.0.4",
     author="Tom Holding and Jamie Shutler",
-    author_email="t.m.holding@exeter.ac.uk, j.d.shutler@exeter.ac.uk",
+    author_email="j.d.shutler@exeter.ac.uk, t.m.holding@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",
     long_description=longDescription,
     long_description_content_type="text/markdown",
@@ -63,7 +63,7 @@ setuptools.setup(
     
     packages=setuptools.find_packages("."),  # include all packages in this dir "fluxengine"
     package_dir={"":"."},   # tell distutils packages in this dir "fluxengine"
-    scripts=scripts,#["fluxengine/scripts/text2ncdf.py", "fluxengine/scripts/verify_takahashi09.py"],
+    scripts=scripts,
     include_package_data=True,
     package_data={"fluxengine": allPackageDataPaths},
     

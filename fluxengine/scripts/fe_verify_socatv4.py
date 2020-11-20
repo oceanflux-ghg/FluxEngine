@@ -46,7 +46,7 @@ def run_socat_sst_salinity_gradients_N00_verification(verbose=True):
     if verbose:
         print("\n\nComparing output to reference data...");
     newPath = path.join(outputFilePath, "_global.txt");
-    refPath = path.join(feRoot, "data", "verification_data", "verification_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv3", "SST_Salinity_gradients-N00_global.txt");
+    refPath = path.join(feRoot, "data", "verification_data", "verification_reference_netflux", "socatv4_sst_salinity_N00_reference_FEv4", "SST_Salinity_gradients-N00_global.txt");
     diffs = calc_net_budget_percentages(newPath, refPath, verbose=False);
     
     numFailed = 0;

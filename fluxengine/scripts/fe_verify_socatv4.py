@@ -65,8 +65,8 @@ def run_socat_sst_salinity_gradients_N00_verification(verbose=True):
                 print("\t"+key+": "+str(diffs[key])+"%");
     else:
         if verbose:
-            print("\Verification failed because %d values were outside threshold limits." % numFailed);
-            verificationSuccessful = True;
+            print("Verification failed because %d values were outside threshold limits." % numFailed);
+            verificationSuccessful = False;
     
     return {"run status":runStatus, "number of net budgets exceeding threshold":numFailed,
             "verification successful?":verificationSuccessful, "percentage difference from reference (dictionary)":diffs};

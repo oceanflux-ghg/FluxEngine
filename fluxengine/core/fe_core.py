@@ -1226,7 +1226,7 @@ class FluxEngine:
         #If there is no pco2_sst data, we need to get it / generate it.
         if "pco2_sst" not in self.data: #SOCATv4
             try:
-                print("No pco2_sst data was supplied. sstfnd will be used instead.")
+                print("No pco2_sst data were supplied. sstfnd will be used instead.")
                 self.add_empty_data_layer("pco2_sst");
                 self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata-273.15; #copy/convert sstfnd
             except (IOError, KeyError, ValueError) as e:

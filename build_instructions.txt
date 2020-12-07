@@ -1,4 +1,4 @@
 To build the package from source run:
 
 python setup.py sdist bdist_wheel
-pip install dist/FluxEngine-4.0.0.tar.gz #replace with correct filename for the current version
+pip install dist/fluxengine-4.0.5.tar.gz #replace with correct filename for the current version

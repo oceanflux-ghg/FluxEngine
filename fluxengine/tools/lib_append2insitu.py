@@ -92,7 +92,7 @@ def append_to_in_situ(feOutputPath, insituDataPath, outputPath, varsToAppend = [
             if np.ma.is_masked(value):
                 newVectors[variable][i] = missingValue;
                 if verbose:
-                    print("Row", i, "Warning: No data found for timesetp", t, "lat", lat, "lon", str(lon)+".", missingValue, "inserted instead");
+                    print("Row", i, "Warning: No data found for timestep", t, "lat", lat, "lon", str(lon)+".", missingValue, "inserted instead");
             else:
                 newVectors[variable][i] = float(value);
     

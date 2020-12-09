@@ -22,4 +22,4 @@ except FileExistsError:
     print("*** Continuing using existing files at this path.");
 
 print("Starting jupyter notebook...");
-os.system("jupyter notebook --notebook-dir="+tutorialsCopyPath);
+os.system("jupyter notebook --notebook-dir="+"\""+tutorialsCopyPath+"\"");

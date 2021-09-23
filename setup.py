@@ -23,11 +23,9 @@ for i in range(len(scripts)): #Append the directory to each script name
 #list the dependencies
 dependencies = ["numpy>=1.16.4",
                 "pandas>=0.24.2",
-                "matplotlib>=3.1.0",
                 "netCDF4>=1.4.2",
                 "argparse>=1.1",
                 "scipy>=1.3.0",
-                "jupyter>=1.0.0",
                 ];
 
 #Create a list of package data files

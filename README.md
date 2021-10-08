@@ -51,8 +51,6 @@ Journal publications (which use FluxEngine and/or FluxEngine outputs)
 ----
 1. Friedlingstein et al, (2021), Global Carbon Budget 2020, Earth Syst. Sci. Data, 12, 3269–3340, https://doi.org/10.5194/essd-12-3269-2020.  
 
-2. 
-
 2. Watson, A.J., Schuster, U., Shutler, J.D. et al. Revised estimates of ocean-atmosphere CO2 flux are consistent with ocean carbon inventory. Nature Communications 11, 4422 (2020). https://doi.org/10.1038/s41467-020-18203-3 
 
 3. Kitidis, V., Shutler, JD., Ashton, I. et al (2020) Winter weather controls net influx of atmospheric CO2 on the north-west European shelf, Scientific Reports, 9(20153), https://www.nature.com/articles/s41598-019-56363-5

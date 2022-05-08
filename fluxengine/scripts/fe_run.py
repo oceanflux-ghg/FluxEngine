@@ -44,6 +44,7 @@ if __name__ == "__main__":
                         action="store_true");
     clParser.add_argument("-use_takahashi_driver", "-t", help="indicates that this is a Takahashi validation run. This should only be used in conjunction with the supplied takahashi09_validation/conf file.",
                           action="store_true", default=False);
+    clParser.add_argument("-custom_gas_transfer_parameterisation", "-gtvp", metavar='\b', help="File path to a python file containing the definition of any custom gas transfer velocity parameterisations. This file will be executed and the parameterisations made available in for use in configuration files.", default=None);
     clParser.add_argument("-verbose", "-v", help="verbose: increases the amount of information sent to stdout.",
                         action="store_true");
     #clParser.add_argument("-year_start", "-s", metavar='\b', help="first year to evaluate (default=2010)", type=int, default=2010);
@@ -59,5 +60,6 @@ if __name__ == "__main__":
                    processLayersOff=clArgs.process_layers_off,
                    takahashiDriver=clArgs.use_takahashi_driver,
                    pco2DirOverride=clArgs.pco2_dir_override,
-                   outputDirOverride=clArgs.output_dir_override);
+                   outputDirOverride=clArgs.output_dir_override,
+                   customGTVPath=clArgs.custom_gas_transfer_parameterisation);
 

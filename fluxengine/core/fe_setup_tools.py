@@ -425,17 +425,30 @@ def list_input_datalayers(runParameters, metadata):
 #returns an object of the appropriate class, as specified by k_parameterisation in the config file.
 #Classes are checked so that they derive from KCalculationBase.
 #If no suitable class is found, or there is some other error None is returned.
-def build_k_functor(runParameters):
+def build_k_functor(runParameters, customGTVPath=None):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     try:
         selectedParameterisation = runParameters["k_parameterisation"];
         
+        #get list of all gas transfer velocity parameterisations
+        gtvList = inspect.getmembers(k_params);
+        
+        #load any custom k parameterisations
+        if customGTVPath is not None:
+            with open(customGTVPath, "r") as file:
+                customGTVString = file.read();
+                importDict = {};
+                exec(customGTVString, importDict)
+                for key in importDict:
+                    print(key,":: ", importDict[key])
+                    gtvList.append( (key, importDict[key]) );
+        
         #Search for the specified k parameterisation class
-        for name, obj in inspect.getmembers(k_params):
+        for name, obj in gtvList:
             if (name == selectedParameterisation) and (inspect.isclass(obj) == True):
                 #Get a handle to the class type
                 try:
-                    ClassHandle = getattr(k_params, name);
+                    ClassHandle = obj;
                 except AttributeError as e:
                     print("%s: Could not find a k parameterisation functor which corresponds to the specified k_parameterisation (%s). If this specified correctly in the config file?"%(function, name));
                     print(e.args);
@@ -485,11 +498,11 @@ def get_preprocessing_funcs(funcNamesArg):
 
 #Constructs a fluxengine object based on a set of run parameters.
 #The resulting fe object is ready to run.
-def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, verbose=False):
+def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, customGTVPath=None, verbose=False):
     fe = fluxengine.FluxEngine(runParameters);
             
     #Add the k parameterisation functor
-    kFunctor = build_k_functor(runParameters);
+    kFunctor = build_k_functor(runParameters, customGTVPath);
     if kFunctor != None:
         fe.add_k_parameterisation_component(kFunctor);
     else:
@@ -582,7 +595,8 @@ def generate_datetime_points(startStr, endStr, deltaTime=None, singleDate=False)
 
 #Takes a config file, a list of years and months, and runs the flux engine for each month/year combination.
 def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=False, processLayersOff=True,
-                   takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False):
+                   takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False,
+                   customGTVPath=None):
     function = inspect.stack()[0][1]+", "+inspect.stack()[0][3];
     hostname = socket.gethostname();
     rootPath = path.abspath(path.expanduser(path.join(__file__, "../..")));
@@ -668,7 +682,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
             print(type(e), e.args);
         
         #Create fluxengine object to use runParameters
-        fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, verbose=False);
+        fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, customGTVPath=customGTVPath, verbose=False);
         
         
         #Run fluxengine            

@@ -1,0 +1,34 @@
+\contentsline {section}{\numberline {1}Overview and major changes}{2}%
+\contentsline {subsection}{\numberline {1.1}Execution time}{2}%
+\contentsline {subsection}{\numberline {1.2}Feedback and bug reporting}{3}%
+\contentsline {section}{\numberline {2}Downloading and installing FluxEngine}{3}%
+\contentsline {section}{\numberline {3}Verifying your installation}{4}%
+\contentsline {section}{\numberline {4}Interactive tutorials}{4}%
+\contentsline {section}{\numberline {5}Running FluxEngine v4.0}{5}%
+\contentsline {subsection}{\numberline {5.1}Using the command line tool}{5}%
+\contentsline {subsection}{\numberline {5.2}Driving FluxEngine from your own Python scripts}{6}%
+\contentsline {section}{\numberline {6}Input data requirements}{7}%
+\contentsline {section}{\numberline {7}Creating and modifying configuration files}{9}%
+\contentsline {subsection}{\numberline {7.1}Opening configuration files}{9}%
+\contentsline {subsection}{\numberline {7.2}Configuration file parameters}{9}%
+\contentsline {subsection}{\numberline {7.3}k parameterisation specific variables}{13}%
+\contentsline {subsection}{\numberline {7.4}Tokens in file paths}{14}%
+\contentsline {subsection}{\numberline {7.5}Data layers in detail}{14}%
+\contentsline {subsubsection}{\numberline {7.5.1}Using tokens to reuse selected data}{16}%
+\contentsline {subsubsection}{\numberline {7.5.2}Optional data layer attributes}{16}%
+\contentsline {subsubsection}{\numberline {7.5.3}Data layer preprocessing}{17}%
+\contentsline {subsection}{\numberline {7.6}Working with different temporal resolutions}{17}%
+\contentsline {subsection}{\numberline {7.7}Indexing input data using the temporal dimension}{18}%
+\contentsline {subsection}{\numberline {7.8}Setting output filenames and directory structure}{18}%
+\contentsline {subsection}{\numberline {7.9}Grouping output from multiple time points into a single file}{19}%
+\contentsline {subsection}{\numberline {7.10}Filtering input data using a mask}{19}%
+\contentsline {section}{\numberline {8}Bundled tools}{20}%
+\contentsline {subsection}{\numberline {8.1}Calculating net fluxes with \texttt {fe\_calc\_budgets.py}}{21}%
+\contentsline {subsection}{\numberline {8.2}Using \texttt {fe\_reanalyse\_fco2\_driver.py} to reanalyse data to a consistent temperature and depth}{21}%
+\contentsline {subsection}{\numberline {8.3}Using \texttt {fe\_text2ncdf.py} to create FluxEngine compatible NetCDF files}{22}%
+\contentsline {subsection}{\numberline {8.4}Automatically updating old configuration files}{23}%
+\contentsline {section}{\numberline {9}Guide for developers}{23}%
+\contentsline {subsection}{\numberline {9.1}Adding pre-processing functions}{23}%
+\contentsline {subsection}{\numberline {9.2}Adding k-parametrisation functors}{24}%
+\contentsline {subsubsection}{\numberline {9.2.1}Adding configuration variables}{25}%
+\contentsline {subsection}{\numberline {9.3}Contributing}{26}%

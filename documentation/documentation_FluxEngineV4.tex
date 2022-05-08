@@ -1,0 +1,633 @@
+\documentclass[]{scrartcl}
+
+\usepackage{listings}
+\usepackage{color}
+\usepackage{dirtree}
+\usepackage[obeyspaces]{url}
+
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb, %none, %tb,
+	language=Python,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\newcommand{\conflistingsep}{\vspace{0.40cm}}
+
+%opening
+\title{FluxEngine v4.0.3: Changes and User Guide}
+
+%TODO: run_full_validation.py, download link etc.
+%TODO: Overall structure / execution path of FluxEngine (in developer section)
+%TODO: Planned additions:
+	%more flexible approach to random noise and bias modifiers
+	%modular process indicator layers (individually specified)
+	%move linear and non-linear components of krain to their own parameters??
+	%k_parameterisation as components which can be linked together sequentially
+	%Update to Python 3
+	%variable/configuration dependencies in xml
+%TODO: Check settings.xml for other config variables
+%TODO: Give list of required formats for each input (this will help people choose correct pre-processing functions)
+
+
+\begin{document}
+\maketitle
+\tableofcontents
+\sloppy %prevents certain formatted sections (e.g. \texttt) from encroaching margins.
+
+\section{Overview and major changes}
+The major changes, new to FluxEngine version 4.0 include:
+\begin{itemize}
+	\item \textit{Python version} - With support for Python 2.x stopping in January, all FluxEngine code and tools have been updated to run using Python 3.6+.
+	\item \textit{Installation as a Python package} - FluxEngine v4.0 is provided as a Python package which can be installed from PyPi using Pip. This considerably simplified the installation process for Windows, MacOS and Linux, and full supports the use of virtual environments.
+	\item \textit{Command line tools} - FluxEngine comes with a number of command line tools. These have been updated to separate importable library code (which can be used in custom Python scripts) from the driver scripts which are used to run the tools via the command line. The driver scripts are now automatically added to your operating system's environment path, mean you don't need to \texttt{cd} into the FluxEngine tools directory to use them.
+	\item \textit{Updated interactive tutorials} - Four interactive Jupyter notebook tutorials were added after the release of FluxEngine v3.0. These have been updated for v4.0. These can be found in the \texttt{tutorials} subdirectory.
+	\item \textit{Simplifications to config files} - Configuration files have been further simplified to remove some unnecessary options. In some cases these options were no longer needed, in other cases they could be inferred from the data provided - reducing the potential for user error when creating configuration files.
+\end{itemize}
+
+\subsection{Execution time}
+Simple benchmarking was conducted using an Intel Core i5 2.7GHz processor with 8GB RAM running MacOS El Capitan. A one year (2010) run using the SOCATv4 verification configuration (Nightingale 2000 \texttt{k} parameterisation with process indicator layers off) took approximately 6 minutes to complete using FluxEngine v3.0. This is compared to over 9 minutes for the same configuration using FluxEngine v2.0. This speed-up can be largely attributed to the removal of non-required input data layers. Run time will therefore differ depending on the options specified by configuration files. For example the Takahashi 2009 verification run took just 4 minutes to complete.
+
+\subsection{Feedback and bug reporting} \label{feedback}
+Feedback is greatly appreciated both in terms comments about which aspects of running and using FluxEngine were not intuitive or poorly explained, as well as which features would be useful to you in future releases. These can be e-mailed to Tom Holding at \url{t.m.holding@exeter.ac.uk}. Bugs can be reported via our GitHub page by opening an issue: \url{https://github.com/oceanflux-ghg/FluxEngine/issues} or by e-mailing Tom.
+
+
+\section{Downloading and installing FluxEngine}
+You will need Python 3.6 (or newer) installed before you can install or use FluxEngine. If you don't already have Python installed we recommend installing Anacondas for this because it has excellent support for Windows, MacOS and Linux. Anacondas is specifically designed to be used by scientists and engineers, and comes with useful package and environment management tools. You can download Anacondas from {https://www.anaconda.com/distribution/} (make sure you choose the version for Python 3.6 or newer.
+
+It is also highly recommended that you create a separate virtual environment for FluxEngine. This prevents dependencies from different projects or versions of Python from interfering with one another. For information on how to create and manage virtual environments with Anacondas, see {https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html}.
+
+Once you have Python installed (whether via Anacondas or not) you can install FluxEngine in two ways. For most people, the easiest way is to use Pip - a command line tool for downloading and installing Python modules. The latest stable version of FluxEngine is packaged as a Python module, and can be installed from PyPi with the following command:
+\begin{lstlisting}
+pip install FluxEngine
+\end{lstlisting}
+
+The very latest version, which may not be as stable as the PyPi version, can be downloaded from our GitHub repository \url{https://github.com/oceanflux-ghg/FluxEngine/archive/master.zip}, or if you're a Git user you can clone the repository here: \url{https://github.com/oceanflux-ghg/FluxEngine.git}. The PyPi version will be updated periodically as features are added and tested, or bugs patched. If you download FluxEngine from GitHub you'll need to build the package and install it from your local file system, e.g. by running:
+\begin{lstlisting}
+python setup.py sdist bdist_wheel
+pip install dist/FluxEngine-4.0.dev0.tar.gz
+\end{lstlisting}
+
+
+\section{Verifying your installation} \label{verifying_fluxengine}
+Two verification scripts come bundled with FluxEngine. These make it easy to verify that everything has installed correctly and that FluxEngine is producing correct output. These scripts compare output generated by your local copy of the FluxEngine with a known reference, and will report any discrepancies.
+
+To verify using Takahashi2009 (T09) and/or SOCATv4 data run the following command/s using command line (aka Terminal or Command Prompt). Make sure you have activated the correct virtual environment if you installed FluxEngine using an environment manager. The executable scripts \texttt{fe\_verify\_takahashi09.py} and \texttt{fe\_verify\_socatv4.py} will have been automatically added to your environment path so there is no need to change directory. On Windows you may need to exit and reopen command prompt before running these commands. The output will be stored in a \texttt{verification\_output} subdirectory in your current working directory.
+\begin{lstlisting}
+fe_verify_takahashi09.py
+fe_verify_socatv4.py
+\end{lstlisting}
+
+Verification will take 10-20 minutes and it your installation has been successful you will receive a messages saying that the verification is completed successfully after each command. Note that on Windows, if you have .py files associated with a text editor instead of the Python interpreter, calling one of the FluxEngine command line tools will open the
+script file instead of running it. To fix this, you can either tell Windows to associate
+.py files with the Python interpreter (see {https://docs.python.org/3/faq/windows.
+html\#how-do-i-make-python-scripts-executable} for details). An alternative work-
+around is to run the command line tools by explicitly calling the Python interpreter with
+python prefix added to the command - although you will need to either provide the full
+file path to the script, or cd (change directory) into the directory which contains
+the command line tools.
+
+
+\section{Interactive tutorials}
+FluxEngine comes with interactive Jupyter notebook tutorials which demonstrate the basics of how to setup and run FluxEngine for some simple scenarios. These run in a web browser, and can be started by running \texttt{fe\_tutorials.py} from the command line (make sure you're in the correct virtual environment first). This command starts a Jupyter server and automatically opens the Jupyter hub page for the tutorials in a web browser. In the web browser you'll the contents of the tutorial's directory, with a sub-directory for each tutorial. Within each tutorial sub-directory there is a Jupyter notebook file (ending in \texttt{.ipynb}). Clicking the Jupyter notebook file will open the interactive tutorial.
+
+Note: On some computers, the web browser may not automatically open. If this happens you can copy and paste the link provided in the command prompt / terminal window into a web browser. The tutorials cover:
+\begin{itemize}
+	\item \textit{Tutorial 1} - Introductory topics, including: using Jupyter notebooks, verification, modifying FluxEngine configuration files, adding input data layers, running FluxEngine and plotting output.
+	\item \textit{Tutorial 2} - Working with in situ data, including: using build in tools to reanalyse in situ fCO2 data to a consistent temperature and depth, using the \texttt{fe\_text2ncf.py} tool to converting text formatted data into netCDF files for use with FluxEngine, creating/modifying configuration files to use new data, using the \texttt{fe\_append2insitu.py} tool to append FluxEngine output to the original in situ files.
+	\item \textit{Tutorial 3} - Working with fixed station data, including: a more detailed look at \texttt{fe\_reanalyse\_fco2\_driver.py}, utilising input data with a temporal dimension, configuring FluxEngine to perform unit conversions with a pre-processing function, outputting CO2 flux time series.
+	\item \textit{Tutorial 4} - NO\textsubscript{2} gas fluxes, including: preparing and input data to calculate atmosphere-to-ocean NO\textsubscript{2} fluxes, using pre-processing functions to perform unit conversions and estimate missing parameters, overriding dimension names for individual input data layers, and visualising the effect of surfactant suppression on gas fluxes.
+\end{itemize}
+
+
+\section{Running FluxEngine v4.0} \label{running_fluxengine}
+There are two ways to run FluxEngine: using the command line tools or by importing FluxEngine as a module in a custom Python script. The simplest method is to use the command line tools as these provide enough flexibility for most use-cases.
+
+\subsection{Using the command line tool}
+The command line tool for running FluxEngine is called \texttt{fe\_run.py} and is automatically added to your environment path, so you don't need to be in a particular directory to access it (but you will have to activate the correct virtual environment, if you're using one). To run FluxEngine using this tool, open a terminal window (or Command Prompt) and type \texttt{fe\_run.py} followed by the path to a configuration file, then any other options:
+\begin{lstlisting}
+fe_run.py config [-options]
+\end{lstlisting}
+where \texttt{[-options]} is an option list of options to change how FluxEngine runs. Information on valid options can be listed using \texttt{fe\_run.py -h} to view the help information. The \texttt{-h} flag can be used with any of the command line tolls to view the help information. Some options will require you to specify a value, for example when defining start and stop dates, whereas others will just turn a specific feature on/off.
+
+\begin{lstlisting}
+fe_run.py configs/example_config.conf -l -start_date 2000 -end_date 2010
+\end{lstlisting}
+
+The above command will run FluxEngine using a configuration file called \texttt{example\_config.conf} located in the \texttt{configs} subdirectory of the current working directory. All file paths in FluxEngine can be supplied as absolute paths or relative to the current working directory. Configuration files are used to define the flux calculation in detail, including the flux equation to use, input data, gas transfer parameterisation and output file structure. Next, the command uses three options: The \texttt{-l} option tells FluxEngine to run without process indicator layers (described later). Turning these off reduces the time taken to run and results in smaller output files. The second and third options, \texttt{-start\_date} and \texttt{-end\_date}, tell FluxEngine to calculate fluxes from the year 2000 to the year 2010. More information on using \texttt{fe\_run.py} can be found in the Jupyter tutorials.
+
+Note: A useful option for testing is \texttt{-S1} which will only run FluxEngine for the first time step. This allows you to check the output, and for any error messages, before committing to a longer run.
+
+
+\subsection{Driving FluxEngine from your own Python scripts}
+Some tools are provided which allow you to write Python scripts to run FluxEngine in custom ways. To do this you should import the \texttt{fluxengine} package using \texttt{import fluxengine}. The \texttt{fluxengine.core.fe\_setup\_tools} module contains a function called \texttt{run\_fluxengine}, which allows you to specify custom configuration objects to drive FluxEngine. This module also contains functions for parsing, verifying and modifying configuration files. While these tools are not currently well documented, example use can be found in the \texttt{fe\_run.py} command line tool, and they allow much more control over how FluxEngine runs. For example it is possible to use a single configuration file and overwrite a subset of parameters to run a suite of similar simulations. This also allows FluxEngine to be incorporated into other projects, for example as one step in a larger model or workflow.
+
+The general workflow for initialising and running FluxEngine using these tools involves the following steps:
+\begin{enumerate}
+	\item Parse the config file
+	\item Verify the config file)
+	\item Specify one or more time point to run the FluxEngine
+	\item Create a set of run parameters (these are derived from the verified config file but are specific to the date/time you are using)
+	\item Run FluxEngine for a specific date/time
+	\item Check return code
+\end{enumerate}
+
+Steps 4-6 will be repeated for each time point you want to run the FluxEngine for. Various functions are available in \texttt{fluxengine.core.fe\_setup\_tools} to help with each of these steps. For an example of how they are used to achieve each of these steps see the \texttt{run\_fluxengine} function in the same file.
+
+Note that these tools are intended for use by users who are proficient in Python. Please report any bugs (see section \ref{feedback}).
+
+
+\section{Input data requirements}
+Input data are specified in the configuration file and are conceptualised as 'data layers' (see section \ref{defining_data_layers} for details on how to specify data layers in the configuration file). The minimum required input data needed to run FluxEngine are:
+\begin{itemize}
+	\item Sea surface temperature (sub-skin, skin or both).
+	\item Atmospheric CO\textsubscript{2} (either as Molar fraction in dry air, partial pressure in dry air or concentration).
+	\item CO\textsubscript{2} in the surface water (either partial pressure or concentration).
+	\item Air pressure at sea level.
+	\item Sea surface salinity.
+	\item Any data required by your chosen gas transfer velocity (k) parameterisation (typically wind speed and the second/third moment of wind speed).
+\end{itemize}
+
+There are various other optional inputs, some of which are requires only when using specific functionality. Table \ref{input_datalayers_table} lists the data layers which are recognised by FluxEngine, whether they are required or optional, and their expected units. Additional input data layers can be added by simply specifying them in the configuration file in the same way you would define any other input data layer (see section \ref{defining_data_layers}). Doing this will automatically make them available to any custom FluxEngine code. This is useful when additional data is used by custom gas transfer parameters or pre-processing functions.
+
+\hspace{-2cm}
+\begin{table}
+	\begin{tabular}{|p{4cm}|p{5cm}|p{2cm}|p{5cm}|}
+		\textbf{name} & \textbf{description} & \textbf{units} & \textbf{required?} \\
+		\texttt{sstskin} & sea surface skin temperature & $^{\circ}K$ & if \texttt{sstfnd} not supplied \\
+		\texttt{sstfnd} & sea surface foundation temperature & $^{\circ}K$ & if \texttt{sstskin} not supplied \\
+		\texttt{pco2\_sst} & Ocean temperature at the point of CO$_2$ measurement. Only used for calculations of CO2 flux & $^{\circ}C$ & optional \\
+		
+		\texttt{vgas\_air} & Molar fraction of the flux gas (e.g. CO$_2$) in dry air. & $\mu mol~mol^{-1}$ or $ppm$ & Required if \texttt{pgas\_air} and partial pressure (\texttt{pgas\_air}) are not supplied. \\
+		\texttt{pgas\_air} & partial pressure of the flux gas (e.g. CO$_2$) in dry air & $\mu atm$ & Only used in Takahashi verification. \texttt{gas\_air} not supplied. Not required if concentration or molar fraction (\texttt{vgas\_air}) data are supplied. \\
+		\texttt{pgas\_sw} & partial pressure of the flux gas (e.g. CO$_2$) (aqueous) & $\mu atm$. &  Not required if concentration data are supplied. \\
+		
+		\texttt{conca} & concentration of the flux gas (e.g. CO$_2$) at the interface & $g m^{-3}$. & required if not using fugacity or partial pressure inputs \\
+		
+		\texttt{concw} & concentration of the flux gas (e.g. CO$_2$) (sub-skin) & $g m^{-3}$. & required if not using fugacity or partial pressure inputs \\
+		
+		\texttt{pressure} & air pressure at sea level & $mbar$ & always required \\
+		\texttt{salinity} & surface salinity & none & always required \\
+		\texttt{ice} & fraction ice coverage & none & optional \\
+		\texttt{pressure} & air pressure at sea level & $mbar$ & always required \\
+		
+		\texttt{windu10} & wind speed & $ms^{-1}$ & by most gas transfer velocity parameterisations \\
+		\texttt{windu10\_moment2} & wind speed second moment & ~ & by most gas transfer velocity parameterisations \\
+		\texttt{windu10\_moment3} & wind speed third moment & ~ & by some gas transfer velocity parameterisations \\
+		\texttt{sigma0} & radar backscatter & $dB$ & by some gas transfer velocity parameterisations \\
+		\texttt{sig\_wv\_ht} & significant wave height & $m$ & by some gas transfer velocity parameterisations \\
+		
+		\texttt{rain} & precipitation & $mm~day^{-1}$ & when including precipitation effects (e.g. \texttt{rain\_wet\_deposition} or \texttt{bias\_sstskin\_due\_rain})\\
+		
+		\texttt{biology} & chlorophyll-a concentration & ~ & when using biology process indicator layer \\
+		%\texttt{suspended\_particles} & ??? & ??? & ??? \\
+		\texttt{sstgrad} & sea surface temperature gradient & $^{\circ}K~m^{-1}$ & when using sst gradients process indicator layer \\
+		
+		\texttt{mask} & multipurpose mask used to select specific region/s to compute gas fluxes for & n/a & not required \\
+		
+		\texttt{atlantic\_ocean\_mask} & Atlantic Ocean mask & none & when using Atlantic Ocean region indicator layer \\
+		\texttt{pacific\_ocean\_mask} & Pacific Ocean mask & none & when using Pacific Ocean region indicator layer \\
+		\texttt{southern\_ocean\_mask} & Southern Ocean mask & none & when using Southern Ocean region indicator layer \\
+		\texttt{indian\_ocean\_mask} & Indian Ocean mask & none & when using Indian Ocean region indicator layer \\
+		\texttt{longhurst\_mask} & Longhurst provinces mask & none & when using Longhurst province indicator layer \\
+	\end{tabular}
+	\caption{Input data layers, units and conditions for inclusion.}
+	\label{input_datalayers_table}
+\end{table}
+
+%TODO: Section on output data layers?
+
+\clearpage{}
+
+
+\section{Creating and modifying configuration files}
+\subsection{Opening configuration files}
+Configuration files are stored as plain text files with a \texttt{.conf} file extension. This means they can be opened in any text editor. If you're using Windows you may find that when you open a configuration file all of the information is stored on a single line, making it difficult to work with. To avoid this you should open the configuration file in a text editor which can understand Unix line endings (e.g. not notepad). There is a free lightweight piece of software called \textit{Notepad++} is perfect for this (\url{https://notepad-plus-plus.org/}). \textit{Sublime Text} is an excellent feature rich but lightweight cross-platform text editor (\url{https://www.sublimetext.com/}).
+
+The order in which parameters are specified in configuration files doesn't matter with the exception of the first line which must specify the version of FluxEngine that the configuration file is designed for. This takes the form \texttt{\#?FluxEngineConfigVersion:version}, where \texttt{version} is replaced with the version number. For example, for version 4.0 you would use \texttt{\#?FluxEngineConfigVersion:4.0}. We aim for back compatibility of configuration files, but this is not always possible and the change between version 3.x and 4.0 introduced some minor incompatibilities. A tool is provided to automatically make old configuration files compatible with newer versions of FluxEngine, see section \ref{updating_configuration_files}.
+
+Example annotated configuration files can be found in the \texttt{configs} directory of your FluxEngine installation path. Parameters are specified in the config file by name followed by an equals sign (\texttt{=}) and then the value. Note that in contrast to previous versions the equals sign is now required (as of version 3.0), but this means that parameter values can now contain spaces. Both variable names and values are case sensitive, and comments can be added using the hash (\texttt{\#}) character. Variables can be specified in any order although it is convenient to group related variables together. An example definition of two parameters is given below:
+\begin{lstlisting}
+varname1 = 100.0
+varname2 = test variable #trailing and preceeding whitespace is ignored
+\end{lstlisting}
+
+\subsection{Configuration file parameters}
+A short summary of each parameter is given below.
+
+%flux_calc
+\conflistingsep \noindent
+\texttt{flux\_calc}\\
+Selects the flux equation to use. Valid options are:
+\begin{itemize}
+	\item \texttt{bulk} - i.e. $F = k\alpha_{_W} ({pCO_2}_{_W} - {pCO_2}_{_A})$, where $F$ is the air-sea flux, $k$ is the gas transfer velocity, $\alpha_{_W}$ is the solubility of the gas in sea water, ${pCO_2}_{_W}$ is the partial pressure of CO\textsubscript{2} in the surface sea water and ${pCO_2}_{_A}$ is the partial pressure of CO\textsubscript{2} in the atmosphere.
+	\item \texttt{rapid} - As described in Woolf et al. (2016) \textit{Journal of Geophysical Research: Oceans}. $F = k(\alpha_{_W}{pCO_2}_{_W} - \alpha_{_A}{pCO_2}_{_A})$.
+	\item \texttt{equilibrium} - As described in Woolf et al. (2016) \textit{Journal of Geophysical Research: Oceans}.
+\end{itemize} %TODO: description of the flux calc options, equations and references
+
+If you choose to use supply atmospheric and ocean gas inputs as a concentration (rather than fugacity or partial pressure), the choice of \texttt{flux\_calc} is superseded by the concentration data. For example, if you have supplied both \texttt{conca} (interface concentration) and \texttt{concw} (sub-skin concentration), and they have been calculated using the same solubility, then the \texttt{rapid} calculation is equivalent to the \texttt{bulk}. To avoid this \texttt{conca} should be calculated using solubility at the skin layer, while \texttt{concw} should be calculated using solubility from the sub-skin. For more information, see Woolf et al. (2016) \textit{Journal of Geophysical Research: Oceans}.
+
+\conflistingsep \noindent
+\texttt{temporal\_resolution}\\
+This is an optional parameter which defines the temporal resolution for which the flux calculation is computed. If the parameter is not defined in the configuration file it defaults to monthly. Different temporal resolutions should be defined using the a \texttt{D hh:mm} format to specify the length of timesteps in days, hours and minutes respectively. A full explanation, with examples, is given in section \ref{different_temporal_resolutions}.
+
+%use_sstskin, use_sstfnd and cool_skin_difference
+\conflistingsep \noindent
+\texttt{sst\_gradients}, \texttt{cool\_skin\_difference}\\
+Valid values for \texttt{sst\_gradients} are \texttt{yes} or \texttt{no}. If one of \texttt{sstskin} or \texttt{sstfnd} input data layers are not specified in the configuration file, and \texttt{sst\_gradients} is set, then the missing SST input is estimated using the following equation:
+\begin{lstlisting}[frame=none]
+sstskin = sstfnd - cool_skin_difference
+\end{lstlisting}
+where \texttt{cool\_skin\_difference} is the difference in temperature between the foundation layer and the skin layer (in Kelvin). The default is 0.17K (see Donlon et al. 2002).
+
+\conflistingsep \noindent \texttt{saline\_skin\_value}\\
+Saline skin value is added to salinity. It is an optional entry and will default to $0.0$ if not specified.
+
+\conflistingsep \noindent \texttt{axes\_data\_layer}, \texttt{latitude\_prod} \texttt{longitude\_prod} \texttt{time\_prod}\\
+Specifies the data layer from which to extract the latitude, longitude and time data from. \texttt{axes\_data\_layer} must be the name of a data layer, e.g. \texttt{sstskin}, and all other input data layers will have their dimensions checked for consistency with the named data layer.
+
+\conflistingsep \noindent \texttt{pco2\_reference\_year}, \texttt{pco2\_annual\_extrapolation} \\
+These are optional entries which can be used to specify a reference year from which pCO\textsubscript{2} / fCO\textsubscript{2} can be adjusted. This applies an annual correction according to
+\begin{lstlisting}
+pco2_increment = (year - pco2_reference_year) * pco2_annual_correction
+\end{lstlisting}
+
+\conflistingsep \noindent \texttt{datalayername\_path}, \texttt{datalayername\_prod} \\
+These define each input data layer. A full explanation with worked examples is provided below (section \ref{defining_data_layers}).
+
+\conflistingsep \noindent \texttt{random\_noise\_windu10}, \texttt{random\_noise\_sstskin}, \texttt{random\_noise\_sstfnd}, \texttt{random\_noise\_pco2} \\
+These are optional variables which control whether random noise is added for each of their respective data layers. Valid values are \texttt{yes} or \textit{no}. Note that currently the magnitude of noise must be modified directly in the source code (this is not advised unless absolutely necessary).
+
+\conflistingsep \noindent \texttt{bias\_datalayername}, \texttt{bias\_datalayername\_value}\\
+Setting \texttt{bias\_datalayername} will add a constant value (defined by \texttt{bias\_datalayername\_value}) to the named data layer. This is applied after any random noise is added. Currently the following data layer names are supported: \texttt{windu10}, \texttt{sstskin}, \texttt{sstfnd} and \texttt{pco2}. Valid options for \texttt{bias\_datalayername\_value} are \texttt{yes} or \texttt{no} and default to \texttt{no} if not supplied. \texttt{bias\_datalayername\_value} must be a valid numeric value and defaults to $0.0$ if not supplied.
+
+\conflistingsep \noindent \texttt{bias\_k}, \texttt{bias\_k\_percent}, \texttt{bias\_k\_value}, \texttt{bias\_k\_biology\_value}, \texttt{bias\_k\_wind\_value}\\
+These variables control the bias applied to \texttt{k} (the gas transfer velocity). \texttt{bias\_k} and \texttt{bias\_k\_percent} but be set to either \texttt{yes} or \texttt{no} and control whether any bias is applied at all and whether the bias is added as an absolute value or as a percentage of the original value, respectively. Default values for both of these variables are \texttt{no}. \texttt{bias\_k\_value} requires a numeric variable (the default is $0.0$) and controls the magnitude of the bias (whether as a percentage or absolute value). Bias is only added to \texttt{k} if the value of \texttt{windu10} at the same point in space is above a threshold specified by \texttt{bias\_k\_wind\_value} (the default value is $0.0$). Similarly the corresponding value for \texttt{biology} is below \texttt{bias\_k\_biology\_value} (the default is $0.0$).
+
+\conflistingsep \noindent \texttt{k\_parameterisation}\\
+This controls the way that the gas transfer velocity (\texttt{k}) is calculated. FluxEngine comes bundled with a number of \texttt{k} 'functors' - self-contained Python classes which take data layers as input and write output to one or more data layers (typically the \texttt{k} datalayer). For a list of available parameterisations you can run the \texttt{fe\_run.py} script with the \texttt{-list\_parameterisations} option. Alternatively you can see the Python implementation of each \texttt{k} functor in \texttt{rate\_parameterisation.py} file located in the \texttt{fluxengine.core} directory. These can be referred to by name in configuration files. User defined parameterisations can be added to this file and assigned to \texttt{k\_parameterisation} by name in the config file. Before writing new \texttt{k} functors you should read the guide for developers (section \ref{developer_notes}), as this describes best practices and provides information on potential pitfalls.
+
+\conflistingsep \noindent \texttt{schmidt\_parameterisation}\\
+This sets the Schmidt number parameterisation to use. There are currently two options \texttt{schmidt\_Wanninkhof1992} (the default) and \texttt{schmidt\_Wanninkhof2014}. These are based  on Wanninkhof's 1992 \cite{Wanninkhof1992} and updated 2014 \cite{Wanninkhof12014} Schmidt number parameterisations respectively.
+
+\conflistingsep \noindent \texttt{kb\_asymmetry}\\
+This is an optional parameter which controls the relative weighting given to the atmospheric concentration when calculating the bubble component (\texttt{kb}) of the gas transfer velocity. This allows the user to scale the relative importance of direct and bubble components when calculating total gas transfer velocity, such that larger values increase the importance of the bubble component. This is only used when \texttt{k\_parameterisation} is set to \texttt{kt\_OceanFluxGHG}. If it is not specified it defaults to \texttt{1.0} (no asymmetry).
+
+\conflistingsep \noindent \texttt{bias\_sstskin\_due\_rain}, \texttt{bias\_sstskin\_due\_rain\_value}, \texttt{bias\_sstskin\_due\_rain\_intensity}, \texttt{bias\_sstskin\_due\_rain\_wind}\\
+These control whether and how rain (the \texttt{rain} data layer) influences sea surface temperature. \texttt{bias\_sstskin\_due\_rain\_value} turns this feature on or off (valid values are \texttt{yes} and \texttt{no}, with the default being \texttt{no}). If this feature is turned on, a constant bias (\texttt{bias\_sstskin\_due\_rain\_value}, default value of $0.0$) will be added to sea surface temperature anywhere that \texttt{rain} intensity is greater than \texttt{bias\_sstskin\_due\_rain\_intensity} (default value \texttt{0.0}) and wind intensity (the \texttt{windu10} data layer) is less than \texttt{bias\_sstskin\_due\_rain\_wind} (default is $0.0$).
+
+\conflistingsep \noindent \texttt{rain\_wet\_deposition}\\
+This option enables wet deposition. Valid values are \texttt{yes} or \texttt{no}, and the default value is \texttt{no}.
+
+\conflistingsep \noindent \texttt{k\_rain\_linear\_ho1997}\\
+This option enables a linear additive gas transfer velocity term due to rain. A description of the method can be found in Ashton \textit{et al.} (2016) . Valid values are \texttt{yes} or \texttt{no}, and the default value is \texttt{no}. %Ho1997 reference too?
+
+\conflistingsep \noindent \texttt{k\_rain\_nonlinear\_h2012}\\
+This option enables a nonlinear additive gas transfer velocity term due to rain. A description of the method can be found in Ashton \textit{et al.} (2016) and Harrison \textit{et al.} (2012). Valid values are \texttt{yes} or \texttt{no}, and the default value is \texttt{no}.
+
+\conflistingsep \noindent \texttt{GAS}\\
+This is an optional parameter which specifies the gas to calculate the air-sea flux of. Valid options are \texttt{co2}, \texttt{n2o} and \texttt{ch4}. If not defined then the default \texttt{co2} will be used.
+
+\conflistingsep \noindent \texttt{output\_dir}\\
+This specifies the root directory that will be used for writing output to. If the directory doesn't exist it will be created. Any subdirectories which are used to organise the output will be created in this folder.
+
+\conflistingsep \noindent \texttt{output\_structure}\\
+This is an optional parameter which defines the way output will be organised into subdirectories. Tokens can be used in this definition of \texttt{output\_structure}. The default value is \texttt{<YYYY>/<MM>}, which will create a directory for each year that FluxEngine runs, and subdirectories for each month of each year. The resulting netCDF files will therefore be organised first by year, then by month. This is the default output directory structure because it is same as that required by the \texttt{ofluxghg\_net\_budget.py} tool (see the section \ref{tools}) to make running this tool convenient.
+
+\conflistingsep \noindent \texttt{output\_file}\\
+This is an optional parameter which defines the names of the output netCDF files produced by FluxEngine. Tokens can be used in the definition (see section \ref{tokens}). If it is not defined the default value of \texttt{OceanFluxGHG-month<MM>-<mmm>-<YYYY>-v0} is used. If the file already exists it will be overwritten.
+
+\conflistingsep \noindent \texttt{output\_temporal\_chunking}\\
+This is an optional parameter which tells FluxEngine to combine output into fewer files. The default value of \texttt{1} means that each output file will contain one timestep. Setting to, for example, \texttt{12} means that one output file will be created for every 12 time steps and FluxEngine output will be placed in a temporal dimension of the output netCDF files. See section \ref{output_chunking} for examples. The time range covered by each file depends on the temporal resolution (see \texttt{temporal\_resolution} or section \ref{temporal_resolutions}).
+
+Full meta data, including a list of data layer names recognised by FluxEngine, default values and expected data types can be accessed in the \texttt{settings.xml} file in the \texttt{fluxengine\_src} directory. \textit{Note: It is strongly recommended that you do not modify this file.}
+
+
+\subsection{k parameterisation specific variables}
+Several \texttt{k\_parametrisation} options require additional variables to be specified which change the way that the gas transfer velocity is calculated. These must be defined in the configuration file. In particular \texttt{k\_generic} requires a Schmidt number to be defined \texttt{k\_generic\_sc} (valid values are $600.0$ and $660.0$) as well as weightings for each order of the generic gas transfer velocity equation, i.e. \texttt{k\_generic\_a0}, \texttt{k\_generic\_a1}, \texttt{k\_generic\_a2} and \texttt{k\_generic\_a3}.
+
+\texttt{kt\_OceanFluxGHG}, \texttt{kt\_OceanFluxGHG\_kd\_wind} and \texttt{k\_Wanninkhof2013} require that \texttt{kb\_weighting} and \texttt{kd\_weighting} be specified. These define the weighting for the bubble and direct components of the gas transfer velocity, as described in Goddijn-Murphy et al., (2015). %TODO: CHECK REFERENCE
+
+Other custom or third-party k parametrisations may require other variables to be specified and you should consult any documentation or guidance specific to the parametrisation being used, or examining the initialiser function (\texttt{\_\_init\_\_}) of the relevant parametrisation functor the \texttt{rate\_parameterisation.py} file.
+
+
+\subsection{Tokens in file paths} \label{tokens}
+Configuration files need to define a number of file paths. These include the location of various input data layers, the root output directory (\texttt{output\_dir}), output directory structure (\texttt{output\_structure}) and output file names ({\texttt{output\_file}). These file paths will often need to change depending on the date, or even time, that the data corresponds to. FluxEngine uses several 'tokens' which allow time information to be substituted into file paths (or file names) to allow these to change depending on the point in time being analysed. Tokens are always prefixed by a less-than sign (\texttt{<}) and suffixed by a greater than sign (\texttt{>}). The following tokens are supported:
+\begin{itemize}
+	\item {\texttt{<YYYY>}-four digit year, e.g. \texttt{2010}}
+	\item {\texttt{<YY>}-two digit year, e.g. \texttt{10} for 2010}
+	\item {\texttt{<MM>} - two digit numerical month, e.g. \texttt{01} for January}
+	\item {\texttt{<Mmm>} - three character abbreviation of the month, e.g. \texttt{Jan} for January}
+	\item {\texttt{<MMM>} - three character upper-case abbreviation of the month, e.g. \texttt{JAN} for January}
+	\item {\texttt{<mmm>} - three character lower-case abbreviation of the month, e.g. \texttt{jan} for January}
+	\item {\texttt{<DD>} - two digit day of the month, e.g. \texttt{01} for the 1st of the month. Defaults to \texttt{01} when \texttt{daily\_resolution} is set to \texttt{no}}
+	\item {\texttt{<DDD>} - three digit day of the year, e.g. \texttt{123} for the 3rd May (\texttt{124} if it is a leap year). Defaults to the first of the month when temporal resolution is monthly}
+	\item {\texttt{<hh>} - two digit hour specification in 24-hour format, e.g. \texttt{06} for six AM.}
+	\item {\texttt{<mm>} - two digit minute specification, e.g. \texttt{05} for five minutes past the hour.}
+	\item {\texttt{<FEROOT>} - used by some internal scripts and tutorials to refer to the root directory to which FluxEngine was installed. This is used, for example, to access data that comes packaged with FluxEngine.}
+\end{itemize}
+
+
+\subsection{Data layers in detail} \label{defining_data_layers}
+The term 'data layer' is used to describe a geographical dataset and any accompanying metadata. Data layers are used by FluxEngine for inputs, intermediate products and outputs. Configuration files specify all the input data layers which will be needed for the flux calculation, but you only need to specify the input data layers which will be used given the specific options you’ve selected. For example you do not need to you do not need to specify biology input files if the 'process indicator layers off' is set using the \texttt{-l} flag, and you do not need to specify a sea surface skin temperature data layer if you set \texttt{sst\_gradients = no} and supply specify data for \texttt{sstfnd} in the config file. If you try to run the FluxEngine without a required input you’ll get an error message telling you which input data layer(s) are missing. If you specify data layers which are not needed for the calculation options specified they will simply be added as an extra variable in the netCDF output file(s) and no error messages or warnings will be displayed. This can be useful if you want additional data packaged with the output files for convenience when performing further analysis steps after running FluxEngine. This is used with the \texttt{ice} data layer, for example. which isn't used in the main flux calculation, but it is useful to have ice coverage data in the output files so that the net budgets tool can use it.
+
+\subsubsection*{Data layer paths}
+To specify an input data layer the configuration file must specify a minimum of two attributes: a path to the netCDF / .nc file, and a prod (variable name within the netCDF file). The path can be absolute or relative. Windows users might experience some problems using absolute paths. If you have problems with this please let me know (tom: t.m.holding@exeter.ac.uk) and I’ll try to fix it. Path are specified in the config file using the data layer name with the \texttt{\_path} suffix, like so:
+\begin{lstlisting}
+datalayername_path = path/to/data/filename.nc
+\end{lstlisting}
+
+One important change in this version of FluxEngine is that you should specify the path including a the filename for the netCDF file, rather simply a directory. This provides greater flexibility when working with data from many different sources. To help with this two standard Unix glob patterns can be used to specify patterns of file names: \texttt{?} and \texttt{*}. These will match any single character/digit, or any number of characters/digits (including no characters), respectively. For example to specify the location of ice coverage data you could use:
+\begin{lstlisting}
+    ice_path = path/to/data/20100101_???-ice*.nc
+\end{lstlisting}
+
+This will match any file with a name that starts with \texttt{20100101\_} followed by any three characters/digits, then the characters \texttt{-ice}, followed by any number of characters/digits and ending in \texttt{.nc}. Note that glob patterns cannot be used to match directory names and can only be used to specify the pattern that FluxEngine will use to match the netCDF file itself.
+
+In most cases the file you want to use as input will depend on the point in time that you are analysing. In this case you can use tokens (described in section \ref{tokens}) to specify date and time related changes to file or directory names. For example, if your ice coverage data files are prefixed with the year and month they were recorded, and organised into subdirectories for each year, \texttt{ice\_path} might be defined like this:
+\begin{lstlisting}
+ice_path = path/to/data/<YYYY>/<YYYY><MM>_???-ice*.nc
+\end{lstlisting}
+
+Here \texttt{<YYYY>} will be replaced with the four digit year (e.g. \texttt{2010} for 2010) and \texttt{<MM>} will be replaced with the two digit representation of the month (e.g. \texttt{01} for January).
+
+\subsubsection*{Data layer products}
+The second required attribute of a data layer is its product (or 'prod'). This is the name of the variable within the netCDF file. It is specified in the configuration file by using the \texttt{\_prod} suffix with the data layer name. The minimal specification (in this case for the 'ice' data layer) could therefore looks like this:
+\begin{lstlisting}
+ice_path = path/to/data/<YYYY>/<YYYY><MM>_???-ice*.nc
+ice_prod = sea_ice_fraction_mean
+\end{lstlisting}
+
+\subsubsection{Using tokens to reuse selected data}
+Tokens can be used in directory names allowing your to reuse data for selected inputs. For example, you may have data for multiple years of sea surface temperature, but only one year's worth of salinity data (or this may be a multi-year average). In this case you can to reuse the salinity data for each year you have of other data. To do this simple specify the file path of the salinity data by hard-coding the year string into the file path, while specifying other data layers using tokens as usual. This could look as follows:
+\begin{lstlisting}
+salinity_path = path/to/data/2010/2010<MM>_woa-salinity.nc
+sstfnd_path = path/to/data/<YYYY>/<YYYY><MM>_OCF-SST-GLO-1M-???-REYNOLDS.nc
+\end{lstlisting}
+
+%\subsubsection{Using tokens to match data sampled at different temporal resolutions}
+%Describe e.g. a mix of monthly and daily resolution data.
+
+
+\subsubsection{Optional data layer attributes}
+There are several optional attributes which can be configured for each data layer. They can be set using the same \texttt{datalayername\_suffix} notation used for the path and products above. These are:
+\begin{itemize}
+	\item {\texttt{\_stddev\_prod} - product name of a variable containing standard deviation data for the data layer}
+	\item {\texttt{\_count\_prod} - product name containing the number of samples used to calculate standard deviation}
+	\item {\texttt{\_netCDFName} - the variable name used to label this data layer in the output netCDF file/s}
+	\item {\texttt{\_units} - a string description of the units}
+	\item {\texttt{\_minBound} - minimum allowed value)}
+	\item {\texttt{\_maxBound} - maximum allowed value}
+	\item {\texttt{\_standardName} - short standardised description of the variable/data layer}
+	\item {\texttt{\_longName} - human readable description of the variable/data layer}
+	\item {\texttt{\_temporalChunking} - the number of time points in each file (see section \ref{temporal_dimension_indexing})}
+	\item {\texttt{\_temporalSkipInterval} - sets skip interval between temporal indices}
+	\item {\texttt{\_timeDimensionName} - specify the name of the time dimension (default is \texttt{time})}
+\end{itemize}
+
+For example to overwrite the \texttt{minBound} and \texttt{maxBound} attributes for the ice coverage data layer as well as rename it in the output files you can add the following lines to a configuration file:
+\begin{lstlisting}
+ice_minBound = 0.0
+ice_maxBound = 100.0
+ice_netCDFName = ice_percent
+\end{lstlisting}
+
+Any value outside of this range will be replaced with missing values.
+
+Default metadata values are stored in \texttt{settings.xml} in the \texttt{fluxengine\\core} directory. \texttt{settings.xml} is only mentioned as the definitive place to look up default values and shouldn't be modified because this would change the values for all subsequent FluxEngine runs, and can lead to difficult to detect errors in future runs. If you need to change one of these values you should always overwrite it using a configuration file instead (as shown above).
+
+\subsubsection{Data layer preprocessing}
+It is sometimes convenient to apply some pre-processing to a data layer before it is used for any computations. There is an additional data layer attribute which allows the user to specify a list of functions to be applied immediately after the data layer read in. A number of simple preprocessing functions are bundled with FluxEngine (these can be listed by running \texttt{ofluxghg\_run.py} with the \texttt{-list\_preprocessing} flag, or by viewing the functions directly in the \texttt{data\_preprocessing.py} file in the \textit{fluxengine\_src} directory). For users comfortable with python, custom pre-processing functions can be added to \texttt{data\_preprocessing.py}. These will be automatically detected when running FluxEngine available to use in configuration files. Before modifying this file you should familiarise yourself with the guide for developers notes in section \ref{developer_notes}.
+
+To specify pre-processing functions the \texttt{\_preprocessing} suffix is used with a list of function names separated by commas. Each function will be applied in the order it appears in this list. For example adding the following line to a config file will first transpose the 2D matrix, then convert from Kelvin to Celsius:
+\begin{lstlisting}
+sstskin_preprocessing = transpose, kelvin_to_celsius
+\end{lstlisting}
+
+Note that no checks are made to ensure the original values are in Kelvin to begin with, and it is up to the user to ensure that any pre-processing functions are applied appropriately.
+
+\subsection{Working with different temporal resolutions} \label{temporal_resolutions}
+The temporal resolution over which the FluxEngine will undertake the flux computation is, by default, one month. This can be changed by defining a new time step in the configuration file by setting \texttt{temporal\_resolution}. The required format is \texttt{D hh:mm} for the number of days, hours and minutes between time steps, and it is important that the hour and minute components are exactly two digits (so there should be a preceding \texttt{0} if necessary). Four examples are given below, which define a time step of one week, twelve hours, one hour and 30 minutes, and five minutes, respectively:
+\begin{lstlisting}
+temporal_resolution = 7 00:00 #one week timestep
+temporal_resolution = 0 12:00 #twelve hour timestep
+temporal_resolution = 0 01:30 #one hour and 30 minutes time step
+temporal_resolution = 0 00:05 #five minute time step
+\end{lstlisting}
+
+The temporal resolution should not be higher (smaller time step) than that of the highest resolution input data, otherwise FluxEngine will duplicate some calculations. If temporal resolution is set lower (larger time step) than that of your highest resolution input data then FluxEngine will not use all of this data. Depending on your requirements, this may be what you want, but could indicate that higher resolution inputs should be re-analysed to create a matching data set which has a lower temporal resolution.
+
+When working with higher temporal resolutions than the default monthly resolution, it will be necessary to modify the output filenames and/or the directory structure. Leaving them as the default is likely to result in FluxEngine overwriting some of the previous outputs. See section \ref{output_filenames} for examples of how to do this.
+
+%TODO: Figures a and b (too high resolution), (too low resolution).
+
+
+\subsection{Indexing input data using the temporal dimension} \label{temporal_dimension_indexing}
+Data are sometimes formatted as netCDF files which utilise a temporal dimension in addition to two spatial dimensions (longitude and latitude). Configuration options are provided to allow FluxEngine to utilise input data which use a temporal dimension. The \texttt{datalayername\_temporalChunking} option can be set for any input data layer and indicates how many time steps are in a single input file. It is therefore important to set this in the context of the temporal resolution over which FluxEngine will be run. For example, if you are using FluxEngine to calculate gas fluxes with a daily resolution and your input wind speed data files provide daily resolution but contain a single file for each week, your configuration file should include something like the following:
+
+\begin{lstlisting}
+temporal_resolution = 1 00:00 #daily temporal resolution
+windu10_path = path/to/wind_data<DDD>.nc
+windu10_prod = windspeed_mean
+windu10_temporalChunking = 7 #Each file contains 7 time points
+\end{lstlisting}
+
+
+\subsection{Setting output filenames and directory structure} \label{output_filenames}
+You can define the output file names be setting \texttt{output\_file} in the configuration file. For example, when using a temporal resolution of one day you'll need to ensure output file names are unique so they should include the day that the output corresponds to. Below are two possible ways you could define this:
+\begin{lstlisting}
+output_file = OceanGluxGHG_output_<YYYY>_<DDD>.nc #year and day of the year
+output_file = OceanGluxGHG_output_<YYYY>_<MM>_<DD>.nc #year, month and day of the month
+\end{lstlisting}
+
+
+%TODO: output file structure
+Similarly, it might be convenient for FluxEngine to use a different directory hierarchy to organise the output. The default output directory structure is \texttt{<YYYY>/<MM>} to be compatible with the flux budgets tool, but to define a custom output directory structure you can specify \texttt{output\_structure} in the configuration file. This can be another way to ensure that output files have unique file paths/names. For example, to group output files by year and day, you could use
+\begin{lstlisting}
+output_structure = <YYYY>/<DDD> #e.g. 1991/019 for 19th Jan 1991
+\end{lstlisting}
+
+or to group output files by year and month, then by day
+\begin{lstlisting}
+output_structure = <YYYY>_<MM>/<DD> #e.g. 1991_01/19 for 19th Jan 1991
+\end{lstlisting}
+
+\subsection{Grouping output from multiple time points into a single file} \label{output_chunking}
+FluxEngine output for more than one time point can be written to a single file. In this case each netCDF variable will contain a temporal dimension. This can be useful when running FluxEngine at high temporal resolution to prevent generating hundreds or thousands of separate files. To do this, set the \texttt{output\_temporal\_chunking} option in the configuration file, which defines how many time steps to group into each file. For example, if you're running FluxEngine with an hourly resolution, you might want to have a single file per day. This can be achieved by including
+\begin{lstlisting}
+output_temporal_chunking = 24 #24 timesteps in each output file
+\end{lstlisting}
+
+\subsection{Filtering input data using a mask}
+You can specify a mask by specifying the path and prod for the \texttt{mask} data layer. The mask must have the same spatial dimensions as the input data. It specifies for which grid cells the flux calculation should be performed (where the mask is non-zero) and which grid cells should be ignored (where the mask is equal to zero). The usual data/time tokens can be used when specifying the path of a mask, allowing different masks to be used for different time points (e.g. if filtering out grid cells with high wind speed). An example configuration file snippet to define a mask is as follows:
+\begin{lstlisting}
+mask_path = data/mask/<YYYY><MM>_maskfile.nc
+mask_prod = high_winds
+\end{lstlisting}
+
+
+
+\section{Bundled tools} \label{tools}
+FluxEngine comes bundled with a number of command line tools. These are designed to be used in conjunction with FluxEngine, and perform closely related tasks such as converting or merging data files, reanalysing fCO\textsubscript{2} data, or calculating monthly/annual net flux budgets. The tools are added to your environment path when FluxEngine is installed so can be accessed via the command line from any directory (remember to activate the correct virtual environment). A description of how to use each tool, and a list of each their command line options, can be viewed by running the tool with the \texttt{-h} or \texttt{-help} option. A short description of each tool is given below.
+
+\vspace{0.25cm} \noindent
+\vspace{0.25cm} \noindent
+\texttt{fe\_run.py} - Command line tool for running FluxEngine using the settings specified in a configuration file.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_calc\_budgets.py} - Calculates integrated net air-sea gas fluxes from FluxEngine output.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_update\_config.py} - Updates old FluxEngine configuration files to be valid for the current version. Works with configuration files from FluxEngine v3.0 and newer.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_resample\_netcdf.py} - Resamples a $1^{\circ}$~by $1^{\circ}$~netCDF data to a $5^{\circ}$~by $4^{\circ}$~grid. This tool is kept for historic reasons as it was used to resample the input data for validating against published Takahashi climatology.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_text2ncdf.py} - Converts in situ data to a netCDF file. See section \ref{text2ncdf_example} for example usage.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_ncdf2text.py} - Converts netCDF file (e.g. a FluxEngine output file) to a flat text file.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_append2insitu.py} - Appends FluxEngine output to a pre-existing text formatted data file. Intended to allow FluxEngine output to be added as columns for \textit{in situ} data}.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_reanalyse\_fco2\_driver.py} - Generates fCO\textsubscript{2} reanalysed to a consistent temperature and depth. See section \ref{reanalyse_fco2_example} for details and example usage.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_compare\_net\_budgets.py} - Simple tool which compare net budgets between two runs. This is used as the basic of some of the checks found in the verification scripts (see section \ref{verifying_fluxengine}). Further tools for performing common verification tasks are available to use in custom Python scripts by importing \texttt{fluxengine.tools.lib\_verification\_tools}.
+
+\vspace{0.25cm} \noindent
+\texttt{fe\_verify\_socatv4.py} - Runs the verification script using interpolated SOCAT CO\textsubscript{2} data.
+\vspace{0.25cm} \noindent
+\texttt{fe\_verify\_takahashi09.py} - Runs the verification script using CO\textsubscript{2} data from Takahashi 2009.
+\vspace{0.25cm} \noindent
+\texttt{fe\_tutorials.py} - Starts a Jupyter notebook server and opens the interactive tutorials in a web browser.
+
+\subsection{Calculating net fluxes with \texttt{fe\_calc\_budgets.py}}
+This tool will calculate monthly and annual the net flux budgets from monthly FluxEngine output. FluxEngine output is used as input to the tool and must adhere to a \texttt{<YYYY>/<MM>} output directory structure (this is the default, see section \ref{output_filenames} for details). Fluxes can be calculated regionally by setting the region(s) you'd like to calculate fluxes for. After running the tool a single text file will be generated for each region. This file contains a monthly breakdown of the estimated net, missing and gross downward (into the ocean) and upward (into the atmosphere) flux. These regions must correspond to the values of regions in the region mask file. Usage of the tool is as follows:
+
+\begin{lstlisting}
+fe_calc_budgets.py -d FluxEngine/output -v -lf land_mask_file.nc -mf region_mask_file.nc -o your/output/directory
+\end{lstlisting}
+
+The \texttt{-d} or \texttt{--dir} option specifies the directory to the FluxEngine output which the tool will use to calculate the net flux. The \texttt{-v} option increases verbosity (prints extra information for the user). The \texttt{-lf} or \texttt{--landfile} options specify a netCDF file with a variable describing the proportion land in each grid cell. An additional option \texttt{--landdataset} (or \texttt{-ld}) specifies the variables/product name in the land netCDF file, but defaults to \texttt{land\_proportion} if not set. Similarly \texttt{-mf} or \texttt{--maskfile} defines the region mask netCDF file while \texttt{--maskdatasets} or \texttt{-md} specifies the variable names of each region's mask within the netCDF file. Finally, the \texttt{-o} or \texttt{--outroot} option defines the root directory to which \texttt{ofluxghg-flux-budgets.py} will write output files. Note that the FluxEngine output, land file and region mask must all have the same spatial dimensions (grid size). Region names can be set using \texttt{-r} or \texttt{--regions}, and there must be one for each mask dataset used (defaults to 'global', e.g. \texttt{--maskdatasets} is not set).
+
+Examples of how land and mask files should be formatted can be seen by examining the land and mask files used in the verification scripts. These are located \texttt{<FEROOT>/data/onedeg\_land.nc} and \texttt{<FEROOT>/data/World\_Seas-final-complete\_IGA.nc}, respectively.
+
+
+\subsection{Using \texttt{fe\_reanalyse\_fco2\_driver.py} to reanalyse data to a consistent temperature and depth} \label{reanalyse_fco2_example}
+\texttt{fe\_reanalyse\_fco2\_driver.py} is an external tool which comes bundled with FluxEngine and which implements the method described by Goddijn-Murthy (2015) to reanalyse fCO2 / pCO2, sampled in situ from different depths and/or with different instantaneous temperatures, to a consistent temperature field. A driver script (\texttt{fe\_reanalyse\_fco2\_driver.py}, in the \texttt{tools} directory) is provided to facilitate using this script with \textit{in situ} data via the command line. This tool has many options, which can be viewed by running it with the \texttt{-h} command:
+\begin{lstlisting}
+fe_reanalyse_fco2_driver.py -h
+\end{lstlisting}
+
+A simple example command to generate a netCDF file containing fCO2 values from a tab delimited text file is as follows:
+\begin{lstlisting}
+fe_reanalyse_fco2_driver.py -input_dir path/to/data -input_files datafile.tsv -sst_dir path/to/ReynoldsSST/ -sst_tail 01_OCF-SST-GLO-1M-100-REYNOLDS.nc -output_dir output/path -socatversion 6 -usereynolds -startyr 2008 -endyr 2015
+\end{lstlisting}
+
+The \texttt{-socatversion 6} option tells the tool to expect column headings to conform to those used by SOCATv6. If your data header does not conform to a SOCAT naming convention you can specify each column names for each of the required variables (see the available options using the \texttt{-h} option for details).
+
+To produce output as text files instead of NetCDF files, use the \texttt{-asciioutput} option.
+
+Example commands utilising different options can be found in the comments at the top of \texttt{fe\_reanalyse\_fco2\_driver.py}.
+
+\subsection{Using \texttt{fe\_text2ncdf.py} to create FluxEngine compatible NetCDF files} \label{text2ncdf_example}
+FluxEngine requires all input data to be supplied in NetCDF files. While FluxEngine will accept correctly formatted NetCDF files that have been created by any method, the \texttt{fe\_text2ncdf.py} tool is provided as a convenient and flexible tool to convert flat text formatted data into NetCDF files. The tool can run from the command line, or imported as a Python module (\texttt{import fluxengine.tools.lib\_text2ncdf}). Basic operation using the commandline is as follows:
+\begin{lstlisting}
+fe_text2ncsf.py inFiles inputfile1.tsv inputfile2.tsv --startTime 2010-01-01 --endTime 2010-12-31 --ncOutPath output/path/file.nc --delim '\t' --latProd latitude --lonProd longitude --latResolution 1 --lonResolution 1 --dateIndex 0 --temporalResolution '0 12:00' --colNames 1 2 5 'SST [C]' 'windspeed [ms-1]' --parse_units --limits -90 90 -180 180
+\end{lstlisting}
+
+This will convert two files (\texttt{inputfile1.tsv} and \texttt{inputfile1.tsv}) into NetCDF files for the year 2010. Output files will be saved to \texttt{output/path}. The delimiter separating values in the input files is defined as a tab, and the latitude and longitude column names in the input files are \texttt{latitude} and \texttt{longitude} respectively. Output files will consist of a $1^\circ$ by $1^\circ$ grid, with means, counts and standard deviations calculated for this grid size. \texttt{--dateIndex} specifies the column index containing the date/time. The \texttt{--temporalResolution} defines the time step used (by default a separate output file will be created for each time point). The \texttt{colNames} option allows you to specify column names (or indices, or a mixture of names and indices) to be converted to NetCDF (indexes start from 0). This should not include longitude, latitude of data/time columns, as these are specified separately by \texttt{--lonProd}, \texttt{--latProd} and \texttt{--dateIndex}, respectively. In this case column numbers 1, 2 and 5, as well as columns with the names \texttt{SST [C]} and \texttt{windspeed [mc-1]}, will be converted. The \texttt{--parse\_units} option tells the tool to automatically interpret any text in the header which is contained between square brackets (\texttt{[} and \texttt{]}) as the units, which will be added as metadata in the output NetCDF.
+
+As with other tools, a full description of the various options can be found by running the tool using the \texttt{-h} option. This description will always contain the most up to date description of the options and usage.
+
+
+\subsection{Automatically updating old configuration files} \label{updating_configuration_files}
+Configuration files for FluxEngine version 4.0 are mostly compatible with version 3.x, however some changes in variable names will prevent old configuration files from running. A simple command line utility is provided (\texttt{fe\_update\_config.py}) to automatically update old configuration files to the compatible with the current version of FluxEngine. This utility will work for any configuration file for FluxEngine 3.0 or newer. Usage is simple:
+\begin{lstlisting}
+fe_update_config.py path/to/old_config.conf path/to/updated_config.conf
+\end{lstlisting}
+
+If you want to ensure a file is written to the updated configuration file path, regardless of whether the old configuration file required modifying (e.g. as part of an automated workflow) you can add \texttt{-alwayswrite} to ensure a copy will be written to your output path.
+
+If version information is missing from an old configuration file, you can mannual add it, or use the \texttt{-oldversion} flag to tell the tool which version to expect. See the tool's help (\texttt{-h}) information for more details.
+
+
+\section{Guide for developers} \label{developer_notes}
+In FluxEngine v3.0 we have made changes to make it easier for people to modify and extend the functionality of FluxEngine. We have implemented a more consistent structure to the code and added the ability to easily extent certain aspects of FluxEngine's functionality without modifying the core code. The following sections provide some background information on how to do this. This is intended for users who are comfortable programming in Python.
+
+\subsection{Adding pre-processing functions}
+Pre-processing functions are defined in \textit{fluxengine{\textbackslash}core{\textbackslash}data\_preprocessing.py}. When parsing \texttt{*\_preprocessing} data layer proprties in configuration files, FluxEngine searches the function names defined in this file, and so any function which is added will be immediately available for use as a pre-processing function. However, there are certain requirements for the function to operate harmoniously with FluxEngine. These are listed below:
+\begin{itemize}
+	\item Pre-processing functions must have a single argument, and this must be the \texttt{DataLayer} instance which corresponds to the input data layer which is being transformed. Detailed of the \texttt{DataLayer} class can be found in \texttt{DataLayer.py}.
+	\item \texttt{DataLayer}s should be modified in place. Returned values are ignored.
+	\item Pre-processing functions should only modify the (1D) \texttt{fdata} attribute of the \texttt{DataLayer} instance. The exception to this is if it is convenient to modify 2D view of this (the \texttt{data} attribute), in which case you must call \texttt{datalayer.calculate\_fdata()} afterwards. This is because, while in most cased \texttt{fdata} is a view of \texttt{data}, in some cases \texttt{fdata} may be a copy of \texttt{data} and hence any changes to \texttt{data} will not be reflected in \texttt{fdata}. \texttt{fdata} is used for all calculations, so it is important that any changes are copied to this attribute.
+	\item If a pre-processing function modifies the dimensions or any of the meta data associated with a \textit{DataLayer} it must also manually update the relevant attributes as these will not be automatically reflected.
+\end{itemize}
+
+\subsection{Adding k-parametrisation functors}
+The gas transfer velocity calculation is fully customisable and is is possible to write custom 'functor' classes to add to the built-in parameterisations available. In older version of FluxEngine, this was achieved by adding the parameterisations to the \texttt{fluxengine{\textbackslash}core{\textbackslash}rate\_parameterisation.py} file, thereby making them globally available to any project. As of FluxEngine v4.0.3, the new recommended way to add parameterisations is to implement them in a separate file which is stored with your other project files / config files etc. You can then pass the path to this file as an argument when running FluxEngine and the contents of the file will be executed, and any parameterisations will be available for use in configuration files. The advantages to this are 1) Parameterisations can be stored with other project-specific files, such as config files, and therefore moved around with them. 2) Custom parameterisations aren't lost when updating FluxEngine. And 3) parameterisations can be easily shared, e-mails or attached as supplementary material to manuscripts.
+
+You can pass the file path containing custom gas transfer velocity parameterisations to FluxEngine in two ways. Firstly, using the command line \texttt{fe\_run.py} tool, you can supply the path using \texttt{-custom\_gas\_transfer\_parameterisation} (\texttt{-gtvp} for short) followed by a string containing the relative or absolute file path. For example:
+
+\begin{lstlisting}
+fe_run.py test.conf -l -custom_gas_transfer_parameterisation "a_directory/my_custom_gtv.py"
+\end{lstlisting}
+
+The second method can be used when driving FluxEngine directly from Python. Simply provide the \texttt{customGTVPath} argument to the \texttt{run\_fluxengine} function:
+
+\begin{lstlisting}
+import fluxengine.core.fe_setup_tools as setup;
+setup.run_fluxengine("test.conf", 2010, 2010, customGTVPath="a_directory/my_gtv.py");
+\end{lstlisting}
+
+To implement a new parameterisation you must write a 'functor' class (a class which implementa the \texttt{\_\_call\_\_} member function), and the class must be derived from the \texttt{KCalculationBase} class (also defined in \texttt{rate\_parameters.py}) and implement four functions:
+\begin{itemize}
+	\item \texttt{\_\_init\_\_} - Initialises the class. This must, at a minimum, set \texttt{self.name}. You can add any arguments which the class needs to initialise to the function signature and provided they are added as variables with the same name/s in the configuration file they will be automatically passed to the functor during initialisation (see the notes on adding configuration variables below).
+	\item \texttt{input\_names} - This should return a list of \texttt{DataLayer} names (strings) which are required as inputs to the gas transfer velocity calculation.
+	\item \texttt{output\_names} - This should return a list of \texttt{DataLayer} names which are modified or written to. These can be existing or new \texttt{DataLayer}s. Any non-existing \texttt{DataLayer}s will be created in the correct dimensions (but filled with missing values) by FluxEngine prior to performing the gas transfer velocity calculation.
+	\item \texttt{\_\_call\_\_} - This performs the gas transfer velocity calculation, and will contain all the implementation details for your specific case. In addition to \texttt{self}, an argument called \texttt{data} is passed to this function which contains a dictionary of each \texttt{DataLayer} available to FluxEngine. These can be assessed by using the \texttt{DataLayer} name as a key. Note that you should not create new \texttt{DataLayer} instances, add entries to this dictionary or change \texttt{DataLayer}s which are not listed by name in the list returned by \texttt{output\_names}.
+	
+	It is best practice to modify the 1D 'flat' data attribute of output \texttt{DataLayer}s (\texttt{DataLayer.fdata}). If the 2D \texttt{DataLayer.data} attribute is modified you should update the \texttt{fdata} attribute by calling \texttt{DataLayer.calculate\_fdata} for the \texttt{DataLayer}s which have changed. This is because, while in most cases \texttt{fdata} is a view of \texttt{data} to avoid unnecessary duplication, this is not guaranteed on all systems.
+	
+	The final gas transfer velocity output should usually be written to the \texttt{k} data layer, as this is what will be used by FluxEngine to calculate air-sea gas flux. Additionally, it can be a good idea to set the \texttt{DataLayer.long\_name} and \texttt{DataLayer.short\_name} attributes of \texttt{k} to provide a description of the parameterisation used because this will be copied to the output netCDF files.
+\end{itemize}
+
+An example implementation, as well as all the pre-bundled gas transfer velocity functors, can be found in \texttt{fluxengine{\textbackslash}core{\textbackslash}rate\_parameterisation.py}.
+
+
+\subsubsection{Adding configuration variables}
+You can add variables to the configuration file and these will be immediately available in the flux engine code (encapsulated in the \texttt{runParams} 'namespace'). For example, if you add
+\begin{lstlisting}
+my_new_var = 100.0
+\end{lstlisting}
+to the configuration file. This can be referenced in the FluxEngine code using \texttt{runParams.my\_new\_var}. This is utilised by different k-parameterisation functors which require additional variables to initialise correctly (see the definition of \texttt{k\_generic} in \texttt{rate\_parameterisation.py} for an example).
+
+Additional configuration variables are interpreted as a float if they're formatted as a valid float, otherwise they're interpreted as a string.
+
+To avoid naming conflicts (since all config variables are imported to the same namespace) it is good practice to add a prefix to the name of any custom configuration variables. Typically this should be the name of the k-parameterisation functor it is associated with. For example, the \texttt{k\_generic)} functor requires 5 additional variables each of which begin with \texttt{k\_generic} (e.g. \texttt{k\_generic\_sc}).
+
+\subsection{Contributing}
+If you're a git user you can fork the FluxEngine repository at \url{https://github.com/oceanflux-ghg/FluxEngine} and if you develop extensions or functionality which might be useful to the wider community, or spot and fix any bugs, you can share them by sending us a pull request. Alternately, if you don't know what any of that means but you've developed an extension or fixed a bug which you think will be useful to others, you can e-mail me at \url{t.m.holding@exeter.ac.uk}.
+
+
+\end{document}
+

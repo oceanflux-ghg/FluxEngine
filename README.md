@@ -8,9 +8,7 @@ Version 4.0.
 ----
 v4.0.7 released May 2022 - Small update adding flexibility to custom gas transfer velocity parameterisations.
 
-v4.0.2 released July 2020 - released as major FluxEngine v4 release
-
-Small updates for re-analysis tool compatbility with SOCATv2020 release.
+v4.0.2 released July 2020 - released as major FluxEngine v4 release - Small updates for re-analysis tool compatbility with SOCATv2020 release.
 
 v4.0.1 released May 2020.
 

@@ -3,6 +3,10 @@ FluxEngine
 
 The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 13 different journal publications, resulting in 5 press releases, contributed to 2 completed PhDs and 1 ongoing PhD, has been used within 5 UK and EU research projects and has been used in undergraduate and masters level teaching. It is now being used within the European Integrated Carbon Observing System (ICOS).  This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon. 
 
+Known issues with v4.0.7
+----
+01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this). With this option you have to set and use conca and concw as the inputs. But the tools incorrectly request pgas_air inputs (which are not used in the flux calculation when you concentrations). To overcome this simply define and pass pgas_air data i.e. create a file containing NaN or 0s and add the information into the condiguration file. This will allow the calculations to complete (and will not be used in the calculation). This error will be fixed in the next release of the fluxengine.
+
 
 Version 4.0.
 ----

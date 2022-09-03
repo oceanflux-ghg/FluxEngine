@@ -5,7 +5,7 @@ The FluxEngine is an open source atmosphere-ocean gas flux data processing toolb
 
 Known issues with v4.0.7
 ----
-01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this error and Tom Holding for identify the work around). With this option you have to set and use conca and concw as the main inputs. But the tools incorrectly request pgas_air inputs (which are not used in the flux calculation when you use concentration data). To overcome this simply define and pass pgas_air data as an additional input i.e. create a file containing NaN or 0s and add the information into the configuration file. This will allow the calculations to complete and the pgas data will not be used in the calculation. This error will be fixed in the next release of the fluxengine.
+01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this error and Tom Holding for identify the work around). With this option you have to set and use conca and concw as the main inputs. But the tools incorrectly request pgas_air and pgas_sw inputs (which are not used in the flux calculation when you use concentration data). To overcome this simply define and pass pgas_air and pgas_sw data as an additional input i.e. create a file containing NaN or 0s and add the information into the configuration file. This will allow the calculations to complete and the pgas data will not be used in the calculation. This error will be fixed in the next release of the fluxengine.
 
 
 Version 4.0.

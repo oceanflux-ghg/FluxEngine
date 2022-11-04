@@ -25,6 +25,7 @@ Re-analysed SOCAT datasets
 Each year we used the FluxEngine to reanalyse the latest version of the Surface Ocean CO2 Atlas (SOCAT) database (https://www.socat.info).  We provide this service for free and typically provide links to the reanalysed data a few weeks after the new release of the SOCAT database. The original SOCAT data are all sampled from different depths and each measurement is tied to a temperature values, but the sources of the temperature data varies. This makes these data less ideal for global air-sea flux analyses. To enable an accurate air-sea flux calculation they need to be reanalysed to a common depth and temperature dataset. The reanalysed SOCAT data that we provide are all referenced to a common sampling depth and temperature dataset and the pairing between CO2 data and temperature is retained.  The tools and methods that perform the reanalysis are detailed within the FluxEngine publications. The reanalysed datasets contain the individual cruise version of the SOCAT database and the gridded SOCAT data. 
 
 Please read the dataset metadata when using these data and please follow the guidelines in the metadata when referencing and acknowleging their use. 
+
 Sims, R., Holding T, Ashton I, Shutler, J (2021) Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2021
 
 Holding T, Ashton I, Shutler, J (2020) Reanalysed (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2020, ICOS carbon portal, https://doi.org/10.18160/vmt4-4563

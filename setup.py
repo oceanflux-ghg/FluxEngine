@@ -21,7 +21,7 @@ for i in range(len(scripts)): #Append the directory to each script name
     scripts[i] = "fluxengine/scripts/"+scripts[i];
 
 #list the dependencies
-dependencies = ["numpy>=1.16.4",
+dependencies = ["numpy>=1.20.0",
                 "pandas>=0.24.2",
                 "matplotlib>=3.1.0",
                 "netCDF4>=1.4.2",
@@ -49,7 +49,7 @@ with open(path.join('README.md'), encoding='utf-8') as f:
 #Main setup object.
 setuptools.setup(
     name="fluxengine",
-    version="4.0.7",
+    version="4.0.8",
     author="Tom Holding and Jamie Shutler",
     author_email="j.d.shutler@exeter.ac.uk, t.m.holding@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",
@@ -60,12 +60,12 @@ setuptools.setup(
     project_urls={"Source Code":"https://github.com/oceanflux-ghg/FluxEngine",
                   "Ancillary Tools":"https://github.com/oceanflux-ghg/FluxEngineAncillaryTools",
                   "More Info":"http://www.oceanflux-ghg.org/Products/FluxEngine"},
-    
+
     packages=setuptools.find_packages("."),  # include all packages in this dir "fluxengine"
-    package_dir={"":"."},   # tell distutils packages in this dir "fluxengine"
+    #package_dir={"":"."},   # tell distutils packages in this dir "fluxengine"
     scripts=scripts,
     include_package_data=True,
     package_data={"fluxengine": allPackageDataPaths},
-    
+
     install_requires=dependencies,
     );

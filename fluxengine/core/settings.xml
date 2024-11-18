@@ -25,17 +25,17 @@
 			 longName="Count of data points of wind speed at 10m used for calculating the mean wind speed">
 		</DataLayer>
 
-		<DataLayer name="sstskin" netCDFName="ST1_Kelvin_mean" units="degreeK" minBound="271.35" maxBound="373.15"
+		<DataLayer name="sstskin" netCDFName="ST1_Kelvin_mean" units="degreeK" minBound="271.15" maxBound="313.15"
 			 standardName="sea_surface_skin_temperature"
 			 longName="Sea surface skin temperature used for the flux calculations">
 		</DataLayer>
 
-		<DataLayer name="sstskinC" netCDFName="ST1_mean" units="degreeC" minBound="-2.0" maxBound="100.0"
+		<DataLayer name="sstskinC" netCDFName="ST1_mean" units="degreeC" minBound="-2.0" maxBound="40.0"
 			 standardName="sea_surface_skin_temperature"
 			 longName="Sea surface skin temperature used for the flux calculations">
 		</DataLayer>
 
-		<DataLayer name="sstskin_stddev" netCDFName="ST1_stddev" units="degreeC" minBound="-2.0" maxBound="100.0"
+		<DataLayer name="sstskin_stddev" netCDFName="ST1_stddev" units="degreeC" minBound="0.0" maxBound="100.0"
 			 standardName="sea_surface_skin_temperature_stddev"
 			 longName="Standard deviation of Sea surface skin temperature used to create the mean sea surface skin data">
 		</DataLayer>
@@ -45,7 +45,7 @@
 			 longName="Count of data points of Sea surface skin temperature used to create the mean sea surface skin data">
 		</DataLayer>
 
-		<DataLayer name="sstfndC" netCDFName="FT1_mean" units="degreeC" minBound="-2.0" maxBound="100.0"
+		<DataLayer name="sstfndC" netCDFName="FT1_mean" units="degreeC" minBound="-2.0" maxBound="40.0"
 			 standardName="sea_surface_foundation_temperature"
 			 longName="foundation SST used for the flux calculations">
 		</DataLayer>
@@ -207,12 +207,12 @@
 			 longName="Gas transfer velocity due to rain from Ho et al Tellus 1997">
 			 </DataLayer>
 
-		<DataLayer name="salinity" netCDFName="OKS1" units="count" minBound="0.0" maxBound="50.0"
+		<DataLayer name="salinity" netCDFName="OKS1" units="count" minBound="0.0" maxBound="45.0"
 			standardName="sea_water_salinity"
 			longName="salinity in sea water">
 		</DataLayer>
 
-		<DataLayer name="salinity_skin" netCDFName="salinity_skin" units="count" minBound="0.0" maxBound="50.0"
+		<DataLayer name="salinity_skin" netCDFName="salinity_skin" units="count" minBound="0.0" maxBound="45.0"
 			standardName="sea_water_skin_salinity"
 			longName="salinity in sea water at the skin layer">
 		</DataLayer>

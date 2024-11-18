@@ -2,9 +2,9 @@ FluxEngine
 ==========
 Main contacts: Jamie D. Shutler (j.d.shutler@exeter.ac.uk) and Daniel J. Ford (d.ford@exeter.ac.uk)
 
-The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 23 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency reasearch projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
+The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 23 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency research projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
 
-Known issues with v4.0.7
+Known issues with v4.0.8
 ----
 01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this error and Tom Holding for identify the work around). With this option you have to set and use conca and concw as the main inputs. But the tools incorrectly request pgas_air and pgas_sw inputs (which are not used in the flux calculation when you use concentration data). To overcome this simply define and pass pgas_air and pgas_sw data as an additional input i.e. create a file containing NaN or 0s and add the information into the configuration file. This will allow the calculations to complete and the pgas data will not be used in the calculation. This error will be fixed in the next release of the fluxengine.
 
@@ -14,13 +14,15 @@ Known issues with v4.0.7
 
 Version 4.0.
 ----
+v4.0.8 released November 2024 - Small update that fixes: 1) Fixes issues in newer version of Python and Numpy due to deprecated functions identified by Sylvain Herlédan (Python now must be 3.0 or greater; Numpy must be 1.20 or greater) 2) the 'settings.xml' file has been updated to be less restrictive of temperature, salinities and fCO2 (these can be edited through config files). 3) A bug identified by Daniel Ford, where the FluxEngine input NetCDF file would remain opened in FluxEngine, causing a HDF error if that file was then opened in a subsequent script in 'append' or 'write' mode, has been fixed. 4) Legacy hardcoded temperature limits have been removed and now respect the setting.xml file. 5) Fixed fe_verify_socat.py for the new setting.xml limits causing the verification to fail.
+
 v4.0.7 released May 2022 - Small update adding flexibility to custom gas transfer velocity parameterisations.
 
 v4.0.2 released July 2020 - released as major FluxEngine v4 release - Small updates for re-analysis tool compatbility with SOCATv2020 release.
 
 v4.0.1 released May 2020.
 
-Version 4.0.7 uses Python 3 (but still contains all of the functionality of FluxEngine v3.0). Version 4.0 is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). This update means that the FluxEngine is now a standard Python package and this has simplified the installation process. For example, you can now install the FluxEngine by using the Python Package Installer, pip, using the command 'pip install fluxengine'.  Whilst providing this update we also removed some functionality that was no longer needed which resulted in the FluxEngine configuration file format changing slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs using SOCATv4 pCO2 and Takahashi et al (2009) data sets, as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were consistent with those produced using v3.0. The description of all FluxEngine functionality can be found in Shutler et al., (2016) and Holding et al., (2019) https://doi.org/10.5194/os-15-1707-2019 and full documentation/usage instructions are included as a PDF documentation on the GitHub page.
+Version 4.0.8 uses Python 3 (but still contains all of the functionality of FluxEngine v3.0). Version 4.0 is available to install from PyPi (https://pypi.org/project/fluxengine/) or GitHub (https://github.com/oceanflux-ghg/FluxEngine). This update means that the FluxEngine is now a standard Python package and this has simplified the installation process. For example, you can now install the FluxEngine by using the Python Package Installer, pip, using the command 'pip install fluxengine'.  Whilst providing this update we also removed some functionality that was no longer needed which resulted in the FluxEngine configuration file format changing slightly and a new commandline tool is provided to update old configuration files (fe_update_config.py). Version 4.0 has been verified against reference runs using SOCATv4 pCO2 and Takahashi et al (2009) data sets, as described in Shutler et al. (2016) http://journals.ametsoc.org/doi/abs/10.1175/JTECH-D-14-00204.1. All results were consistent with those produced using v3.0. The description of all FluxEngine functionality can be found in Shutler et al., (2016) and Holding et al., (2019) https://doi.org/10.5194/os-15-1707-2019 and full documentation/usage instructions are included as a PDF documentation on the GitHub page.
 
 Please reference these journal publications when using this toolbox and presenting its output in any publications.
 
@@ -73,13 +75,13 @@ Ford, D.J., Blannin, J., Watts, J., Watson, A.J., Landschützer, P., Jersild, A.
 
 Friedlingstein et al, (2023), Global Carbon Budget 2023, Earth Syst. Sci. Data, 15, 5301–5369, https://doi.org/10.5194/essd-15-5301-2023.
 
-Ford DJ, Tilstone GH, Shutler JD, Kitidis V, Sheen KL, Dall’Olmo G, Orselli IBM (2023). Mesoscale Eddies Enhance the Air‐Sea CO2 Sink in the South Atlantic Ocean. Geophysical Research Letters, 50(9). 
+Ford DJ, Tilstone GH, Shutler JD, Kitidis V, Sheen KL, Dall’Olmo G, Orselli IBM (2023). Mesoscale Eddies Enhance the Air‐Sea CO2 Sink in the South Atlantic Ocean. Geophysical Research Letters, 50(9).
 
 Friedlingstein et al, (2022), Global Carbon Budget 2022, Earth Syst. Sci. Data,14, 4811–4900, https://doi.org/10.5194/essd-14-4811-2022.
 
 Ford DJ, Tilstone GH, Shutler JD, Kitidis V (2022). Derivation of seawater pCO2 from net community production identifies the South Atlantic Ocean as a CO2 source. Biogeosciences, 19(1), 93-115
 
-Ford DJ, Tilstone GH, Shutler JD, Kitidis V (2022). Identifying the biological control of the annual and multi-year variations in South Atlantic air-sea CO2 flux. Biogeosciences, 19(17), 4287-4304. 
+Ford DJ, Tilstone GH, Shutler JD, Kitidis V (2022). Identifying the biological control of the annual and multi-year variations in South Atlantic air-sea CO2 flux. Biogeosciences, 19(17), 4287-4304.
 
 Friedlingstein et al, (2021), Global Carbon Budget 2021, Earth Syst. Sci. Data, 14, 1917–2005, https://doi.org/10.5194/essd-14-1917-2022.
 

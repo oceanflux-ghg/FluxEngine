@@ -9,18 +9,18 @@ import tempfile
 R = 82.0578 # cm^3 atm/(mol K)
 hPa2atm = 100. * 9.867E-06
 EPS = 2.2204460492503131e-16
-trend = 1.5e-06 # pCO2 [atm/year] (Takahashi et al., 2009) 
+trend = 1.5e-06 # pCO2 [atm/year] (Takahashi et al., 2009)
 tempdir=tempfile.mkdtemp(prefix="ignore_points_")
 
 def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None):
    """
-    Wrapper function to run v2_f_conversion but from a structured array as input. 
+    Wrapper function to run v2_f_conversion but from a structured array as input.
     Also returns result as a structured array.
    """
    #Run the conversion function
    jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
-                                                      data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'], 
-                                                      data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'], 
+                                                      data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'],
+                                                      data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'],
                                                       data_array['fCO2'], Tcls, Peq_cls,extrapolatetoyear);
 
    if jd is None:
@@ -28,22 +28,22 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None):
       return None
    else:
       #concatenate arrays into single, structured array for return
-      result=np.recarray((jd.size,),dtype=[('jd',np.float),
+      result=np.recarray((jd.size,),dtype=[('jd',float),
                                            ('yr',np.int32),
                                            ('mon',np.int32),
                                            ('day', np.int32),
                                            ('hh', np.int32),
                                            ('mm', np.int32),
                                            ('ss', np.int32),
-                                           ('lat',np.float),
-                                           ('lon',np.float),
-                                           ('SST_C',np.float),
-                                           ('Tcl_C',np.float),
-                                           ('fCO2_SST',np.float),
-                                           ('fCO2_Tym',np.float),
-                                           ('pCO2_SST',np.float),
-                                           ('pCO2_Tym',np.float),
-                                           ('qf',np.int)]);
+                                           ('lat',float),
+                                           ('lon',float),
+                                           ('SST_C',float),
+                                           ('Tcl_C',float),
+                                           ('fCO2_SST',float),
+                                           ('fCO2_Tym',float),
+                                           ('pCO2_SST',float),
+                                           ('pCO2_Tym',float),
+                                           ('qf',int)]);
       result['jd']=jd
       result['yr']=yr;
       result['mon']=mon;
@@ -93,18 +93,18 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
         fCO2_Tym - fCO2 recomputed for Tcl_C (uatm)
         qf - quality flag?"""
 
-   
+
    #Because this function changes the values of the sal_woas array we should copy it and change the copy instead
    sal_woas=sal_woas1.copy()
-   # only use records where SST_Cs, fCO2_recs and Tcls are valid 
+   # only use records where SST_Cs, fCO2_recs and Tcls are valid
    goodpoints=np.where((np.isfinite(SST_Cs)) & (np.isfinite(fCO2_recs)) & (Tcls >= 0) & (Tcls < 1000) & (np.isfinite(Peq_cls)))# some Tcl data = 9.96921e+36 were found for ATS-ARC
    badpoints=np.where(~(np.isfinite(SST_Cs)) | ~(np.isfinite(fCO2_recs)) | (Tcls <0) | (Tcls >= 1000) | ~(np.isfinite(Peq_cls))) #TMH: updated so that good and bad points are mutually exclusive and the whole domain
 #   aa = len(np.where(~(np.isfinite(SST_Cs)))[0]);
 #   bb = len(np.where(~(np.isfinite(fCO2_recs)))[0]);
 #   cc = len(np.where((Tcls <0) | (Tcls >= 1000) )[0]);
 #   dd = len(np.where(~(np.isfinite(Peq_cls)) )[0]);
-   
-   
+
+
    if badpoints[0].size != 0:
       fileout=tempfile.mkstemp(prefix="%s/ignored_points_"%tempdir)[1]
       print("Writing ignored points to temp file: %s"%fileout)
@@ -170,13 +170,13 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
 #      print "B", B[0];
 #      print "delta:", delta[0];
 #      print "R:", R; # cm^3 atm/(mol K)
-      
-      
+
+
       y = pCO2_SST
       pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
       XCO2_Teq = pCO2_Teq / Peq # wet XCO2_Teq
       pCO2_SST = fCO2_SST * np.exp(-(B + 2 * delta * (1 - XCO2_Teq) ** 2) * Peq / (R * SST))
-      
+
 #      raw_input("modified...");
 
    pCO2_Teq = pCO2_SST * np.exp(-0.0423 * dT)
@@ -190,7 +190,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
       dt = (datenum.datenum(extrapolatetoyear,1,1,0,0,0)-jd)/365.0
       pCO2_Tym_final = pCO2_Tym + trend*dt
    else:
-      # rename the variable so that the succeeding script will work and continue 
+      # rename the variable so that the succeeding script will work and continue
       # would be better not doing this (from intuitive point of view) but easiest way.
       pCO2_Tym_final = pCO2_Tym
 
@@ -201,10 +201,9 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    fCO2_Tym_final = pCO2_Tym_final * exponent
 
    # conversion from atm to uatm
-   fCO2_Tym_final *= 1E+06 # uatm 
-   pCO2_Tym_final *= 1E+06 # uatm 
+   fCO2_Tym_final *= 1E+06 # uatm
+   pCO2_Tym_final *= 1E+06 # uatm
    fCO2_SST *= 1E+06 # uatm (this is the same as fCO2_rec)
    pCO2_SST *= 1E+06 # uatm
 
    return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf];
-

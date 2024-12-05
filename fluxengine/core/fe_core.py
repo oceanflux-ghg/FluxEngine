@@ -1482,23 +1482,25 @@ class FluxEngine:
                         self.data["pgas_air_cor"].fdata[i] = self.data["vgas_air"].fdata[i]
 
 
+        # DJF 04/12/2024: Indentation issue which causes this to never run even if the 'socat_fco2' pco2_data_selection, and therefore atmospheric side is pCO2 and not fCO2.
 
-            #SOCAT, so: conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
-            #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata
-            if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
-                b11_fdata = array([missing_value] * nx*ny);
-                d12_fdata = array([missing_value] * nx*ny);
-                for i in range(len(self.data["pgas_air_cor"].fdata)):
-                    #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
-                    if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vgas_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pgas_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
-                        # conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
-                        b11_fdata[i] = -1636.75 + (12.0408*self.data["sstskin"].fdata[i]) - (0.0327957*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]) + (3.16528e-5 * self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i])
-                        d12_fdata[i] = 57.7 - (0.118*self.data["sstskin"].fdata[i])
-                         # gas constant
-                        R = 82.0578 # in [cm^3 atm/(mol K)]
-                        # 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
-                        # the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
-                        self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
+        #SOCAT, so: conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
+        #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata
+        if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
+            print("%s Calculating fCO2atm from pCO2atm, as fCO2sw specified" % (function))
+            b11_fdata = array([missing_value] * nx*ny);
+            d12_fdata = array([missing_value] * nx*ny);
+            for i in range(len(self.data["pgas_air_cor"].fdata)):
+                #If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
+                if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vgas_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pgas_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
+                    # conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
+                    b11_fdata[i] = -1636.75 + (12.0408*self.data["sstskin"].fdata[i]) - (0.0327957*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]) + (3.16528e-5 * self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i])
+                    d12_fdata[i] = 57.7 - (0.118*self.data["sstskin"].fdata[i])
+                     # gas constant
+                    R = 82.0578 # in [cm^3 atm/(mol K)]
+                    # 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
+                    # the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
+                    self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
 
 
         ######################################

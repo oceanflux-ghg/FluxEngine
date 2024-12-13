@@ -4,7 +4,7 @@ Main contacts: Jamie D. Shutler (j.d.shutler@exeter.ac.uk) and Daniel J. Ford (d
 
 The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 23 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency research projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
 
-Known issues with v4.0.9
+Known issues with v4.0.9.1
 ----
 01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this error and Tom Holding for identify the work around). With this option you have to set and use conca and concw as the main inputs. But the tools incorrectly request pgas_air and pgas_sw inputs (which are not used in the flux calculation when you use concentration data). To overcome this simply define and pass pgas_air and pgas_sw data as an additional input i.e. create a file containing NaN or 0s and add the information into the configuration file. This will allow the calculations to complete and the pgas data will not be used in the calculation. This error will be fixed in the next release of the fluxengine.
 
@@ -14,6 +14,8 @@ Known issues with v4.0.9
 
 Version 4.0.
 ----
+v4.0.9.1 released December 2024 - Update to apply additional fix to the atmospheric fCO2 error. This fix has now been verified against output from pyCO2sys v1.8.3.3, and confirms that FluxEngine is consistent (to 1e-6 uatm).
+
 v4.0.9 released December 2024 - Update to fix a error with the calculation of atmospheric fCO2 when using fCO2sw. This error only affects code where fCO2atm is calculated, and does not affect FluxEngine runs using pCO2sw and pCO2atm.
 
 v4.0.8 released November 2024 - Small update that fixes: 1) Fixes issues in newer version of Python and Numpy due to deprecated functions identified by Sylvain Herlédan (Python now must be 3.0 or greater; Numpy must be 1.20 or greater) 2) the 'settings.xml' file has been updated to be less restrictive of temperature, salinities and fCO2 (these can be edited through config files). 3) A bug identified by Daniel Ford, where the FluxEngine input NetCDF file would remain opened in FluxEngine, causing a HDF error if that file was then opened in a subsequent script in 'append' or 'write' mode, has been fixed. 4) Legacy hardcoded temperature limits have been removed and now respect the setting.xml file. 5) Fixed fe_verify_socat.py for the new setting.xml limits causing the verification to fail.

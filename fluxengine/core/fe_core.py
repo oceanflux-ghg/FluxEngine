@@ -1482,7 +1482,7 @@ class FluxEngine:
                         self.data["pgas_air_cor"].fdata[i] = self.data["vgas_air"].fdata[i]
 
 
-        # DJF 04/12/2024: Indentation issue which causes this to never run even if the 'socat_fco2' pco2_data_selection, and therefore atmospheric side is pCO2 and not fCO2.
+        # DJF 04/12/2024: Fixed indentation issue which causes this to never run even if the 'socat_fco2' pco2_data_selection, and therefore atmospheric side is pCO2 and not fCO2.
 
         #SOCAT, so: conversion of pCO2 to fCO2 from McGillis and Wanninkhof 2006, Marine chemistry with correction from Weiss 1974 (as the equation in 2006 paper has a set of brackets missing)
         #runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata
@@ -1497,10 +1497,15 @@ class FluxEngine:
                     b11_fdata[i] = -1636.75 + (12.0408*self.data["sstskin"].fdata[i]) - (0.0327957*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]) + (3.16528e-5 * self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i]*self.data["sstskin"].fdata[i])
                     d12_fdata[i] = 57.7 - (0.118*self.data["sstskin"].fdata[i])
                      # gas constant
-                    R = 82.0578 # in [cm^3 atm/(mol K)]
-                    # 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
-                    # the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
-                    self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * 1e-6 * ((self.data["pressure"].fdata[i] * 1013.25)/(R*self.data["sstskin"].fdata[i]) ))
+                    #R = 82.0578 # in [cm^3 atm/(mol K)]
+                    R = 83.1451 # DJF 11/12/2024: Updated gas molar constant to CODATA2022 - https://physics.nist.gov/cgi-bin/cuu/Value?r|search_for=gas+constant
+                    #DJF 11/12/2024: Above gas molar constant is consistent with pyCO2sys v1.8.3.3
+
+                    # LEGACY: 1/0.987 = 1.0131712 - conversion between bar and atm, so *1013.25 is the conversion from millibar to atm.
+                    # LEGACY: the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
+                    # DJF 11/12/2024: Assessed consistency with PyCO2sys v1.8.3.3 - Updated the pressure section. Pressure (mb) / 1013.25 to convert to atm. pressure (atm) / 0.98692 to convert to bar.
+                    # DJF 11/12/2024: pCO2(atm) (unchanged) and fCO2(atm) (changed for FEv4.0.9.1) were consistent with PyCO2sys to within 1e-14 and 1e-6 uatm respectively.
+                    self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * exp((b11_fdata[i] + (2*d12_fdata[i]) ) * (((self.data["pressure"].fdata[i] / 1013.25)/0.98692)/(R*self.data["sstskin"].fdata[i]) ))
 
 
         ######################################

@@ -37,7 +37,9 @@ cldefaults={'start':1991,
             'coastalfile':None,
             'useaatsr': False,
             'usereynolds': False,
+            'useESACCI': False,
             'keepduplicates' : False,
+            'temperature_handling': 1
             }
 
 #list of variables for which we want std,min,max in outputfiles
@@ -63,10 +65,12 @@ def GetCommandline():
    parser.add_argument('--socatversion',type=int,dest='socatversion',help="The version of SOCAT data files to read.",default=cldefaults['socatversion'])
    parser.add_argument('--useaatsr',type=int,dest='useaatsr',help="To use the AATSR SST data.",default=cldefaults['useaatsr'])
    parser.add_argument('--usereynolds',type=int,dest='usereynolds',help="To use the Reynolds SST data.",default=cldefaults['usereynolds'])
+   parser.add_argument('--useESACCI',type=int,dest='useESACCI',help="To use the ESACCI SST data.",default=cldefaults['useESACCI'])
    parser.add_argument('inputfile',metavar='<filename>',help ='The input SOCAT file to use')
    parser.add_argument('--no-grid-output',action='store_true',dest='asciioutput',help="To output as an ascii list rather than gridded netcdf.",default=cldefaults['asciioutput'])
    parser.add_argument('--coastalfile', type=str,metavar='<path>',help ='The file with the SOCAT coastal data in',default=cldefaults['coastalfile'])
    parser.add_argument('--keepduplicates',action='store_true',metavar='boolean',help ='Whether to keep duplicate data',default=cldefaults['keepduplicates'])
+   parser.add_argument('--temperature_handling',dest='temperature_handling',type=int,help="How to handle temperature corrections",default=1)
    commandline=parser.parse_args()
 
    #expand user incase path has been entered in style '~/'
@@ -86,8 +90,9 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
                   ASCIIOUT=cldefaults['asciioutput'], socatversion=6,
                   percruisedir=cldefaults['asciioutput'],coastalfile=cldefaults['coastalfile'],
-                  useaatsr=cldefaults['useaatsr'],usereynolds=cldefaults['usereynolds'],
-                  removeduplicates=not cldefaults['keepduplicates']):
+                  useaatsr=cldefaults['useaatsr'],usereynolds=cldefaults['usereynolds'],useESACCI=cldefaults['useESACCI'],
+                  removeduplicates=not cldefaults['keepduplicates'],
+                  temperature_handling=1):
    """
    Does all the hard work - if run as a library then call this function.
       inputfile - filename of the SOCAT ascii csv file
@@ -108,7 +113,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
    #Read in the data (including coastal if requested)
    data=ReadInData(inputfile=inputfile,columnInfo=columnInfo, socatversion=socatversion)
    #read in the coastal data but use a global variable to
-   #store the data so that this is only done once and not 
+   #store the data so that this is only done once and not
    #per run of function
    global coastaldata
    if coastalfile is not None and coastaldata is None:
@@ -151,7 +156,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
          data=numpy.lib.recfunctions.stack_arrays((data,coastaldata[all_indices_to_add]),asrecarray=True,usemask=False)
          #now remove these data from the coastaldata array
          coastaldata=numpy.delete(coastaldata,all_indices_to_add)
-   
+
    #Data has now had relevant coastal points appended to it.
    #Run the following for each pair of years in the range to process
    total_number_of_data_points=0
@@ -160,7 +165,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
       number_of_data_points,duplicates=ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,
                                                 extrapolatetoyear,version=socatversion,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
-                                                useaatsr=useaatsr,usereynolds=usereynolds)
+                                                useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI,temperature_handling=temperature_handling)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -175,7 +180,8 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
                   outputdir=cldefaults['outputdir'],notperyear=cldefaults['notperyear'],sstdir=cldefaults['sstdir'],
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
                   version=cldefaults['socatversion'],ASCIIOUT=cldefaults['asciioutput'],
-                  percruisedir=cldefaults['asciioutput'],useaatsr=False,usereynolds=False,removeduplicates=True):
+                  percruisedir=cldefaults['asciioutput'],useaatsr=False,usereynolds=False,useESACCI=False,
+                  temperature_handling=1,removeduplicates=True):
    #Run the following for each pair of years in the range to process
    print("Working on remaining coastal data.")
    total_number_of_data_points=0
@@ -185,7 +191,7 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
       number_of_data_points,duplicates=ConvertYears(coastaldata,year_range,sstdir,ssttail,prefix,outputdir,
                                                 extrapolatetoyear,version=version,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
-                                                useaatsr=useaatsr,usereynolds=usereynolds)
+                                                useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI,temperature_handling=temperature_handling)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -204,7 +210,7 @@ def GetYearsToProcess(start,end,notperyear):
                  - False if want each year within this range to be converted individually
    """
    #Get the range of years to process so that we can process all years in one run of script
-   #So, we create a list of [start,end] years dependent on notperyear: 
+   #So, we create a list of [start,end] years dependent on notperyear:
    # notperyear = True - then the start,end year range are converted together
    # notperyear = False - then for each year in the range (start,end) there is one run
    if notperyear is False:
@@ -252,18 +258,18 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
            header = [s.strip() for s in preline.strip().split(delimiter)];
        else: #Using insitu, assume header is first line.
            header = [s.strip() for s in FILE.readline().split(delimiter)];
-    
+
 
     columnInfoToExtract = [info for info in columnInfo if info[2] != None]; #These will be extracted from the datafile
-    
+
     #Convert columns into indices
     indicesToExtract = [convert_column_id_to_index(header, info[2]) for info in columnInfoToExtract];
     namesOfExtracted = [info[0] for info in columnInfoToExtract];
     order = numpy.argsort(indicesToExtract); #pandas ignores the column order so we need to rearrange the column names accordingly
     namesOfExtracted = [namesOfExtracted[i] for i in order];
-    
+
     print(namesOfExtracted);
-    
+
     #dtypesOfExtracted = [info[1] for info in columnInfoToExtract];
 
     #Read in the columns we want into a data array
@@ -271,23 +277,23 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
     print("This can take a while for large datasets.\n");
 
     data = pd.read_table(inputfile, skiprows=linestoskip+1, sep=delimiter, engine='c', usecols=indicesToExtract, names=namesOfExtracted, low_memory=False);#, dtype=dtypesOfExtracted);
-    
+
     #Now insert additional columns filled with nan
     colNamesToInsert = [info[0] for info in columnInfo if info[2] == None];
     toInsert = numpy.full((len(data), len(colNamesToInsert)), numpy.nan);
     toInsert = pd.DataFrame(toInsert, columns=colNamesToInsert);
     data = data.join(toInsert);
-    
+
     #Reorder columns
     orderedColNames = [info[0] for info in columnInfo];
     data = data[orderedColNames];
 
     #attach metadata to the data
     data = data.to_records(index=False);
-    
-    
-    
-    
+
+
+
+
     if "fCO2_qc_flag" in colNamesToInsert: #nan values must be float type, fCO2_qc_flag is usually int, so have to split here.
         data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
                      ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
@@ -298,7 +304,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
                          ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
                         ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
                         ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8')]);
-    
+
     return data;
 
 #def ReadInData(inputfile, columns, delimiter='\t'):
@@ -336,7 +342,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 ##   SOCATv2_cols=[1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,20,22]
 ##   #Use these for SOCAT v3
 ##   SOCATv3_cols=[4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,23,25]
-##      
+##
 ##   if version==2:
 ##      usecols=SOCATv2_cols
 ##   elif version==3:
@@ -355,7 +361,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #      with open(filename) as SOCAT:
 #         for _ in range(skiprows):#+1 to skip the column names also
 #            next(SOCAT)
-#         
+#
 #         #extract header and interpret columns as either indices or colnames.
 #         iter_loadtxt.header = next(SOCAT).split("\t");
 #         iter_loadtxt.colIndices = [];
@@ -367,7 +373,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #                     iter_loadtxt.colIndices.append(iter_loadtxt.header.index(col));
 #                 except ValueError:
 #                     raise ValueError("column index '%s' could not be determined in file %s" % (col, filename));
-#         
+#
 #         #start reading data from here
 #         for line in SOCAT:
 #            newline=[]
@@ -383,7 +389,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #               except Exception, e:
 #                  raise Exception("Data value found in column of SOCAT data cannot be converted to float: %s"%(item)+str(e))
 #      iter_loadtxt.rowlength=len(newline)
-#   
+#
 #   #Create a numpy array using the above function
 #   data=numpy.fromiter(iter_func(cols=columns,dtype=float,filename=filename,skiprows=skiprows,delimiter=delimiter),dtype=float)
 #   #Reshape it
@@ -396,7 +402,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #   with open(filename) as SOCAT:
 #      for _ in range(skiprows):
 #         next(SOCAT)
-#      #Now read in the column names removing the first one 
+#      #Now read in the column names removing the first one
 #      #as we don't keep that column in the data array below
 #      names=next(SOCAT).rstrip().split(delimiter)
 #
@@ -415,7 +421,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #
 #   #Had to hard code here - this is not ideal. Could instead update the
 #   #rest of the code to expect floats for all columns of data.
-#   #Convert the datatypes to what genfromtxt would give 
+#   #Convert the datatypes to what genfromtxt would give
 #   data=data.astype([('yr','<i8'), ('mon','<i8'), ('day','<i8'), ('hh','<i8'), ('mm','<i8'), ('ss','<i8'),
 #                     ('longitude_decdegE','<f8'), ('latitude_decdegN','<f8'), ('sal', '<f8'),
 #                    ('SST_degC', '<f8'), ('Tequ_degC', '<f8'), ('PPPP_hPa', '<f8'), ('Pequ_hPa', '<f8'),
@@ -426,10 +432,10 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #   return data
 
 def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoyear,version,
-                 percruisedir=None,ASCIIOUT=False,removeduplicates=True,useaatsr=False,usereynolds=False):
+                 percruisedir=None,ASCIIOUT=False,removeduplicates=True,useaatsr=False,usereynolds=False,useESACCI=False,temperature_handling=1):
    """
    Convert the data from the year range into netcdf files
-      data - structured numpy array containing the SOCAT data 
+      data - structured numpy array containing the SOCAT data
       year_range - the range list(start,end) defining the range of years to convert
       sstdir - directory that contains the SST monthly climatology files
       ssttail - remainder of the SST netcdf name after the year and month
@@ -439,13 +445,13 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       ASCIIOUT - write out as ascii data
       withcoastal - True if using data from coastal file also
    """
-   
+
    data_subset=[]
    #subset the year(s) we want
    print("Subsetting data for year range: %d %d"%(year_range[0],year_range[1]))
    #print len(data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]);
    data_subset=data[numpy.where((data['year'] >= year_range[0]) & (data['year'] <= year_range[1]))]
-   
+
 
    #Test if there are any data - if not then return
    if data_subset.size==0:
@@ -456,7 +462,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #fco2 quality flag (if a SOCAT fCO2 quality control flag is present, use it to remove data that failed the check)
    if numpy.all(numpy.isnan(data_subset['fCO2_qc_flag'])) == False:
        data_subset=data_subset[numpy.where(data_subset['fCO2_qc_flag'] == 2)]
-   
+
    #check if fco2 is not nan
    data_subset=data_subset[numpy.where(numpy.isfinite(data_subset['fCO2']))]
 
@@ -491,7 +497,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
                if data_subset[i][name]!=data_subset[i-1][name]:
                    duplicate=False;
                    break;
-                  
+
                #there is a difference so these cannot be duplicates - exit the loop
                duplicate=False
                break
@@ -509,7 +515,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
             allindices.remove(dupe)
          data_subset=data_subset[allindices]
          jds=jds[allindices]
-   
+
    #Finally we can remove columns which were only required for quality checks
    #these are days,hours,mins,fCO2rec_flag
    names=list(data_subset.dtype.names)
@@ -528,7 +534,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Get temperature from SST climatology
    if useaatsr and not usereynolds:
       #Use the AATSR data to get the SST
-      Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
+      Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
                               data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print("All Temperature data are no-data-values - skipping for this year.")
@@ -537,11 +543,18 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
       Tcls += 0.17
    elif usereynolds and not useaatsr:
       #Use the Reynolds data to get the SST
-      Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'], 
+      Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
                               data_subset['latitude'],sstdir, ssttail)
       if numpy.all(Tcls==-999):
          print("All Temperature data are no-data-values - skipping for this year/month combination.")
          return 0,[]
+    elif useESACCI and not usereynolds:
+        #Use the Reynolds data to get the SST
+        Tcls = get_sst.GetESACCISST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+                            data_subset['latitude'],sstdir, ssttail,useESACCI=useESACCI)
+        if numpy.all(Tcls==-999):
+            print("All Temperature data are no-data-values - skipping for this year/month combination.")
+            return 0,[]
       #Temperature is already (kind-of) subskin so no need to convert it
    else:
       raise Exception("No SST data specified. Currently must be one (and only one) of either AATSR or Reynolds.")
@@ -551,11 +564,11 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Extract the expocodes here as they get removed in the conversion
    expocodes=data_subset['expocode']
    #Recalculate the fugacity and partial pressure
-   conversion = v2_f_conversion.v2_f_conversion_wrap(jds,data_subset,Tcls,Peq_cls,extrapolatetoyear)
+   conversion = v2_f_conversion.v2_f_conversion_wrap(jds,data_subset,Tcls,Peq_cls,extrapolatetoyear,temperature_handling)
    if conversion is None:
       #There were no good data to use
       return 0,[]
-   
+
    #Write out the data into gridded monthly netCDF files - this will be easier if we append all arrays and use numpy
    #First convert jd_y into month - write a lambda function to do this so we can use numpy arrays
    ##convert_to_month=numpy.vectorize(lambda x: datetime.datetime.fromordinal(x).month)
@@ -586,8 +599,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
 #      month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month,
 #                                                   dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
       month_data=numpy.lib.recfunctions.append_fields(month_data, 'expocode', expocodes_month, dtypes=expocodes_month.dtype, usemask=False, asrecarray=True)
-      
-      
+
+
       #Get this month into a datetime object - use the average of year to get a centre point
       #Note in most usual cases the year range is a single year so averaging does nothing strange
       if m!=12:
@@ -654,13 +667,13 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
     dF=month_data['fCO2_Tym'] - month_data['fCO2_SST']
     #Difference in partial pressure
     dP=month_data['pCO2_Tym'] - month_data['pCO2_SST']
-    
+
     outputfile=outputfile.replace('.nc','.txt')
     #Write out the data into a netCDF file
     #Test directory exists
     if not os.path.exists(os.path.dirname(outputfile)):
         raise Exception("Directory to write file to does not exist: %s"%(os.path.dirname(outputfile)))
-    
+
     output_data=month_data
 
     if output_data.size > 0:
@@ -671,7 +684,7 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
 def CreateBinnedData(month_data):
    #import pandas as pd;
    #allData = pd.DataFrame(month_data);
-   
+
    #grid information
    nlon = 360 # number of longitude pixels
    lon0 = -180. # start longitude
@@ -949,9 +962,8 @@ def Main():
                 sstdir=cl.sstdir,ssttail=cl.ssttail,prefix=cl.prefix,outputdir=cl.outputdir,
                 extrapolatetoyear=cl.extrapolatetoyear,version=cl.socatversion,ASCIIOUT=cl.asciioutput,
                 percruisedir=cl.percruisedir,coastalfile=cl.coastalfile,useaatsr=cl.useaatsr,
-                usereynolds=cl.usereynolds,removeduplicates=not cl.keepduplicates)
+                usereynolds=cl.usereynolds,useESACCI=cl.useESACCI,removeduplicates=not cl.keepduplicates,temperature_handling=cl.temperature_handling)
    print("%s ended at: %s "%(os.path.basename(__file__),str(datetime.datetime.now())))
 
 if __name__=="__main__":
    Main()
-

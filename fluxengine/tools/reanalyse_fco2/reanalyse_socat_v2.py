@@ -26,7 +26,7 @@ def GenerateRegionFileMap(socatfiles, regions):
     if len(socatfiles) == 1 and regions == None:
         regionFileMap = {"GL":socatfiles[0]};
         return regionFileMap;
-    
+
     #Multiple regions defined
     elif len(socatfiles) == len(regions):
         regionFileMap = {regions[i]:socatfiles[i] for i in range(0, len(regions))};
@@ -39,9 +39,9 @@ def GenerateRegionFileMap(socatfiles, regions):
     #Not global and there are more files than regions or more regions than files.
     else:
         raise ValueError("GenerateRegionFileMap: number of region codes suppled do not match the number of input files.");
-        
 
-#Output directories for the various data: $dirname will be replaced with the output directory 
+
+#Output directories for the various data: $dirname will be replaced with the output directory
 #at a later point in the processing
 outputdirectory={'socat' : string.Template('$dirname/reanalysed_data'),
                  'socatmonth' : string.Template('$dirname/reanalysed_data/%02d'),
@@ -126,8 +126,9 @@ def GetCommandline():
    arg_convertgroup.add_argument('--withcoastal',dest='withcoastal',type=str,help="The region code (defined using --regions) which corresponds to coastal data. Coastal data is appended to other regions where gridcells overlap and any remaining data is analysed seperately. Do not specify if no coastal data is used. Default is None (no coastal data used).",default=None)
    arg_convertgroup.add_argument('--useaatsr',dest='useaatsr',action='store_true',help="To use the AATSR SST data.",default=False)
    arg_convertgroup.add_argument('--usereynolds',dest='usereynolds',action='store_true',help="To use the Reynolds SST data.",default=False)
+   arg_convertgroup.add_argument('--useESACCI',dest='useESACCI',action='store_true',help="To use the ESACCI SST data.",default=False)
    arg_convertgroup.add_argument('--keepduplicates',dest='keepduplicates',action='store_true',help="To use duplicate data.",default=False)
-
+   arg_convertgroup.add_argument('--temperature_handling',dest='temperature_handling',type=int,help="How to handle temperature corrections",default=1)
    cl=parser.parse_args()
 
    return cl;
@@ -151,7 +152,7 @@ def CreateOutputTree(topdir,continuing=False):
    #else if continuing is True then we already have output directory tree existing
    if not continuing:
       #Check if topdir exists - if so then exit (to avoid accidental overwrites)
-      if os.path.exists(topdir): 
+      if os.path.exists(topdir):
          raise Exception("Output directory: %s already exists - please specify a new one that does not exist."%topdir)
 
       #Make the topdir directory
@@ -175,7 +176,7 @@ def CreateOutputTree(topdir,continuing=False):
 
 def KrigeWithGstat(gstatcommdir):
    """
-   Experimental function to allow kriging using the gstat application 
+   Experimental function to allow kriging using the gstat application
       gstatcommdir: directory containing all the gstat cmd files for each month
    """
    #Get all the files that match the 'glob' in the gstatcommdir
@@ -196,7 +197,7 @@ def KrigeWithGstat(gstatcommdir):
 
 def InterpolateWithDiva(inputfilename,destinationpath,variable,divaparamdefault):
    """
-   Function to call the third party GPLv3 DIVA interplation routines: 
+   Function to call the third party GPLv3 DIVA interplation routines:
       http://modb.oce.ulg.ac.be/mediawiki/index.php/DIVA
    The routines are written in Fortran and bash so will be called via subprocess.
    """
@@ -220,7 +221,7 @@ def InterpolateWithDiva(inputfilename,destinationpath,variable,divaparamdefault)
    fout.close()
 
 
-#Returns standard column names, dtypes and columns as string names or string column numbers   
+#Returns standard column names, dtypes and columns as string names or string column numbers
 def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
                                    fCO2_col, expocode_col, socatversion, notsocatformat):
@@ -228,7 +229,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
                     "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2", "fCO2_qc_flag"];
     colDTypes = ['U24', '<i8', '<i8', '<i8', '<i8', '<i8', '<i8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<i8'];
     #colDTypes = [str, int, int, int, int, int, int, float, float, float, float, float, float, float, float, float, float, int];
-    
+
     if notsocatformat: #Specify the columns as given by the command line parameters.
         colIdentifiers = [expocode_col, year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_equ_col, salinity_sub_col, air_pressure_sub_col, \
@@ -277,7 +278,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
             colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '29', '31'];
         else:
             raise ValueError("No value columns could be generated. Only socat version 2, 3, 4, 5, 6, 2019, and 2020 are supported.");
-        
+
     columnInfo = [];
     for i in range(len(colIdentifiers)):
         columnInfo.append( (stndColNames[i], colDTypes[i], colIdentifiers[i]) );
@@ -287,7 +288,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
 def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010,
                       endyr=2010, regions=None,  methodused=None, diva=False, gstatcmds=None,
                       notperyear=v2_convert_f_SSH.cldefaults['notperyear'], extrapolatetoyear=None, keepduplicates=False,
-                      asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, useaatsr=False, usereynolds=False,
+                      asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, useaatsr=False, usereynolds=False,useESACCI=False,
                       socatversion=6,
                       notsocatformat=False,
                       year_col=None,
@@ -306,25 +307,30 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                       air_pressure_sub_col=None,
                       air_pressure_equ_col=None,
                       fCO2_col=None,
-                      expocode_col=None
+                      expocode_col=None,
+                      temperature_handling=1
                       ):
    #Dodgy use of global means we need to explicitly reset 'outputdirectory'this between calls.
    reset_outputdirectory();
-   
-   
+
+
    columnInfo = construct_column_info(year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
                                    fCO2_col, expocode_col, socatversion, notsocatformat);
-   
-   
+
+
    #Dictionary mapping region codes with names.
    regionFileMap=GenerateRegionFileMap(socatfiles, regions);
-   
+
    ###Check for valid parameters
    if useaatsr and usereynolds:
        raise Exception("Can only use one of AATSR or Reynolds SST products not both.")
-   if not useaatsr and not usereynolds:
-       raise Exception("Must specify one of AATSR or Reynolds SST products.")
+   #Can't use three SST datasets
+   if useaatsr and usereynolds and useESACCI:
+       raise Exception("Can only use one of AATSR, Reynolds or ESACCI SST products not both.")
+   # Must select one SST dataset
+   if not useaatsr and usereynolds and useESACCI:
+       raise Exception("Must specify one of AATSR, Reynolds or ESACCI SST products.")
 
    if usereynolds:
       print()
@@ -334,7 +340,11 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
       print()
       print("ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it).")
       print()
-   
+   if useESACCI:
+      print()
+      print("ATTENTION: selected to use ESACCI SST. This assumes that the sstdir points to the ESACCI data (if not you need to change it).")
+      print()
+
 
    if methodused is not None and (diva==True or gstatcmds is not None):
       print("Can only select one of --methodused, --diva or --gstatcmds.")
@@ -355,15 +365,15 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
    if vco2dir != None: vco2dir = os.path.abspath(os.path.expanduser(vco2dir));
    if socatdir != None: socatdir = os.path.abspath(os.path.expanduser(socatdir));
    output = os.path.abspath(os.path.expanduser(output));
-   
+
    #Check if paths exist
    for path in [sstdir, vco2dir, socatdir]:
        if path != "" and path != None:
            if not os.path.exists(os.path.expanduser(path)):
                print("File path does not exist: %s" % path)
                return 2;
-   
-   
+
+
    #######
    ###Start main logic
    #######
@@ -374,7 +384,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
       #No interpolation has been specified. Exit when reach interpolation stage
       exitatinterpolation=True;
       print("No interpolation option specified so will exit at interpolation stage.");
-   
+
    #Get command line variables
    interpmethod=methodused
    #Create the output directory tree (if methodused is false)
@@ -418,7 +428,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  coastalfile,
                                                  useaatsr,
                                                  usereynolds,
-                                                 removeduplicates)
+                                                 useESACCI,
+                                                 removeduplicates,
+                                                 temperature_handling)
 
       if withcoastal != None:
          v2_convert_f_SSH.FinalCoastalConversion(startyr,
@@ -433,7 +445,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  outputdirectory['socatmonthpercruise'],
                                                  useaatsr,
                                                  usereynolds,
-                                                 removeduplicates)
+                                                 useESACCI,
+                                                 removeduplicates,
+                                                 temperature_handling)
 
       #Get the variable names based on whether we have extrapolated or not
       #These are (only) needed when we write out to ASCII
@@ -446,7 +460,7 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
 
       #Here we can combine the regional netCDFs into a global product
       #we will do it per month per year
-      #Only do if netCDFs were produced in previous step 
+      #Only do if netCDFs were produced in previous step
       #TODO FIXME AND if more than 1 regions selected
       if not asciioutput:
          print("Creating global netCDF products ...")
@@ -513,9 +527,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
             InterpolateWithDiva(filename,destdir,FCO2,divaparamdefault)
             destdir=outputdirectory['ppred']
             InterpolateWithDiva(filename,destdir,PCO2,divaparamdefault)
-   
+
    #We do the following after interpolation
-   #Now do the combining of files 
+   #Now do the combining of files
    if extrapolatetoyear is not None:
       output_prefix="%s/%4d"%(outputdirectory['combined'],extrapolatetoyear)
       tcl_filename_base="%s/%s/%4d%%02d01_OCF-SST-GLO-1M-100-ATS-ARC.nc"%(sstdir,extrapolatetoyear,extrapolatetoyear)
@@ -532,6 +546,8 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
          tcltype="aatsr"
       elif usereynolds:
          tcltype="reynolds"
+      elif useESACCI:
+         tcltype="ESACCI"
 
       #Due to the file name of the vco2 data it is non-trivial to auto get for each month
       #but we can convert month to string representation and get the file with that in the name
@@ -560,20 +576,17 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                         plot=True,month=month,tclyear=str(extrapolatetoyear),
                         extrapolatedyear=extrapolatetoyear,
                         method=interpmethod,tcltype=tcltype)
-      
+
       return 0;
 
 
 if __name__ == "__main__":
     #Get command line variables
     cl = GetCommandline();
-    
+
     exitCode = RunReanalyseSocat(**vars(cl));
-    
+
     if exitCode == 0:
         print("Reanalysis of socat data completed successfully.");
     else:
         print("An error occured while performing reanalysis. Exited with exit-code:", exitCode);
-    
-
-

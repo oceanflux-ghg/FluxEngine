@@ -6,11 +6,14 @@ import numpy
 import os
 from scipy.ndimage import map_coordinates
 
-def GetReynoldsSST(years, months, lons, lats, SSTdir, SSTtail):
-   return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='sst_mean',lonname='lon',latname='lat')
+def GetESACCISST(years, months, lons, lats, SSTdir, SSTtail,useaatsr=False,usereynolds=False,useESACCI=False):
+   return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='analysed_sst',lonname='longitude',latname='latitude',useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI)
 
-def GetAATSRSST(years, months, lons, lats, SSTdir, SSTtail):
-   return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='sst_skin_mean',lonname='lon',latname='lat')
+def GetReynoldsSST(years, months, lons, lats, SSTdir, SSTtail,useaatsr=False,usereynolds=False,useESACCI=False):
+   return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='sst_mean',lonname='lon',latname='lat',useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI)
+
+def GetAATSRSST(years, months, lons, lats, SSTdir, SSTtail,useaatsr=False,usereynolds=False,useESACCI=False):
+   return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='sst_skin_mean',lonname='lon',latname='lat',useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI)
 
 
 def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
@@ -34,7 +37,7 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
          print("SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). ")
    return data,lons,lats
 
-def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
+def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,useaatsr=False,usereynolds=False,useESACCI=False):
    """reads AATSR monthly climatology files and extracts data closest to the
       ship position:
       Arguments (all          #this is not good - suspect we are interpolating in an impossible area1D numpy arrays):
@@ -59,15 +62,21 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
       #Get the indices of points from this year and month
       indices=numpy.where((years==thisdate[0])&(months==thisdate[1]))[0]
       #Read in the data from the SST data file
-      sstfilename=os.path.join(SSTdir,"%d"%thisdate[0],"%d%02d"%(thisdate[0],thisdate[1])+SSTtail)
-      if os.path.isfile(sstfilename) == False: 
+      if useESACCI:
+          yearstring=thisdate[0]
+          monthstring=thisdate[1]
+          sstfilename=os.path.join(SSTdir,"{0}/{0}{1}{2}".format(yearstring,format(monthstring, "02d"),SSTtail))
+      else:
+          sstfilename=os.path.join(SSTdir,"%d"%thisdate[0],"%d%02d"%(thisdate[0],thisdate[1])+SSTtail)
+
+      if os.path.isfile(sstfilename) == False:
          print('%s: no SST file'%sstfilename)
          Tcl[indices] = -999
          continue
       else:
          sstdata,sstlons,sstlats=ReadSSTFile(sstfilename,dataname=dataname,lonname=lonname,latname=latname)
       #Now get the grid cell positions that relate to these
-      #Start by rounding to the integer+0.5 
+      #Start by rounding to the integer+0.5
       X=numpy.floor(lons[indices])+0.5
       Y=numpy.floor(lats[indices])+0.5
       XY=list(zip(X,Y))
@@ -103,7 +112,7 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
          indexlat = int(numpy.floor(grid_indices_offset[index][0])); #TMH: converted to int
          indexlon = int(numpy.floor(grid_indices_offset[index][1])); #TMH: converted to int
          window=sstdata[indexlat:indexlat+2,indexlon:indexlon+2].reshape([-1])
-         gooddata=numpy.where(window<9e9)[0]
+         gooddata=numpy.where((window<9e9) & (window > 0) & (numpy.isnan(window) == 0))[0] #DJF: Added second condition where the fill value is less than 0.
          if gooddata.size == 4 or gooddata.size ==0:
             #all data are good so interpolation should be valid
             #or all data are bad and no interpolation can be done
@@ -126,4 +135,3 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname):
          Tcl[indices[bad]]=-999
 
    return Tcl
-

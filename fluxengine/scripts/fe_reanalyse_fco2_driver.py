@@ -77,12 +77,17 @@ if __name__ == "__main__":
     argParseSettingsGroup.add_argument("-regions", metavar='<keyword_list>', type=str, nargs='*', help='A list of region codes to process. These will be used to name output files and should correspond to the list of file names given in -socat_files. If no region code is specified it is assumed a single file containing global data is provided.', default=["GL"]);
     argParseSettingsGroup.add_argument('-withcoastal',dest='withcoastal',type=str,help="The region code (defined using -regions) which corresponds to coastal data. Coastal data is appended to other regions where gridcells overlap and any remaining data is analysed seperately. Do not specify if no coastal data is used. Default is None (no coastal data used).",default=None)
     argParseSettingsGroup.add_argument('-asciioutput', dest='asciioutput', action='store_true', help="To output data as ascii lists rather than gridded netcdf.", default=False);
-    argParseSettingsGroup.add_argument('-useaatsr', action='store_true', help="To use the AATSR SST data.", default=False);
-    argParseSettingsGroup.add_argument('-usereynolds', action='store_true', help="To use the Reynolds SST data.", default=False);
-    argParseSettingsGroup.add_argument('-useESACCI', action='store_true', help="To use the ESACCI SST data.", default=False);
+    # argParseSettingsGroup.add_argument('-useaatsr', action='store_true', help="To use the AATSR SST data.", default=False);
+    # argParseSettingsGroup.add_argument('-usereynolds', action='store_true', help="To use the Reynolds SST data.", default=False);
+    # argParseSettingsGroup.add_argument('-useESACCI', action='store_true', help="To use the ESACCI SST data.", default=False);
     argParseSettingsGroup.add_argument('-keepduplicates', action='store_true', help="Do not detect and remove duplicate data points.", default=False);
     argParseSettingsGroup.add_argument('-keeptempfiles', action='store_true', help="Do not delete the temporary (full output) files produced by the reanalyse_socat.", default=False);
     argParseSettingsGroup.add_argument('-temperature_handling',dest='temperature_handling',type=int,default = 1)
+    #argParseSettingsGroup.add_argument('-daily',action='store_true',help='Run sst matching on daily files',default = False) DJF: 06/02/2025 No longer needed testing item
+    argParseSettingsGroup.add_argument('-sst_data_name',type=str,dest='sst_data_name',help="The name of the SST variable within the SST netCDF files for reanalysis",default='analysed_sst')
+    argParseSettingsGroup.add_argument('-sst_longitude',type=str,dest='sst_longitude',help="The name of the longitude variable within the SST netCDF files for reanalysis",default='lon')
+    argParseSettingsGroup.add_argument('-sst_latitude',type=str,dest='sst_latitude',help="The name of the latitude variable within the SST netCDF files for reanalysis",default='lat')
+    argParseSettingsGroup.add_argument('-sst_bias',type=float,dest='sst_bias',help="The global SST bias to apply",default=0)
 
     argParseRunModeGroup = clParser.add_argument_group(title='Mode (socat vs non-socat)');
     argParseRunModeGroup.add_argument('-socatversion', type=int, dest='socatversion', help="If running in SOCAT mode this determines the version of the SOCAT data files to read",default=None);
@@ -123,9 +128,9 @@ if __name__ == "__main__":
                          sstdir=clArgs.sst_dir,
                          ssttail=clArgs.sst_tail,
                          regions=clArgs.regions,
-                         useESACCI=clArgs.useESACCI,
-                         usereynolds=clArgs.usereynolds,
-                         useaatsr=clArgs.useaatsr,
+                         # useESACCI=clArgs.useESACCI,
+                         # usereynolds=clArgs.usereynolds,
+                         # useaatsr=clArgs.useaatsr,
                          startyr=clArgs.startyr,
                          endyr=clArgs.endyr,
                          asciioutput=clArgs.asciioutput,
@@ -154,6 +159,11 @@ if __name__ == "__main__":
                          withcoastal=clArgs.withcoastal,
                          #output=clArgs.output_dir);
                          temperature_handling = clArgs.temperature_handling,
+                         #daily = clArgs.daily,
+                         sst_bias = clArgs.sst_bias,
+                         sst_data_name = clArgs.sst_data_name,
+                         sst_longitude = clArgs.sst_longitude,
+                         sst_latitude = clArgs.sst_latitude,
                          output=temporaryOutputPath);#"reanalyse_socat/output/");
 
     #copy output files to the output_dir folder.

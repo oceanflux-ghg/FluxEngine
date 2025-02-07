@@ -35,11 +35,16 @@ cldefaults={'start':1991,
             'asciioutput':False,
             'percruisedir':None,
             'coastalfile':None,
-            'useaatsr': False,
-            'usereynolds': False,
-            'useESACCI': False,
+            # 'useaatsr': False,
+            # 'usereynolds': False,
+            # 'useESACCI': False,
+            'sst_data_name': 'analysed_sst',
+            'sst_longitude': 'lon',
+            'sst_latitude': 'lat',
             'keepduplicates' : False,
-            'temperature_handling': 1
+            'temperature_handling': 1,
+            'sst_bias': 0
+            #'daily': False # DJF: 06/02/2025 No longer needed as a testing item.
             }
 
 #list of variables for which we want std,min,max in outputfiles
@@ -63,14 +68,19 @@ def GetCommandline():
    parser.add_argument('--notperyear',dest='notperyear',action='store_true',help="Use this if you don't want separate files per year",default=cldefaults['notperyear'])
    parser.add_argument('--extrapolatetoyear',type=int,dest='extrapolatetoyear',help="Extrapolate to given year using Takahashi trend.",default=cldefaults['extrapolatetoyear'])
    parser.add_argument('--socatversion',type=int,dest='socatversion',help="The version of SOCAT data files to read.",default=cldefaults['socatversion'])
-   parser.add_argument('--useaatsr',type=int,dest='useaatsr',help="To use the AATSR SST data.",default=cldefaults['useaatsr'])
-   parser.add_argument('--usereynolds',type=int,dest='usereynolds',help="To use the Reynolds SST data.",default=cldefaults['usereynolds'])
-   parser.add_argument('--useESACCI',type=int,dest='useESACCI',help="To use the ESACCI SST data.",default=cldefaults['useESACCI'])
+   # parser.add_argument('--useaatsr',type=int,dest='useaatsr',help="To use the AATSR SST data.",default=cldefaults['useaatsr'])
+   # parser.add_argument('--usereynolds',type=int,dest='usereynolds',help="To use the Reynolds SST data.",default=cldefaults['usereynolds'])
+   # parser.add_argument('--useESACCI',type=int,dest='useESACCI',help="To use the ESACCI SST data.",default=cldefaults['useESACCI'])
+   parser.add_argument('--sst_data_name',type=str,dest='sst_data_name',help="The name of the SST variable within the SST netCDF files for reanalysis",default=cldefaults['sst_data_name'])
+   parser.add_argument('--sst_longitude',type=str,dest='sst_longitude',help="The name of the longitude variable within the SST netCDF files for reanalysis",default=cldefaults['sst_longitude'])
+   parser.add_argument('--sst_latitude',type=str,dest='sst_latitude',help="The name of the latitude variable within the SST netCDF files for reanalysis",default=cldefaults['sst_latitude'])
    parser.add_argument('inputfile',metavar='<filename>',help ='The input SOCAT file to use')
    parser.add_argument('--no-grid-output',action='store_true',dest='asciioutput',help="To output as an ascii list rather than gridded netcdf.",default=cldefaults['asciioutput'])
    parser.add_argument('--coastalfile', type=str,metavar='<path>',help ='The file with the SOCAT coastal data in',default=cldefaults['coastalfile'])
    parser.add_argument('--keepduplicates',action='store_true',metavar='boolean',help ='Whether to keep duplicate data',default=cldefaults['keepduplicates'])
    parser.add_argument('--temperature_handling',dest='temperature_handling',type=int,help="How to handle temperature corrections",default=1)
+   parser.add_argument('--sst_bias',dest='sst_bias',type=float,help="Global correction to SST data",default=0)
+   #parser.add_argument('--daily',action='store_true',dest='daily',help='Add this to run with daily sst data',default=cldefaults['daily']) # DJF 06/02/2025 no longer needed as getSST code modified.
    commandline=parser.parse_args()
 
    #expand user incase path has been entered in style '~/'
@@ -90,9 +100,9 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
                   ASCIIOUT=cldefaults['asciioutput'], socatversion=6,
                   percruisedir=cldefaults['asciioutput'],coastalfile=cldefaults['coastalfile'],
-                  useaatsr=cldefaults['useaatsr'],usereynolds=cldefaults['usereynolds'],useESACCI=cldefaults['useESACCI'],
+                  sst_data_name=cldefaults['sst_data_name'],sst_longitude = cldefaults['sst_longitude'],sst_latitude=cldefaults['sst_latitude'],
                   removeduplicates=not cldefaults['keepduplicates'],
-                  temperature_handling=1):
+                  temperature_handling=1,sst_bias=0):
    """
    Does all the hard work - if run as a library then call this function.
       inputfile - filename of the SOCAT ascii csv file
@@ -165,7 +175,8 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
       number_of_data_points,duplicates=ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,
                                                 extrapolatetoyear,version=socatversion,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
-                                                useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI,temperature_handling=temperature_handling)
+                                                sst_data_name=sst_data_name,sst_latitude = sst_latitude, sst_longitude = sst_longitude,
+                                                temperature_handling=temperature_handling,sst_bias=sst_bias)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -180,8 +191,8 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
                   outputdir=cldefaults['outputdir'],notperyear=cldefaults['notperyear'],sstdir=cldefaults['sstdir'],
                   ssttail=cldefaults['ssttail'],extrapolatetoyear=cldefaults['extrapolatetoyear'],
                   version=cldefaults['socatversion'],ASCIIOUT=cldefaults['asciioutput'],
-                  percruisedir=cldefaults['asciioutput'],useaatsr=False,usereynolds=False,useESACCI=False,
-                  temperature_handling=1,removeduplicates=True):
+                  percruisedir=cldefaults['asciioutput'],sst_data_name=cldefaults['sst_data_name'],sst_longitude = cldefaults['sst_longitude'],sst_latitude=cldefaults['sst_latitude'],
+                  temperature_handling=1,sst_bias=0,removeduplicates=True):
    #Run the following for each pair of years in the range to process
    print("Working on remaining coastal data.")
    total_number_of_data_points=0
@@ -191,7 +202,8 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
       number_of_data_points,duplicates=ConvertYears(coastaldata,year_range,sstdir,ssttail,prefix,outputdir,
                                                 extrapolatetoyear,version=version,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
-                                                useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI,temperature_handling=temperature_handling)
+                                                sst_data_name=sst_data_name,sst_latitide = sst_latitude, sst_longitude = sst_longitude,
+                                                temperature_handling=temperature_handling,sst_bias=sst_bias)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -432,7 +444,8 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 #   return data
 
 def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoyear,version,
-                 percruisedir=None,ASCIIOUT=False,removeduplicates=True,useaatsr=False,usereynolds=False,useESACCI=False,temperature_handling=1):
+                 percruisedir=None,ASCIIOUT=False,removeduplicates=True,sst_data_name='analysed_sst',sst_longitude='lon',sst_latitude='lat',
+                 temperature_handling=1,sst_bias=0):
    """
    Convert the data from the year range into netcdf files
       data - structured numpy array containing the SOCAT data
@@ -532,32 +545,41 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    number_of_data_points=data_subset.shape
    #Now do some actual conversion of the data
    #Get temperature from SST climatology
-   if useaatsr and not usereynolds:
-      #Use the AATSR data to get the SST
-      Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
-                              data_subset['latitude'],sstdir, ssttail)
-      if numpy.all(Tcls==-999):
-         print("All Temperature data are no-data-values - skipping for this year.")
-         return 0,[]
-      #Convert the temperature from skin to subskin
-      Tcls += 0.17
-   elif usereynolds and not useaatsr:
-      #Use the Reynolds data to get the SST
-      Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
-                              data_subset['latitude'],sstdir, ssttail)
-      if numpy.all(Tcls==-999):
-         print("All Temperature data are no-data-values - skipping for this year/month combination.")
-         return 0,[]
-    elif useESACCI and not usereynolds:
-        #Use the Reynolds data to get the SST
-        Tcls = get_sst.GetESACCISST(data_subset['year'], data_subset['month'], data_subset['longitude'],
-                            data_subset['latitude'],sstdir, ssttail,useESACCI=useESACCI)
-        if numpy.all(Tcls==-999):
-            print("All Temperature data are no-data-values - skipping for this year/month combination.")
-            return 0,[]
-      #Temperature is already (kind-of) subskin so no need to convert it
-   else:
-      raise Exception("No SST data specified. Currently must be one (and only one) of either AATSR or Reynolds.")
+   Tcls = get_sst.GetSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+                           data_subset['latitude'],sstdir, ssttail,sst_data_name,sst_longitude,sst_latitude,days = data_subset['day'],sst_bias=sst_bias)
+   if numpy.all(Tcls==-999):
+      print("All Temperature data are no-data-values - skipping for this year/month combination.")
+      return 0,[]
+
+
+   # DJF 30/01/2025: Removed this paritioning into the seperate datasets, this will all be handled at the command line now, providing this information
+   #  adds flexibility.
+   # if useaatsr and not usereynolds:
+   #    #Use the AATSR data to get the SST
+   #    Tcls = get_sst.GetAATSRSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+   #                            data_subset['latitude'],sstdir, ssttail)
+   #    if numpy.all(Tcls==-999):
+   #       print("All Temperature data are no-data-values - skipping for this year.")
+   #       return 0,[]
+   #    #Convert the temperature from skin to subskin
+   #    Tcls += 0.17
+   # elif usereynolds and not useaatsr:
+   #    #Use the Reynolds data to get the SST
+   #    Tcls = get_sst.GetReynoldsSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+   #                            data_subset['latitude'],sstdir, ssttail)
+   #    if numpy.all(Tcls==-999):
+   #       print("All Temperature data are no-data-values - skipping for this year/month combination.")
+   #       return 0,[]
+   # elif useESACCI and not usereynolds:
+   #    #Use the Reynolds data to get the SST
+   #    Tcls = get_sst.GetESACCISST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+   #                          data_subset['latitude'],sstdir, ssttail,useESACCI=useESACCI,days = data_subset['day'],daily=daily)
+   #    if numpy.all(Tcls==-999):
+   #        print("All Temperature data are no-data-values - skipping for this year/month combination.")
+   #        return 0,[]
+   #    #Temperature is already (kind-of) subskin so no need to convert it
+   # else:
+   #    raise Exception("No SST data specified. Currently must be one (and only one) of either AATSR or Reynolds.")
 
    #Update the pressure?
    Peq_cls = data_subset['air_pressure_sub'] + 3.
@@ -961,8 +983,8 @@ def Main():
    DoConversion(inputfile=cl.inputfile,startyr=cl.start,endyr=cl.end,notperyear=cl.notperyear,
                 sstdir=cl.sstdir,ssttail=cl.ssttail,prefix=cl.prefix,outputdir=cl.outputdir,
                 extrapolatetoyear=cl.extrapolatetoyear,version=cl.socatversion,ASCIIOUT=cl.asciioutput,
-                percruisedir=cl.percruisedir,coastalfile=cl.coastalfile,useaatsr=cl.useaatsr,
-                usereynolds=cl.usereynolds,useESACCI=cl.useESACCI,removeduplicates=not cl.keepduplicates,temperature_handling=cl.temperature_handling)
+                percruisedir=cl.percruisedir,coastalfile=cl.coastalfile,sst_data_name=cl.sst_data_name,sst_longitude = cl.sst_longitude,sst_latitude=cl.sst_latitude,
+                removeduplicates=not cl.keepduplicates,temperature_handling=cl.temperature_handling,sst_bias=cl.sst_bias)
    print("%s ended at: %s "%(os.path.basename(__file__),str(datetime.datetime.now())))
 
 if __name__=="__main__":

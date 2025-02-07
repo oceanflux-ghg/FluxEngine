@@ -124,11 +124,17 @@ def GetCommandline():
    arg_convertgroup.add_argument('--socatversion',type=int,dest='socatversion',help="The version of the SOCAT data files to read",default=2)
    arg_convertgroup.add_argument('--asciioutput',dest='asciioutput',action='store_true',help="To output data as ascii lists rather than gridded netcdf.",default=v2_convert_f_SSH.cldefaults['asciioutput'])
    arg_convertgroup.add_argument('--withcoastal',dest='withcoastal',type=str,help="The region code (defined using --regions) which corresponds to coastal data. Coastal data is appended to other regions where gridcells overlap and any remaining data is analysed seperately. Do not specify if no coastal data is used. Default is None (no coastal data used).",default=None)
-   arg_convertgroup.add_argument('--useaatsr',dest='useaatsr',action='store_true',help="To use the AATSR SST data.",default=False)
-   arg_convertgroup.add_argument('--usereynolds',dest='usereynolds',action='store_true',help="To use the Reynolds SST data.",default=False)
-   arg_convertgroup.add_argument('--useESACCI',dest='useESACCI',action='store_true',help="To use the ESACCI SST data.",default=False)
+   # arg_convertgroup.add_argument('--useaatsr',dest='useaatsr',action='store_true',help="To use the AATSR SST data.",default=False)
+   # arg_convertgroup.add_argument('--usereynolds',dest='usereynolds',action='store_true',help="To use the Reynolds SST data.",default=False)
+   # arg_convertgroup.add_argument('--useESACCI',dest='useESACCI',action='store_true',help="To use the ESACCI SST data.",default=False)
+   arg_convertgroup.add_argument('--sst_data_name',type=str,dest='sst_data_name',help="The name of the SST variable within the SST netCDF files for reanalysis",default='analysed_sst')
+   arg_convertgroup.add_argument('--sst_longitude',type=str,dest='sst_longitude',help="The name of the longitude variable within the SST netCDF files for reanalysis",default='lon')
+   arg_convertgroup.add_argument('--sst_latitude',type=str,dest='sst_latitude',help="The name of the latitude variable within the SST netCDF files for reanalysis",default='lat')
+
    arg_convertgroup.add_argument('--keepduplicates',dest='keepduplicates',action='store_true',help="To use duplicate data.",default=False)
    arg_convertgroup.add_argument('--temperature_handling',dest='temperature_handling',type=int,help="How to handle temperature corrections",default=1)
+   arg_convertgroup.add_argument('--sst_bias',dest='sst_bias',type=float,help='',default=0)
+   #arg_convertgroup.add_argument('--daily',dest='daily',action='store_true',help='Whether to run with daily data',default=False)
    cl=parser.parse_args()
 
    return cl;
@@ -288,7 +294,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
 def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None, vco2dir=None, output="./output", startyr=2010,
                       endyr=2010, regions=None,  methodused=None, diva=False, gstatcmds=None,
                       notperyear=v2_convert_f_SSH.cldefaults['notperyear'], extrapolatetoyear=None, keepduplicates=False,
-                      asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, useaatsr=False, usereynolds=False,useESACCI=False,
+                      asciioutput=v2_convert_f_SSH.cldefaults['asciioutput'], withcoastal=False, sst_data_name='analysed_sst',sst_longitude = 'lon',sst_latitude='lat',
                       socatversion=6,
                       notsocatformat=False,
                       year_col=None,
@@ -308,7 +314,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                       air_pressure_equ_col=None,
                       fCO2_col=None,
                       expocode_col=None,
-                      temperature_handling=1
+                      temperature_handling=1,
+                      sst_bias=0
+                      #daily=False
                       ):
    #Dodgy use of global means we need to explicitly reset 'outputdirectory'this between calls.
    reset_outputdirectory();
@@ -323,28 +331,32 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
    regionFileMap=GenerateRegionFileMap(socatfiles, regions);
 
    ###Check for valid parameters
-   if useaatsr and usereynolds:
-       raise Exception("Can only use one of AATSR or Reynolds SST products not both.")
-   #Can't use three SST datasets
-   if useaatsr and usereynolds and useESACCI:
-       raise Exception("Can only use one of AATSR, Reynolds or ESACCI SST products not both.")
-   # Must select one SST dataset
-   if not useaatsr and usereynolds and useESACCI:
-       raise Exception("Must specify one of AATSR, Reynolds or ESACCI SST products.")
-
-   if usereynolds:
-      print()
-      print("ATTENTION: selected to use Reynolds SST. This assumes that the sstdir points to the Reynolds data (if not you need to change it).")
-      print()
-   if useaatsr:
-      print()
-      print("ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it).")
-      print()
-   if useESACCI:
-      print()
-      print("ATTENTION: selected to use ESACCI SST. This assumes that the sstdir points to the ESACCI data (if not you need to change it).")
-      print()
-
+   # if useaatsr and usereynolds:
+   #     raise Exception("Can only use one of AATSR or Reynolds SST products not both.")
+   # #Can't use three SST datasets
+   # if useaatsr and usereynolds and useESACCI:
+   #     raise Exception("Can only use one of AATSR, Reynolds or ESACCI SST products not both.")
+   # # Must select one SST dataset
+   # if not useaatsr and usereynolds and useESACCI:
+   #     raise Exception("Must specify one of AATSR, Reynolds or ESACCI SST products.")
+   #
+   # if usereynolds:
+   #    print()
+   #    print("ATTENTION: selected to use Reynolds SST. This assumes that the sstdir points to the Reynolds data (if not you need to change it).")
+   #    print()
+   # if useaatsr:
+   #    print()
+   #    print("ATTENTION: selected to use AATSR SST. This assumes that the sstdir points to the AATSR data (if not you need to change it).")
+   #    print()
+   # if useESACCI:
+   #    print()
+   #    print("ATTENTION: selected to use ESACCI SST. This assumes that the sstdir points to the ESACCI data (if not you need to change it).")
+   #    print()
+   print()
+   print("ATTENTION: SST dataset sst variable name is " + sst_data_name)
+   print("ATTENTION: SST dataset latitude variable name is " + sst_latitude)
+   print("ATTENTION: SST dataset longitude variable name is " + sst_longitude)
+   print()
 
    if methodused is not None and (diva==True or gstatcmds is not None):
       print("Can only select one of --methodused, --diva or --gstatcmds.")
@@ -426,11 +438,12 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  socatversion,
                                                  outputdirectory['socatmonthpercruise'],
                                                  coastalfile,
-                                                 useaatsr,
-                                                 usereynolds,
-                                                 useESACCI,
+                                                 sst_data_name,
+                                                 sst_longitude,
+                                                 sst_latitude,
                                                  removeduplicates,
-                                                 temperature_handling)
+                                                 temperature_handling,
+                                                 sst_bias)
 
       if withcoastal != None:
          v2_convert_f_SSH.FinalCoastalConversion(startyr,
@@ -443,11 +456,12 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  extrapolatetoyear,
                                                  asciioutput,
                                                  outputdirectory['socatmonthpercruise'],
-                                                 useaatsr,
-                                                 usereynolds,
-                                                 useESACCI,
+                                                 sst_data_name,
+                                                 sst_longitude,
+                                                 sst_latitude,
                                                  removeduplicates,
-                                                 temperature_handling)
+                                                 temperature_handling,
+                                                 sst_bias)
 
       #Get the variable names based on whether we have extrapolated or not
       #These are (only) needed when we write out to ASCII

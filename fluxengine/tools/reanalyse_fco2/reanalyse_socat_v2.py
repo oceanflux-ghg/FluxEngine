@@ -315,7 +315,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                       fCO2_col=None,
                       expocode_col=None,
                       temperature_handling=1,
-                      sst_bias=0
+                      sst_bias=0,
+                      unc_extract=False,
+                      uncname=''
                       #daily=False
                       ):
    #Dodgy use of global means we need to explicitly reset 'outputdirectory'this between calls.
@@ -356,6 +358,11 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
    print("ATTENTION: SST dataset sst variable name is " + sst_data_name)
    print("ATTENTION: SST dataset latitude variable name is " + sst_latitude)
    print("ATTENTION: SST dataset longitude variable name is " + sst_longitude)
+   if unc_extract:
+       print("ATTENTION: Uncertainty extraction activated")
+       print("ATTENTION: SST dataset uncertainty variable name is " + uncname)
+   else:
+       print("ATTENTION: Uncertainty extraction deactivated")
    print()
 
    if methodused is not None and (diva==True or gstatcmds is not None):
@@ -443,7 +450,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  sst_latitude,
                                                  removeduplicates,
                                                  temperature_handling,
-                                                 sst_bias)
+                                                 sst_bias,
+                                                 unc_extract,
+                                                 uncname)
 
       if withcoastal != None:
          v2_convert_f_SSH.FinalCoastalConversion(startyr,
@@ -461,7 +470,9 @@ def RunReanalyseSocat(socatdir=None, socatfiles=None, sstdir=None, ssttail=None,
                                                  sst_latitude,
                                                  removeduplicates,
                                                  temperature_handling,
-                                                 sst_bias)
+                                                 sst_bias,
+                                                 unc_extract,
+                                                 uncname)
 
       #Get the variable names based on whether we have extrapolated or not
       #These are (only) needed when we write out to ASCII

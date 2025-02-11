@@ -14,16 +14,16 @@ EPS = 2.2204460492503131e-16
 trend = 1.5e-06 # pCO2 [atm/year] (Takahashi et al., 2009)
 tempdir=tempfile.mkdtemp(prefix="ignore_points_")
 
-def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None,temperature_handling=1):
+def v2_f_conversion_wrap(jds,data_array,Tcls,Tcls_unc,Peq_cls,extrapolatetoyear=None,temperature_handling=1):
    """
     Wrapper function to run v2_f_conversion but from a structured array as input.
     Also returns result as a structured array.
    """
    #Run the conversion function
-   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
+   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_C_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
                                                       data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'],
                                                       data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'],
-                                                      data_array['fCO2'], Tcls, Peq_cls,extrapolatetoyear,temperature_handling);
+                                                      data_array['fCO2'], Tcls,Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling);
 
    if jd is None:
       #this is only if there were no usable data after the validity checks
@@ -41,6 +41,7 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None,temp
                                            ('lon',float),
                                            ('SST_C',float),
                                            ('Tcl_C',float),
+                                           ('Tcl_C_unc',float),
                                            ('fCO2_SST',float),
                                            ('fCO2_Tym',float),
                                            ('pCO2_SST',float),
@@ -57,6 +58,7 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None,temp
       result['lon']=lon
       result['SST_C']=SST_C
       result['Tcl_C']=Tcl_C
+      result['Tcl_C_unc'] = Tcl_C_unc
       result['fCO2_SST']=fCO2_SST
       result['fCO2_Tym']=fCO2_Tym_final
       result['pCO2_SST']=pCO2_SST
@@ -67,7 +69,7 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Peq_cls,extrapolatetoyear=None,temp
 
 
 def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, \
-   P_nceps, fCO2_recs, Tcls, Peq_cls,extrapolatetoyear,temperature_handling):
+   P_nceps, fCO2_recs, Tcls, Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling):
    """Recalculates CO2 flux from the ocean:
       Arguments (all numpy arrays):
         jds - days since 0/1/0000 (from datenum.py)
@@ -124,6 +126,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    yr, mon, day, hh, mm, ss = yrs[goodpoints], mons[goodpoints], days[goodpoints], hhs[goodpoints], mms[goodpoints], sss[goodpoints];
    Teq_C, P, Peq, sal_woa = Teq_Cs[goodpoints], Ps[goodpoints], Peqs[goodpoints], sal_woas[goodpoints]
    P_ncep, fCO2_rec, Tcl, Peq_cl = P_nceps[goodpoints], fCO2_recs[goodpoints], Tcls[goodpoints], Peq_cls[goodpoints]
+   Tcl_unc = Tcls_unc[goodpoints]
    n = np.size(jd)
    Tcl_C  = Tcl - 273.15
    # if sal_woas is invalid, use 35.
@@ -274,4 +277,4 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    # fCO2_SST *= 1E+06 # uatm (this is the same as fCO2_rec)
    # pCO2_SST *= 1E+06 # uatm
 
-   return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf];
+   return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf];

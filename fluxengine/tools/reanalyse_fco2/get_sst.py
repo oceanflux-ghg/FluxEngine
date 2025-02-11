@@ -71,7 +71,7 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
          print("SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). ")
    return data,lons,lats
 
-def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,days=0,sst_bias=0): # DJF 06/02/2025: Removed the usaESACCI etc variables as no longer needed
+def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,days=0,sst_bias=0,unc_extract = False,uncname=''): # DJF 06/02/2025: Removed the usaESACCI etc variables as no longer needed
    """reads AATSR monthly climatology files and extracts data closest to the
       ship position:
       Arguments (all          #this is not good - suspect we are interpolating in an impossible area1D numpy arrays):
@@ -86,6 +86,7 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
    """
 
    Tcl=numpy.ma.array([-999.] * years.size, fill_value = -999.)
+   Tcl_unc=numpy.ma.array([-999.] * years.size, fill_value = -999.)
 
    # if daily:
    # Here we setup if we are going to run it in daily mode
@@ -112,6 +113,11 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
            print('%s: File found, start loading...'%sstfilename)
            sstdata,sstlons,sstlats=ReadSSTFile(sstfilename,dataname=dataname,lonname=lonname,latname=latname)
            sstdata = sstdata+sst_bias # This allows a global bias to be applied to the data (i.e remove a cool bias in the data.)
+
+           #DJF 09/02/2025: Adding ability to add unc information to the ASCII files.
+           if unc_extract:
+               print('Loading SST uncertainty data...')
+               sstuncdata,sstlons,sstlats=ReadSSTFile(sstfilename,dataname=uncname,lonname=lonname,latname=latname)
            print('SST bias of '+ str(sst_bias) + ' applied')
 
        sst_data_res = numpy.abs(sstlons[0]-sstlons[1]) # Find the resolution of the sst data, we assume its the same in the latitude and longitudes
@@ -168,12 +174,16 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
        grid_indices_offset=grid_indices+numpy.array(list(zip(latoffset,lonoffset)))
 
        Tcl[indices]=map_coordinates(sstdata, grid_indices_offset.transpose(), order = 1)
+       if unc_extract:
+           Tcl_unc[indices]=map_coordinates(sstuncdata, grid_indices_offset.transpose(), order = 1)
        #We need to test the integrity of the interpolated data
        for index in range(indices.size):
           #Get the points used in the interpolation into a 1d array called window
           indexlat = grid_indices[index,0]#int(numpy.floor(grid_indices_offset[index][0])); #TMH: converted to int
           indexlon = grid_indices[index,1]#int(numpy.floor(grid_indices_offset[index][1])); #TMH: converted to int
           window=sstdata[indexlat:indexlat+2,indexlon:indexlon+2].reshape([-1])
+          if unc_extract:
+              window_unc = sstuncdata[indexlat:indexlat+2,indexlon:indexlon+2].reshape([-1])
           gooddata=numpy.where((window<9e9) & (window > 0) & (numpy.isnan(window) == 0))[0] #DJF: Added second condition where the fill value is less than 0.
           if gooddata.size == 4 or gooddata.size ==0:
              #all data are good so interpolation should be valid
@@ -181,6 +191,8 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
              continue
           #Not all data were good - can we trust interpolation - need to test further
           window=window[gooddata]
+          if unc_extract:
+              window_unc=window_unc[gooddata]
           # #Get all the other points that used exactly these data
           # points=numpy.where((numpy.floor(grid_indices_offset[:,0])==indexlat)&
           #                    (numpy.floor(grid_indices_offset[:,1])==indexlon))
@@ -192,9 +204,13 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
           weights=numpy.array([a2*b2,a2*b,a*b2,a*b])[gooddata].transpose()
           #Calculate the weighted value based only on the weights we DO have
           Tcl[indices[index]]=(window * weights).sum()/weights.sum()
+          if unc_extract:
+              Tcl_unc[indices[index]] = (window_unc * weights).sum()/weights.sum()
           #Some points may be bad if there are no surrounding data
           if weights.max() <= 0:
             Tcl[indices[index]]=-999
+            if unc_extract:
+                Tcl_unc[indices[index]] = -999
 
    # else:
    #     #Get a list of all year and month combinations from the data
@@ -278,4 +294,4 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
    #           bad=numpy.where(weights.max(axis=1) <= 0)
    #           Tcl[indices[bad]]=-999
 
-   return Tcl
+   return Tcl,Tcl_unc

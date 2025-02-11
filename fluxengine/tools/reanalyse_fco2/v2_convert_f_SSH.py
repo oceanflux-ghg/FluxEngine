@@ -43,7 +43,9 @@ cldefaults={'start':1991,
             'sst_latitude': 'lat',
             'keepduplicates' : False,
             'temperature_handling': 1,
-            'sst_bias': 0
+            'sst_bias': 0,
+            'unc_extract':False,
+            'uncname':''
             #'daily': False # DJF: 06/02/2025 No longer needed as a testing item.
             }
 
@@ -80,6 +82,8 @@ def GetCommandline():
    parser.add_argument('--keepduplicates',action='store_true',metavar='boolean',help ='Whether to keep duplicate data',default=cldefaults['keepduplicates'])
    parser.add_argument('--temperature_handling',dest='temperature_handling',type=int,help="How to handle temperature corrections",default=1)
    parser.add_argument('--sst_bias',dest='sst_bias',type=float,help="Global correction to SST data",default=0)
+   parser.add_argument('--unc_extract',dest='unc_extract',action='store_true',help='Extract SST uncertainty - If true, must specify uncname variable',default=cldefaults['unc_extract'])
+   parser.add_argument('--uncname',dest='unc_name',type=str,help='Name of SST uncertainty variable in SST files',default=cldefaults['uncname'])
    #parser.add_argument('--daily',action='store_true',dest='daily',help='Add this to run with daily sst data',default=cldefaults['daily']) # DJF 06/02/2025 no longer needed as getSST code modified.
    commandline=parser.parse_args()
 
@@ -102,7 +106,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
                   percruisedir=cldefaults['asciioutput'],coastalfile=cldefaults['coastalfile'],
                   sst_data_name=cldefaults['sst_data_name'],sst_longitude = cldefaults['sst_longitude'],sst_latitude=cldefaults['sst_latitude'],
                   removeduplicates=not cldefaults['keepduplicates'],
-                  temperature_handling=1,sst_bias=0):
+                  temperature_handling=cldefaults['temperature_handling'],sst_bias=cldefaults['sst_bias'],unc_extract=cldefaults['unc_extract'],uncname=cldefaults['uncname']):
    """
    Does all the hard work - if run as a library then call this function.
       inputfile - filename of the SOCAT ascii csv file
@@ -176,7 +180,7 @@ def DoConversion(inputfile, columnInfo, startyr=cldefaults['start'],endyr=cldefa
                                                 extrapolatetoyear,version=socatversion,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
                                                 sst_data_name=sst_data_name,sst_latitude = sst_latitude, sst_longitude = sst_longitude,
-                                                temperature_handling=temperature_handling,sst_bias=sst_bias)
+                                                temperature_handling=temperature_handling,sst_bias=sst_bias,unc_extract=unc_extract,uncname=uncname)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -203,7 +207,7 @@ def FinalCoastalConversion(startyr=cldefaults['start'],endyr=cldefaults['end'],p
                                                 extrapolatetoyear,version=version,ASCIIOUT=ASCIIOUT,
                                                 percruisedir=percruisedir,removeduplicates=removeduplicates,
                                                 sst_data_name=sst_data_name,sst_latitide = sst_latitude, sst_longitude = sst_longitude,
-                                                temperature_handling=temperature_handling,sst_bias=sst_bias)
+                                                temperature_handling=temperature_handling,sst_bias=sst_bias,unc_extract=unc_extract,uncname=uncname)
       total_number_of_data_points+=number_of_data_points
       total_duplicates.extend(duplicates)
    if len(total_duplicates)>0:
@@ -445,7 +449,7 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
 
 def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoyear,version,
                  percruisedir=None,ASCIIOUT=False,removeduplicates=True,sst_data_name='analysed_sst',sst_longitude='lon',sst_latitude='lat',
-                 temperature_handling=1,sst_bias=0):
+                 temperature_handling=1,sst_bias=0,unc_extract=False,uncname=''):
    """
    Convert the data from the year range into netcdf files
       data - structured numpy array containing the SOCAT data
@@ -545,8 +549,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    number_of_data_points=data_subset.shape
    #Now do some actual conversion of the data
    #Get temperature from SST climatology
-   Tcls = get_sst.GetSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
-                           data_subset['latitude'],sstdir, ssttail,sst_data_name,sst_longitude,sst_latitude,days = data_subset['day'],sst_bias=sst_bias)
+   Tcls,Tcls_unc = get_sst.GetSST(data_subset['year'], data_subset['month'], data_subset['longitude'],
+                           data_subset['latitude'],sstdir, ssttail,sst_data_name,sst_longitude,sst_latitude,days = data_subset['day'],sst_bias=sst_bias,unc_extract=unc_extract,uncname=uncname)
    if numpy.all(Tcls==-999):
       print("All Temperature data are no-data-values - skipping for this year/month combination.")
       return 0,[]
@@ -586,7 +590,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Extract the expocodes here as they get removed in the conversion
    expocodes=data_subset['expocode']
    #Recalculate the fugacity and partial pressure
-   conversion = v2_f_conversion.v2_f_conversion_wrap(jds,data_subset,Tcls,Peq_cls,extrapolatetoyear,temperature_handling)
+   conversion = v2_f_conversion.v2_f_conversion_wrap(jds,data_subset,Tcls,Tcls_unc,Peq_cls,extrapolatetoyear,temperature_handling)
    if conversion is None:
       #There were no good data to use
       return 0,[]
@@ -700,7 +704,7 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
 
     if output_data.size > 0:
         print("Writing to: %s"%outputfile)
-        numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
+        numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
                       header=",".join(output_data.dtype.names),delimiter=',')
 
 def CreateBinnedData(month_data):
@@ -984,7 +988,7 @@ def Main():
                 sstdir=cl.sstdir,ssttail=cl.ssttail,prefix=cl.prefix,outputdir=cl.outputdir,
                 extrapolatetoyear=cl.extrapolatetoyear,version=cl.socatversion,ASCIIOUT=cl.asciioutput,
                 percruisedir=cl.percruisedir,coastalfile=cl.coastalfile,sst_data_name=cl.sst_data_name,sst_longitude = cl.sst_longitude,sst_latitude=cl.sst_latitude,
-                removeduplicates=not cl.keepduplicates,temperature_handling=cl.temperature_handling,sst_bias=cl.sst_bias)
+                removeduplicates=not cl.keepduplicates,temperature_handling=cl.temperature_handling,sst_bias=cl.sst_bias,unc_extract=cl.unc_extract,uncname=cl.uncname)
    print("%s ended at: %s "%(os.path.basename(__file__),str(datetime.datetime.now())))
 
 if __name__=="__main__":

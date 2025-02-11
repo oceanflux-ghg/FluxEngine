@@ -88,6 +88,8 @@ if __name__ == "__main__":
     argParseSettingsGroup.add_argument('-sst_longitude',type=str,dest='sst_longitude',help="The name of the longitude variable within the SST netCDF files for reanalysis",default='lon')
     argParseSettingsGroup.add_argument('-sst_latitude',type=str,dest='sst_latitude',help="The name of the latitude variable within the SST netCDF files for reanalysis",default='lat')
     argParseSettingsGroup.add_argument('-sst_bias',type=float,dest='sst_bias',help="The global SST bias to apply",default=0)
+    argParseSettingsGroup.add_argument('-unc_extract',action='store_true',help = 'Whether to extract SST uncertainty information',default=False)
+    argParseSettingsGroup.add_argument('-uncname',type=str,dest='uncname',help='Name of the uncertainty variable in SST files',default='')
 
     argParseRunModeGroup = clParser.add_argument_group(title='Mode (socat vs non-socat)');
     argParseRunModeGroup.add_argument('-socatversion', type=int, dest='socatversion', help="If running in SOCAT mode this determines the version of the SOCAT data files to read",default=None);
@@ -164,6 +166,8 @@ if __name__ == "__main__":
                          sst_data_name = clArgs.sst_data_name,
                          sst_longitude = clArgs.sst_longitude,
                          sst_latitude = clArgs.sst_latitude,
+                         unc_extract = clArgs.unc_extract,
+                         uncname = clArgs.uncname,
                          output=temporaryOutputPath);#"reanalyse_socat/output/");
 
     #copy output files to the output_dir folder.

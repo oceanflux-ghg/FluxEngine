@@ -28,7 +28,7 @@ dependencies = ["numpy>=1.20.0",
                 "argparse>=1.1",
                 "scipy>=1.3.0",
                 "jupyter>=1.0.0",
-                "pycos2sys>=1.8.3",
+                "pyco2sys>=1.8.3",
                 ];
 
 #Create a list of package data files

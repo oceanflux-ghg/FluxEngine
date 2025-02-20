@@ -115,7 +115,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
       fout=open(fileout,'w')
       fout.write("jd,lat,lon,SST_C,fCO2_rec,Tcl,Tcls_unc,Peq_cl\n")
       for item in badpoints[0]:
-         fout.write("%s,%s,%s,%s,%s,%s,%s\n"%(jds[item],lats[item],lons[item],SST_Cs[item],fCO2_recs[item],Tcls[item],Tcls_unc[item],Peq_cls[item]))
+         fout.write("%s,%s,%s,%s,%s,%s,%s,%s\n"%(jds[item],lats[item],lons[item],SST_Cs[item],fCO2_recs[item],Tcls[item],Tcls_unc[item],Peq_cls[item]))
    if goodpoints[0].size == 0:
       print("No valid points, so None returned")
       #there are no records with valid  Tcls, fCO2_recs and SST_cs

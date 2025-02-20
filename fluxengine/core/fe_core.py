@@ -28,6 +28,7 @@ from string import Template;
 
 from .datalayer import DataLayer, DataLayerMetaData;
 from .settings import Settings;
+from .. import fluxengine as fe_v
 #from .debug_tools import calc_mean; #calculate mean ignoring missing values.
 
 from datetime import timedelta, datetime;
@@ -258,6 +259,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
         setattr(ncfile, 'Conventions', 'CF-1.6')
         setattr(ncfile, 'Institution', 'Originally developed by the partners of the ESA OceanFlux GHG and OceanFlux GHG Evolution projects. Now continued by the CarbonLab team at the University of Exeter.')
         setattr(ncfile, 'Contact', 'email: j.d.shutler@exeter.ac.uk')
+        setattr(ncfile, 'FluxEngine_version',fe_v.__version__)
 
         #Output all the parameters used in this run.
         for paramName in list(vars(runParams).keys()):

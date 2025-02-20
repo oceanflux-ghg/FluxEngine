@@ -28,6 +28,7 @@ dependencies = ["numpy>=1.20.0",
                 "argparse>=1.1",
                 "scipy>=1.3.0",
                 "jupyter>=1.0.0",
+                "pycos2sys>=1.8.3",
                 ];
 
 #Create a list of package data files
@@ -49,9 +50,9 @@ with open(path.join('README.md'), encoding='utf-8') as f:
 #Main setup object.
 setuptools.setup(
     name="fluxengine",
-    version="4.0.9.1",
-    author="Tom Holding and Jamie Shutler",
-    author_email="j.d.shutler@exeter.ac.uk, t.m.holding@exeter.ac.uk",
+    version="4.1.0",
+    author="Daniel Ford, Tom Holding and Jamie Shutler",
+    author_email="d.ford@exeter.ac.uk, j.d.shutler@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",
     long_description=longDescription,
     long_description_content_type="text/markdown",

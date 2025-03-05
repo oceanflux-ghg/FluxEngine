@@ -33,6 +33,14 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
    #lons=numpy.zeros([362])
    with netCDF4.Dataset(filename,'r') as SST_file:
       lons_t = SST_file.variables[lonname][:] # Load longitude variable
+      if numpy.max(lons_t) > 180: # Here we check that lons are between -180 and 180 if they arent we assume they are 0 - 360 and setup to roll the SST grid.
+          print('Longitudes are greater than 180 in the SST file, assuming in 0 to 360 format - preparing to roll dataset to -180 to 180....')
+          #lons_t = numpy.roll(lons_t,len(lons_t/2))
+          rolled = int(len(lons_t)/2)
+          lons_t = lons_t-180
+      else:
+          print('Longitude appear in -180 to 180 format - no rolling required.')
+          rolled = 0
       res = numpy.abs(lons_t[0]-lons_t[1])
       lons = numpy.zeros([len(lons_t)+2]) # Now we know the length we can setup a new longitude array
 
@@ -49,7 +57,10 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
       sst_data_t = numpy.squeeze(SST_file.variables[dataname][:]) # Added a squeeze here as some daily diles have a time dimension of 1. This removes it, and does nothing if no 1 length dimensions exist.
 
       if sst_data_t.shape[0] != len(lats): # If the first dimension is not latitude the data must be (lon, lat) so we transpose.
+          print('SST appears to be in (lon,lat) format - Transposing data to (lat,lon) format')
           sst_data_t = sst_data_t.transpose()
+      sst_data_t = numpy.roll(sst_data_t,rolled,axis=1)
+      print('SST data rolled by ' + str(rolled) + ' pixels...')
       data[:,1:-1] = sst_data_t
       data[:,0] = sst_data_t[:,-1]
       data[:,-1] = sst_data_t[:,0]

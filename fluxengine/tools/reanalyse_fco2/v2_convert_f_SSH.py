@@ -673,7 +673,8 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
 
                #get the binned data for the whole month to add to the nc file as other variables
                allnewvars=CreateBinnedData(month_data)
-               newvars={v : allnewvars[v] for v in statvariables+['stds']}
+               newvars={v : allnewvars[v] for v in statvariables+['stds']+['dT']+['dF']+['dP']}
+               #print(list(newvars.keys()))
                combine_nc_files.AddNewVariables(filename=outputfilepath,newvars=newvars)
          elif percruisedir is None:
             #give every observation an equal weighting - i.e. bin all data together

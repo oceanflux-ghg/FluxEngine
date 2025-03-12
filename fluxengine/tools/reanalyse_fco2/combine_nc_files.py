@@ -79,7 +79,7 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
    if combiningregions == True:
       for variable in list(itemdata.keys()):
          itemdata[variable]=numpy.ma.sum(itemdata[variable],axis=0)
-   #if we are not combining regions - i.e. we are combining cruises, then 
+   #if we are not combining regions - i.e. we are combining cruises, then
    #there could be overlap so we need to update the parameters appropriately
    else:
       #need to do std first as it depends on other variables
@@ -94,7 +94,7 @@ def FromFilelist(filelist,output,weighting=None,outputtime=1e9,combiningregions=
       for variable in list(itemdata.keys()):
          if variable.startswith("std_"):
             continue
-         elif variable in ["count_nobs","count_ncruise"]: 
+         elif variable in ["count_nobs","count_ncruise"]:
             # we don't want to average count_nobs or count_ncruise as these are number of observations
             itemdata[variable]=itemdata[variable].sum(axis=0)
          elif variable.startswith("max_"):
@@ -309,6 +309,44 @@ def AddNewVariables(filename,newvars):
       pCO2_Tym_data.standard_name = "unweighted_std_pCO2_Tym"
       pCO2_Tym_data.long_name = "Standard deviation of CO2 partial pressure using OC-FLUX methodology (unweighted)"
 
+      dT_data = ncfile.createVariable('unweighted_dT','f4',('time','latitude','longitude'),
+                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      dT_data[:] = newvars['dT'][:]
+      dT_data.units = 'Degree C'
+      dT_data.missing_value = netcdf_helper.MISSINGDATAVALUE
+      dT_data.valid_min = -999
+      dT_data.valid_max = 999
+      dT_data.scale_factor = 1.
+      dT_data.add_offset = 0.
+      dT_data.standard_name = "unweighted_dT"
+      dT_data.long_name = "difference Tym - SST unweighted"
+
+      dF_data = ncfile.createVariable('unweighted_dfCO2','f4',('time','latitude','longitude'),
+                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      dF_data[:] = newvars['dF'][:]
+      dF_data.units = 'uatm'
+      dF_data.missing_value = netcdf_helper.MISSINGDATAVALUE
+      dF_data.valid_min = -999
+      dF_data.valid_max = 999
+      dF_data.scale_factor = 1.
+      dF_data.add_offset = 0.
+      dF_data.standard_name = "unweighted_dfCO2"
+      dF_data.long_name = "difference fCO2,Tym - fCO2,SST unweighted"
+
+      dP_data = ncfile.createVariable('unweighted_dpCO2','f4',('time','latitude','longitude'),
+                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      dP_data[:] = newvars['dP'][:]
+      dP_data.units = 'uatm'
+      dP_data.missing_value = netcdf_helper.MISSINGDATAVALUE
+      dP_data.valid_min = -999
+      dP_data.valid_max = 999
+      dP_data.scale_factor = 1.
+      dP_data.add_offset = 0.
+      dP_data.standard_name = "unweighted_dpCO2"
+      dP_data.long_name = "difference pCO2,Tym - pCO2,SST unweighted"
+
+
+
 #Function for combining the global year/month files into an average for the whole stack of dates
 def Climatology(filelist,output,varswewant):
 
@@ -345,7 +383,7 @@ def Climatology(filelist,output,varswewant):
                   print("Dimensions are not the same for %s  what does this mean, they should be. "%variable)
                   print(dataitem_dims[variable],fin.variables[variable][:])
                   sys.exit(1)
-               elif variable == "time": 
+               elif variable == "time":
                   #time could be a different value so this is OK
                   dataitem_dims['time']=numpy.vstack([dataitem_dims['time'],copy.copy(fin.variables[variable][:])])
          if variable in varswewant:
@@ -374,4 +412,3 @@ def Climatology(filelist,output,varswewant):
             tmpvar.standard_name = itemvar[variable].standard_name
             tmpvar.long_name = itemvar[variable].long_name
    return True
-

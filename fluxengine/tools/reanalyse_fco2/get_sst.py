@@ -18,7 +18,7 @@ from scipy.ndimage import map_coordinates
 #    return GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname='sst_skin_mean',lonname='lon',latname='lat',useaatsr=useaatsr,usereynolds=usereynolds,useESACCI=useESACCI,days=days,daily=daily,bias = bias )
 
 
-def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
+def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat',unc=False):
    """
    Function to read the SST data from the netCDF file. We want it in (lat,lon) format.
    We assume the data is a global grid (-180 to 180), so we check this as well.
@@ -75,11 +75,15 @@ def ReadSSTFile(filename,dataname='sst_skin_mean',lonname='lon',latname='lat'):
       # lons[0] = lons[360]
       # lons[361]=lons[1]
       # lats=SST_file.variables[latname][:]
-      if SST_file.variables[dataname].units in ['degrees C']:
-         #we want them in Kelvin (to be consistent with how the scripts were originally written)
-         data=data+273.15
+      if not unc:
+          if SST_file.variables[dataname].units in ['degrees C','Celsius']:
+             #we want them in Kelvin (to be consistent with how the scripts were originally written)
+             print('SST units in Celsius - converting to Kelvin...')
+             data=data+273.15
+          else:
+             print("SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). ")
       else:
-         print("SST units are assummed in Kelvin. If this is incorrect then convert the data to K in getsst.py (lines 30-34). ")
+          print('Extracting uncertainty... so no conversion applied.')
    return data,lons,lats
 
 def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,days=0,sst_bias=0,unc_extract = False,uncname=''): # DJF 06/02/2025: Removed the usaESACCI etc variables as no longer needed
@@ -128,7 +132,7 @@ def GetSST(years, months, lons, lats, SSTdir, SSTtail,dataname,lonname,latname,d
            #DJF 09/02/2025: Adding ability to add unc information to the ASCII files.
            if unc_extract:
                print('Loading SST uncertainty data...')
-               sstuncdata,sstlons,sstlats=ReadSSTFile(sstfilename,dataname=uncname,lonname=lonname,latname=latname)
+               sstuncdata,sstlons,sstlats=ReadSSTFile(sstfilename,dataname=uncname,lonname=lonname,latname=latname,unc=True)
            print('SST bias of '+ str(sst_bias) + ' applied')
 
        sst_data_res = numpy.abs(sstlons[0]-sstlons[1]) # Find the resolution of the sst data, we assume its the same in the latitude and longitudes

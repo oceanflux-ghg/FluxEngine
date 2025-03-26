@@ -673,7 +673,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
 
                #get the binned data for the whole month to add to the nc file as other variables
                allnewvars=CreateBinnedData(month_data)
-               newvars={v : allnewvars[v] for v in statvariables+['stds']+['dT']+['dF']+['dP']}
+               newvars={v : allnewvars[v] for v in statvariables+['stds']+['dT']+['dF']+['dP']+['SST_C']+['Tcl_C']}
                #print(list(newvars.keys()))
                combine_nc_files.AddNewVariables(filename=outputfilepath,newvars=newvars)
          elif percruisedir is None:
@@ -729,6 +729,8 @@ def CreateBinnedData(month_data):
    dFs = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
    pCO2_Tyms = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
    pCO2_SSTs = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
+   SSTs = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
+   Tcls = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
    dPs = numpy.zeros((nlat,nlon))+netcdf_helper.MISSINGDATAVALUE
    ndata = numpy.zeros((nlat,nlon))# keep track of multiple entries
 
@@ -775,6 +777,8 @@ def CreateBinnedData(month_data):
    fCO2_SSTs[ilats,ilons]=0
    pCO2_Tyms[ilats, ilons] = 0.
    pCO2_SSTs[ilats,ilons]=0
+   SSTs[ilats,ilons] = 0.
+   Tcls[ilats,ilons] = 0.
    for var in statvariables:
       maximums[var][ilats,ilons]=0
       minimums[var][ilats,ilons]=0
@@ -795,6 +799,8 @@ def CreateBinnedData(month_data):
 
       dFs[index]=fCO2_Tyms[index] - fCO2_SSTs[index]
       dPs[index]=pCO2_Tyms[index] - pCO2_SSTs[index]
+      SSTs[index] += numpy.mean(month_data['SST_C'][points])
+      Tcls[index] += numpy.mean(month_data['Tcl_C'][points])
       for var in statvariables:
          maximums[var][index]=numpy.nanmax(month_data[var][points])
          minimums[var][index]=numpy.nanmin(month_data[var][points])
@@ -813,6 +819,8 @@ def CreateBinnedData(month_data):
    vardict['dT']=dTs
    vardict['dF']=dFs
    vardict['dP']=dPs
+   vardict['SST_C'] = SSTs
+   vardict['Tcl_C'] = Tcls
    vardict['ndata']=ndata
    vardict['maximums']=maximums
    vardict['minimums']=minimums
@@ -942,6 +950,28 @@ def WriteOutToNCAsGrid(vardict,outputfile,extrapolatetoyear,outputtime=1e9):
       N_data.add_offset = 0.
       N_data.standard_name = "count_nobs"
       N_data.long_name = "Number of observations mean-averaged in cell"
+
+      SSTc = ncfile.createVariable('sst','f4',('time','latitude','longitude'),fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      SSTc[:] = vardict['SST_C']
+      SSTc.units = 'deg C'
+      SSTc.missing_value = netcdf_helper.MISSINGDATAVALUE
+      SSTc.valid_min = -20.
+      SSTc.valid_max = 100.
+      SSTc.scale_factor = 1.
+      SSTc.add_offset = 0.
+      SSTc.standard_name = "sst"
+      SSTc.long_name = "SOCAT sea surface temperature"
+
+      TclC = ncfile.createVariable('subskin_sst','f4',('time','latitude','longitude'),fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      TclC[:] = vardict['Tcl_C']
+      TclC.units = 'deg C'
+      TclC.missing_value = netcdf_helper.MISSINGDATAVALUE
+      TclC.valid_min = -20.
+      TclC.valid_max = 100.
+      TclC.scale_factor = 1.
+      TclC.add_offset = 0.
+      TclC.standard_name = "subskin_sst"
+      TclC.long_name = "Oceanflux subskin temperature"
 
       for var in statvariables:
          if var in ['fCO2_Tym','pCO2_Tym']:

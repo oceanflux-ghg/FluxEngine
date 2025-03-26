@@ -345,6 +345,29 @@ def AddNewVariables(filename,newvars):
       dP_data.standard_name = "unweighted_dpCO2"
       dP_data.long_name = "difference pCO2,Tym - pCO2,SST unweighted"
 
+      SSTc = ncfile.createVariable('unweighted_sst','f4',('time','latitude','longitude'),
+                                            fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      SSTc[:] = newvars['SST_C'][:]
+      SSTc.units = 'deg C'
+      SSTc.missing_value = netcdf_helper.MISSINGDATAVALUE
+      SSTc.valid_min = -20.
+      SSTc.valid_max = 100.
+      SSTc.scale_factor = 1.
+      SSTc.add_offset = 0.
+      SSTc.standard_name = "sst"
+      SSTc.long_name = "unweighted SOCAT sea surface temperature"
+
+      TclC = ncfile.createVariable('unweighted_subskin_sst','f4',('time','latitude','longitude'),fill_value=netcdf_helper.MISSINGDATAVALUE,zlib=True)
+      TclC[:] = newvars['Tcl_C'][:]
+      TclC.units = 'deg C'
+      TclC.missing_value = netcdf_helper.MISSINGDATAVALUE
+      TclC.valid_min = -20.
+      TclC.valid_max = 100.
+      TclC.scale_factor = 1.
+      TclC.add_offset = 0.
+      TclC.standard_name = "subskin_sst"
+      TclC.long_name = "Oceanflux subskin temperature"
+
 
 
 #Function for combining the global year/month files into an average for the whole stack of dates

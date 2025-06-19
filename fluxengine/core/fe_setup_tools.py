@@ -26,7 +26,7 @@ from fluxengine.core import data_preprocessing as data_preprocessing; #preproces
 from fluxengine.core import process_indicator_layers as indicator_layers; #Process indicator layer functors
 from fluxengine.core import fe_core as fluxengine;
 
-
+print('erer')
 #Gets the root fluxengine directory
 def get_fluxengine_root():
     selfPath = inspect.stack()[0][1];

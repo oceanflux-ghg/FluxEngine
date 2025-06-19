@@ -21,6 +21,7 @@ import sys
 from math import log, exp, pow, isnan;
 from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid, where;
 from numpy import any as npany;
+import numpy as np
 from random import normalvariate
 import logging;
 from os import path;
@@ -118,7 +119,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 
         # open a new netCDF file for writing.
         # need to set format type, defaults to NetCDF4
-        ncfile = Dataset(runParams.output_path, 'w', format="NETCDF3_64BIT_OFFSET");  # ,format='NETCDF3_CLASSIC');
+        ncfile = Dataset(runParams.output_path, 'w');  # ,format='NETCDF3_CLASSIC');
 
         # Assign units attributes to coordinate var data. This attaches a
         # text attribute to each of the coordinate variables, containing the
@@ -153,8 +154,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
         # Define the coordinate variables. They will hold the coordinate
         # information, that is, the latitudes and longitudes.
         if len(latitudeData.shape) < 2:  # IGA - If the initial latitude data was a vector, write data as vectors
-            lats2 = ncfile.createVariable('latitude', dtype('float64').char, ('latitude'))
-            lons2 = ncfile.createVariable('longitude', dtype('float64').char, ('longitude'))
+            lats2 = ncfile.createVariable('latitude', dtype('float64').char, ('latitude'), zlib=True, complevel=6)
+            lons2 = ncfile.createVariable('longitude', dtype('float64').char, ('longitude'), zlib=True, complevel=6)
             # Assign units attributes to coordinate var data. This attaches a
             # text attribute to each of the coordinate variables, containing the
             # units.
@@ -177,8 +178,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
             lons2.valid_min = -180.0
             lons2.valid_max = 360.0
         else:  # if the input lat/long was a grid, write output only as a grid.
-            lats = ncfile.createVariable('latitude', dtype('float64').char, dims);
-            lons = ncfile.createVariable('longitude', dtype('float64').char, dims);
+            lats = ncfile.createVariable('latitude', dtype('float64').char, dims, zlib=True, complevel=6);
+            lons = ncfile.createVariable('longitude', dtype('float64').char, dims, zlib=True, complevel=6);
             # Assign units attributes to coordinate var data. This attaches a
             # text attribute to each of the coordinate variables, containing the
             # units.
@@ -210,7 +211,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                     print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
                         dataLayerName].netCDFName);
                 variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims,
-                                                 fill_value=DataLayer.fill_value)
+                                                 fill_value=DataLayer.fill_value, zlib=True, complevel=6)
                 data = dataLayers[
                     dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
@@ -300,7 +301,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 if verbose:
                     print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
                         dataLayerName].netCDFName);
-                # variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value)
+                # variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value,zlib=True,  complevel=6  )
                 data = dataLayers[
                     dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
                 data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
@@ -328,7 +329,7 @@ def write_netcdf(fluxEngineObject, verbose=False):
 def calculate_solubility_distilled(salinity, rain_wet_deposition_switch, sstskin, deltaT, nx, ny,
                                    schmidtParameterisation, gasStr):
     # First create a 0 salinity dataset
-    salDistil = array([missing_value] * len(salinity))
+    salDistil = np.full(len(salinity), missing_value)  # array([missing_value] * len(salinity))
     salDistil[salinity != missing_value] = 0.0
     # for i in arange(nx * ny):
     #     if (salinity[i] != missing_value):
@@ -353,14 +354,14 @@ def calculate_whitecapping(windu10, whitecap):
     if windu10.nx != whitecap.nx or windu10.ny != whitecap.ny:
         raise ValueError(
             "ofluxghg_flux_calc.calculate_whitecapping: Invalid arguments. windu10 and whitecap dimensions do not match (%d, %d vs %d, %d)." % (
-            windu10.nx, windu10.ny, whitecap.nx, whitecap.ny));
+                windu10.nx, windu10.ny, whitecap.nx, whitecap.ny));
 
     mask = windu10.fdata != missing_value
-    whitecap[mask] = 0.00159 * pow(windu10.fdata[mask], 2.7)
-    whitecap[~mask] = missing_value
+    whitecap.fdata[mask] = 0.00159 * (windu10.fdata[mask] ** 2.7)
+    whitecap.fdata[~mask] = missing_value
     # for i in arange(windu10.nx * windu10.ny):
     #     if (windu10.fdata[i] != missing_value):
-    #         whitecap.fdata[i] = 0.00159 * pow(windu10.fdata[i], 2.7)
+    #         whitecap.fdata[i] = 0.00159 * np.power(windu10.fdata[i], 2.7)
     #     else:
     #         whitecap.fdata[i] = missing_value
     return whitecap.fdata;
@@ -388,7 +389,7 @@ def add_noise(data, rmse_value, mean_value, no_elements, clipNegative=False):
             print(
                 "WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.");
         print("INFO: A total of %d grid cells were clipped resulting in an approximate bias of %f." % (
-        numClipped, totalClipped / no_elements));
+            numClipped, totalClipped / no_elements));
 
     return data;
 
@@ -421,7 +422,7 @@ def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, b
         print(
             "WARNING: Adding noise to input datalayer but RMSE value is > 20% of the mean value for this input. This may result in negative values which will be clipped at 0, and therefore indirectly add bias to the input data.");
         print("WARNING: A total of %d grid cells were clipped resulting in an approximate additional bias of %f." % (
-        numClipped, totalClipped / numElements));
+            numClipped, totalClipped / numElements));
 
     return (winduData, moment2, moment3);
 
@@ -440,11 +441,11 @@ def add_noise_and_bias_wind(winduData, moment2, moment3, rmseValue, meanValue, b
 #         for i in arange(no_elements):
 #             if ( (data[i] != missing_value) and (data[i] != 0.0) ):
 #                 orig = data[i]
-#                 value = log(data[i])
+#                 value = np.log(data[i])
 #                 stddev = float(err_value/orig)
 #                 noise = normalvariate(0,stddev) # determines the random noise value based on the rain input data and the standard deviation of the uncertainty
 #                 value = value + noise
-#                 data[i] = exp(value)
+#                 data[i] = np.exp(value)
 #         return data
 ######Ians altered version############END
 
@@ -509,7 +510,7 @@ def median_filter2D(datain, nx, ny):
     w = (size - 1) / 2
 
     data_temp = zeros([nx, ny])
-    vector = array([0.0] * size * size)
+    vector = np.full(size ** 2, 0.0)  # array([0.0] * size * size)
 
     # calculating patches and storing in 'vector', ready for sorting
     for x in range(w, nx - w):
@@ -538,7 +539,7 @@ def median_filter2D(datain, nx, ny):
 def schmidt_Wanninkhof1992(sstC_fdata, nx, ny, gas):
     # calculating the schmidt data
 
-    sc_fdata = array([missing_value] * nx * ny)
+    sc_fdata = np.full(nx * ny, missing_value)
     if 'o2' in gas.lower():
         mask = (sstC_fdata != missing_value)
         sc_fdata[mask] = (
@@ -615,7 +616,7 @@ def schmidt_Wanninkhof1992(sstC_fdata, nx, ny, gas):
 
 # based on Schmid relationship from Wanninkhof2014 - Relationship between wind speed and gas exchange over the ocean revisited, Limnology and Oceanography
 def schmidt_Wanninkhof2014(sstC_fdata, nx, ny, gas):
-    sc_fdata = array([missing_value] * nx * ny)
+    sc_fdata = np.full(nx * ny, missing_value)
     if 'o2' in gas.lower():
         mask = (sstC_fdata != missing_value)
         sc_fdata[mask] = (
@@ -698,20 +699,20 @@ def schmidt_Wanninkhof2014(sstC_fdata, nx, ny, gas):
 def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
     # solubility calculation
     # equation from Table A2 of Wanninkkhof, JGR, 1992
-    sol = array([missing_value] * nx * ny)
+    sol = np.full(nx * ny, missing_value)
     if gas == 'co2':
         mask = (sstK != missing_value) & (sal != missing_value) & (sstK > 0.0)
         sol[mask] = (
                 -60.2409
                 + 93.4517 * (100.0 / sstK[mask])
-                + 23.3585 * log(sstK[mask] / 100.0)
+                + 23.3585 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         0.023517
                         - 0.023656 * (sstK[mask] / 100.0)
                         + 0.0047036 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -721,10 +722,10 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -60.2409 + (93.4517 * (100.0 / sstK[i])) + (23.3585 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -60.2409 + (93.4517 * (100.0 / sstK[i])) + (23.3585 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     0.023517 + ((-0.023656) * (sstK[i] / 100.0)) + (
         #                         0.0047036 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -736,14 +737,14 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -58.3877
                 + 85.8079 * (100.0 / sstK[mask])
-                + 23.8439 * log(sstK[mask] / 100.0)
+                + 23.8439 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.034892
                         + 0.015568 * (sstK[mask] / 100.0)
                         - 0.0019387 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -753,10 +754,10 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -58.3877 + (85.8079 * (100.0 / sstK[i])) + (23.8439 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -58.3877 + (85.8079 * (100.0 / sstK[i])) + (23.8439 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.034892 + ((0.015568) * (sstK[i] / 100.0)) + (
         #                         -0.0019387 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -769,14 +770,14 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -64.8539
                 + 100.2520 * (100.0 / sstK[mask])
-                + 25.2049 * log(sstK[mask] / 100.0)
+                + 25.2049 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.062544
                         + 0.035337 * (sstK[mask] / 100.0)
                         - 0.0054699 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -786,10 +787,10 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -64.8539 + (100.2520 * (100.0 / sstK[i])) + (25.2049 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -64.8539 + (100.2520 * (100.0 / sstK[i])) + (25.2049 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.062544 + ((0.035337) * (sstK[i] / 100.0)) + (
         #                         -0.0054699 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -802,14 +803,14 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -68.8862
                 + 101.4956 * (100.0 / sstK[mask])
-                + 28.7314 * log(sstK[mask] / 100.0)
+                + 28.7314 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.076146
                         + 0.043970 * (sstK[mask] / 100.0)
                         - 0.0068672 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -819,10 +820,10 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -68.8862 + (101.4956 * (100.0 / sstK[i])) + (28.7314 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -68.8862 + (101.4956 * (100.0 / sstK[i])) + (28.7314 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.076146 + ((0.043970) * (sstK[i] / 100.0)) + (
         #                         -0.0068672 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -837,20 +838,20 @@ def solubility_Wanninkhof1992(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
     # solubility calculation
     # equation from Table A2 of Wanninkkhof, JGR, 1992
-    sol = array([missing_value] * nx * ny)
+    sol = np.full(nx * ny, missing_value)
     if gas == 'co2':
         mask = (sstK != missing_value) & (sal != missing_value) & (sstK > 0.0)
         sol[mask] = (
                 -58.0931
                 + 90.5069 * (100.0 / sstK[mask])
-                + 22.2940 * log(sstK[mask] / 100.0)
+                + 22.2940 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         0.027766
                         - 0.025888 * (sstK[mask] / 100.0)
                         + 0.0050578 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -860,10 +861,10 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -58.0931 + (90.5069 * (100.0 / sstK[i])) + (22.2940 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -58.0931 + (90.5069 * (100.0 / sstK[i])) + (22.2940 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     0.027766 + ((-0.025888) * (sstK[i] / 100.0)) + (
         #                         0.0050578 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -875,14 +876,14 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -58.3877
                 + 85.8079 * (100.0 / sstK[mask])
-                + 23.8439 * log(sstK[mask] / 100.0)
+                + 23.8439 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.034892
                         + 0.015568 * (sstK[mask] / 100.0)
                         - 0.0019387 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -892,10 +893,10 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -58.3877 + (85.8079 * (100.0 / sstK[i])) + (23.8439 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -58.3877 + (85.8079 * (100.0 / sstK[i])) + (23.8439 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.034892 + ((0.015568) * (sstK[i] / 100.0)) + (
         #                         -0.0019387 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -908,14 +909,14 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -62.7062
                 + 97.3066 * (100.0 / sstK[mask])
-                + 24.1406 * log(sstK[mask] / 100.0)
+                + 24.1406 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.058420
                         + 0.033193 * (sstK[mask] / 100.0)
                         - 0.0051313 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -925,10 +926,10 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -62.7062 + (97.3066 * (100.0 / sstK[i])) + (24.1406 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -62.7062 + (97.3066 * (100.0 / sstK[i])) + (24.1406 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.058420 + ((0.033193) * (sstK[i] / 100.0)) + (
         #                         -0.0051313 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -941,14 +942,14 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
         sol[mask] = (
                 -68.8862
                 + 101.4956 * (100.0 / sstK[mask])
-                + 28.7314 * log(sstK[mask] / 100.0)
+                + 28.7314 * np.log(sstK[mask] / 100.0)
                 + sal[mask] * (
                         -0.076146
                         + 0.043970 * (sstK[mask] / 100.0)
                         - 0.0068672 * (sstK[mask] / 100.0) ** 2
                 )
         )
-        sol[mask] = exp(sol[mask])
+        sol[mask] = np.exp(sol[mask])
 
         if flux_calc != 2:
             deltaT[mask] = 0.0
@@ -958,10 +959,10 @@ def solubility_Wanninkhof2014(sstK, sal, deltaT, nx, ny, flux_calc, gas):
 
         # for i in arange(nx * ny):
         #     if ((sstK[i] != missing_value) and (sal[i] != missing_value) and (sstK[i] > 0.0)):
-        #         sol[i] = -68.8862 + (101.4956 * (100.0 / sstK[i])) + (28.7314 * (log(sstK[i] / 100.0))) + (sal[i] * (
+        #         sol[i] = -68.8862 + (101.4956 * (100.0 / sstK[i])) + (28.7314 * (np.log(sstK[i] / 100.0))) + (sal[i] * (
         #                     -0.076146 + ((0.043970) * (sstK[i] / 100.0)) + (
         #                         -0.0068672 * ((sstK[i] / 100.0) * (sstK[i] / 100.0)))));
-        #         sol[i] = exp(sol[i])
+        #         sol[i] = np.exp(sol[i])
         #         # runParams.flux_calc is a switch to remove Delta_T-Sb component - ie selects use of RAPID or EQUILIBRIUM flux models from Woolf et al., 2016
         #         if flux_calc != 2:
         #             deltaT[i] = 0.0
@@ -1018,7 +1019,7 @@ def copy_missing_values(master, derived, missingValue=DataLayer.missing_value):
     if master.nx != derived.nx and master.ny != derived.ny:
         raise ValueError(
             "copy_missing_values: master and derived DataLayers do not have the same dimensions: (%d, %d) versus (%d, %d)." % (
-            master.nx, master.ny, derived.nx, derived.ny));
+                master.nx, master.ny, derived.nx, derived.ny));
     mask = (master.fdata == missingValue)
     derived.fdata[mask] = missing_value
 
@@ -1094,7 +1095,7 @@ def average_pixels(datalayer, nx, ny, missing_value):
     n2 = (datany / ny);
     if n != n2:
         raise ValueError("%s: Scaling data layers by irregular scaling factors is not supported (e.g. %d != %d)." % (
-        function, n, n2));
+            function, n, n2));
 
     # print "%s Averaging sstgrad_fdata into 1x1 degree grid (N=%d)" % (function, n)
     nj0, ni0 = data.shape
@@ -1123,12 +1124,12 @@ def check_dimensions(dataLayer, ref_nx, ref_ny, DEBUG=False):
     if dataLayer.data.shape[1] == ref_nx and dataLayer.data.shape[0] == ref_ny:
         if DEBUG:
             print("\n%s Input data (%s) have identical dimensions to reference values (%s, %s) " % (
-            function, dataLayer.name, dataLayer.nx, dataLayer.ny))
+                function, dataLayer.name, dataLayer.nx, dataLayer.ny))
             return True;
     else:
         print(
             "\n%s Input data ('%s') dimensions are non-identical to reference (new: %s, %s is not equal to: %s, %s)." % (
-            function, dataLayer.name, dataLayer.nx, dataLayer.ny, ref_nx, ref_ny))
+                function, dataLayer.name, dataLayer.nx, dataLayer.ny, ref_nx, ref_ny))
         return False;
 
 
@@ -1298,7 +1299,7 @@ class FluxEngine:
             dataset = Dataset(axesDatalayerInfile);
         except IOError as e:
             print("\n%s: axes_data_layer (%s) inputfile %s does not exist" % (
-            function, self.runParams.axes_data_layer, axesDatalayerInfile));
+                function, self.runParams.axes_data_layer, axesDatalayerInfile));
             print(type(e), e.args);
 
         # Read lat and lat
@@ -1310,7 +1311,7 @@ class FluxEngine:
         except KeyError:
             raise ValueError(
                 "%s: Couldn't find longitude (%s) and/or latitude (%s) variables in %s. Have you set longitude_prod and latitude_prod correctly in your configuration file?" % (
-                function, self.runParams.longitude_prod, self.runParams.latitude_prod, axesDatalayerInfile));
+                    function, self.runParams.longitude_prod, self.runParams.latitude_prod, axesDatalayerInfile));
 
         # Determine if already a grid, if not calculate lon and lat grids.
         if len(self.latitude_data.shape) == 1:  # not already a grid
@@ -1330,7 +1331,7 @@ class FluxEngine:
         except KeyError:
             raise ValueError(
                 "%s: Couldn't find time (%s%) variables in %s. Have you set time_prod correctly in your configuration file?" % (
-                function, self.runParams.time_prod, self.runParams.sstskin_infile));
+                    function, self.runParams.time_prod, self.runParams.sstskin_infile));
 
         # set dimensions
         self.ny, self.nx = self.latitude_grid.shape;
@@ -1457,7 +1458,7 @@ class FluxEngine:
         self.data["salinity_skin"].fdata = self.data["salinity"].fdata + runParams.saline_skin_value
         if (runParams.saline_skin_value != 0.0):
             print("%s Using the saline skin model (%lf psu added to skin salinities)" % (
-            function, runParams.saline_skin_value))
+                function, runParams.saline_skin_value))
 
         # conversion of rain data from mm day-1 to mm hr^-1
         if "rain" in self.data:
@@ -1542,7 +1543,7 @@ class FluxEngine:
                 self._input_data_provided("sstfnd") == True):
             print(
                 "%s Using SSTfnd data selection with correction for skin temperature (SSTskin = SSTfnd - %f)(ignoring SSTskin data in configuration file)." % (
-                function, runParams.cool_skin_difference));
+                    function, runParams.cool_skin_difference));
             # actually copy sstfnd data into the sstskin dataset to make sure
             if "sstskin" not in self.data:  # Must add the sstskin layer first!
                 self.add_empty_data_layer("sstskin");
@@ -1570,7 +1571,7 @@ class FluxEngine:
                 self._input_data_provided("sstfnd") == False):
             print(
                 "%s SST gradient handling is off, using SSTskin to derive SSTfnd (SSTfnd = SSTskin + %f) for flux calculation (ignoring SSTfnd data in configuration file)." % (
-                function, runParams.cool_skin_difference));
+                    function, runParams.cool_skin_difference));
             # In this case SST gradients are not used and only sstskin is provided. sstfnd is needed for the flux calculation, so:
             #    Calculate sstfnd from sstskin
             #    Copy sstfnd over sstskin to prevent accidental use of sst gradients
@@ -1604,7 +1605,7 @@ class FluxEngine:
                 self._input_data_provided("sstfnd") == False):
             print(
                 "%s SST gradient handling is on, using SSTskin and SSTfnd = SSTskin + %f for flux calculation (ignoring SSTfnd data in configuration file)." % (
-                function, runParams.cool_skin_difference));
+                    function, runParams.cool_skin_difference));
             # setting sstfnd_ data fields to skin values
             mask = self.data["sstskin"].fdata != missing_value
 
@@ -1630,8 +1631,8 @@ class FluxEngine:
         else:
             print(
                 "\n%s sst_gradients_switch (%s), sstskin provided (%s), sstfnd provided (%s) combination not recognised, exiting." % (
-                function, runParams.sst_gradients_switch == 1, self._input_data_provided("sstskin"),
-                self._input_data_provided("sstfnd")))
+                    function, runParams.sst_gradients_switch == 1, self._input_data_provided("sstskin"),
+                    self._input_data_provided("sstfnd")))
             return 1;
 
         # If there is no pco2_sst data, we need to get it / generate it.
@@ -1709,7 +1710,7 @@ class FluxEngine:
         #    #print "%s Using the SOCAT data " % (function)
         #    #if self.data["pco2_sst"].fdata[i] != missing_value:
         #    for i in arange(nx * ny):
-        #       if isnan(self.data["pco2_sst"].fdata[i]) != True:# and self.data["pco2_sst"].fdata[i] > 0.0 ): #SOCATv4_IGA
+        #       if np.isnan(self.data["pco2_sst"].fdata[i]) != True:# and self.data["pco2_sst"].fdata[i] > 0.0 ): #SOCATv4_IGA
         #          if self.data["pco2_sst"].fdata[i] > 260:
         #            self.data["pco2_sst"].fdata[i] = self.data["pco2_sst"].fdata[i] - 273.15#IGA - If statement added because in-situ SST data may not be in K!
         #
@@ -1732,7 +1733,7 @@ class FluxEngine:
         # convert all missing values into standard value, rather than variations that seem to exist in some of these data
         # note this is an intersect operation (compared to the above)
         mask = (self.data["sstfnd"].fdata == self.data["sstfnd"].fillValue) | (
-                    self.data["sstskin"].fdata == self.data["sstskin"].fillValue)
+                self.data["sstskin"].fdata == self.data["sstskin"].fillValue)
 
         self.data["sstfnd"].fdata[mask] = missing_value
         self.data["sstskin"].fdata[mask] = missing_value
@@ -1767,7 +1768,7 @@ class FluxEngine:
         pco2_increment = (runParams.year - runParams.pco2_reference_year) * runParams.pco2_annual_correction;
         pco2_increment_air = pco2_increment;
 
-        DeltaT_fdata = array([missing_value] * nx * ny)
+        DeltaT_fdata = np.full(nx * ny, missing_value)
 
         if runParams.flux_calc == 1:
             print("%s Using the RAPID model (from Woolf et al., 2016)" % (function))
@@ -1861,9 +1862,9 @@ class FluxEngine:
         #     if (self.data["salinity_skin"].fdata[i] != missing_value) and (
         #             self.data["sstskin"].fdata[i] != missing_value):
         #         # Equation A1 in McGillis, Wade R., and Rik Wanninkhof. "Aqueous CO2 gradients for air-sea flux estimates." Marine Chemistry 98.1 (2006): 100-108.
-        #         self.data["pH2O"].fdata[i] = 1013.25 * exp(
+        #         self.data["pH2O"].fdata[i] = 1013.25 * np.exp(
         #             24.4543 - (67.4509 * (100.0 / self.data["sstskin"].fdata[i])) - (
-        #                         4.8489 * log(self.data["sstskin"].fdata[i] / 100.0)) - 0.000544 *
+        #                         4.8489 * np.log(self.data["sstskin"].fdata[i] / 100.0)) - 0.000544 *
         #             self.data["salinity_skin"].fdata[i])
         #     else:
         #         self.data["pH2O"].fdata[i] = missing_value
@@ -1899,7 +1900,7 @@ class FluxEngine:
 
             if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
                 self.data["pgas_sw_cor"].fdata[mask] = pco2_increment + (
-                        self.data["pgas_sw"].fdata[mask] * exp(
+                        self.data["pgas_sw"].fdata[mask] * np.exp(
                     (0.0423 * (self.data["sstfndC"].fdata[mask] - self.data["pco2_sst"].fdata[mask]))
                     - (0.0000435 * ((self.data["sstfndC"].fdata[mask] ** 2) - (self.data["pco2_sst"].fdata[mask] ** 2)))
                     + pCO2_salinity_term
@@ -1921,7 +1922,7 @@ class FluxEngine:
             #             # correction to different years, correction is data and year specific.
             #             # note for 2010, correction for SOCAT isn't strictly required. However the contents of the exponential will collapse
             #             # to 1 (with some rounding error expected), so effectively no correction will be applied
-            #             self.data["pgas_sw_cor"].fdata[i] = pco2_increment + (self.data["pgas_sw"].fdata[i] * exp(
+            #             self.data["pgas_sw_cor"].fdata[i] = pco2_increment + (self.data["pgas_sw"].fdata[i] * np.exp(
             #                 (0.0423 * (self.data["sstfndC"].fdata[i] - self.data["pco2_sst"].fdata[i])) - (0.0000435 * (
             #                             (self.data["sstfndC"].fdata[i] * self.data["sstfndC"].fdata[i]) - (
             #                                 self.data["pco2_sst"].fdata[i] * self.data["pco2_sst"].fdata[
@@ -1948,7 +1949,7 @@ class FluxEngine:
 
             if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
                 self.data["pgas_air"].fdata[mask] = (self.data["vgas_air"].fdata[mask] * (
-                            self.data["pressure"].fdata[mask] - self.data["pH2O"].fdata[mask])) / 1013.25
+                        self.data["pressure"].fdata[mask] - self.data["pH2O"].fdata[mask])) / 1013.25
             else:
                 self.data["pgas_air"].fdata[:] = self.data["vgas_air"].fdata[:]
 
@@ -2045,8 +2046,8 @@ class FluxEngine:
         # runParams.pco2_data_selection ==2 signifies SOCAT fCO2 data, so converting pCO2_air_cor_fdata to fCO2_air_cor_fdata
         if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
             print("%s Calculating fCO2atm from pCO2atm, as fCO2sw specified" % (function))
-            b11_fdata = array([missing_value] * nx * ny);
-            d12_fdata = array([missing_value] * nx * ny);
+            b11_fdata = np.full(nx * ny, missing_value);
+            d12_fdata = np.full(nx * ny, missing_value);
 
             mask = (
                     (self.data["salinity_skin"].fdata != missing_value) &
@@ -2060,15 +2061,15 @@ class FluxEngine:
             )
 
             b11 = -1636.75 + (12.0408 * self.data["sstskin"].fdata[mask]) - (
-                        0.0327957 * self.data["sstskin"].fdata[mask] ** 2) + (
-                              3.16528e-5 * self.data["sstskin"].fdata[mask] ** 3)
+                    0.0327957 * self.data["sstskin"].fdata[mask] ** 2) + (
+                          3.16528e-5 * self.data["sstskin"].fdata[mask] ** 3)
             d12 = 57.7 - (0.118 * self.data["sstskin"].fdata[mask])
 
             R = 83.1451
 
             self.data["pgas_air_cor"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
-                        ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
-                            R * self.data["sstskin"].fdata[mask])))
+                    ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
+                    R * self.data["sstskin"].fdata[mask])))
 
             # for i in range(len(self.data["pgas_air_cor"].fdata)):
             #     # If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
@@ -2094,7 +2095,7 @@ class FluxEngine:
             #         # LEGACY: the combination of the B11 and d12 terms are in cm^3/mol and so these cancel with the P/RT term (in mol/cm^3) so the whole of the exp term is dimensionless
             #         # DJF 11/12/2024: Assessed consistency with PyCO2sys v1.8.3.3 - Updated the pressure section. Pressure (mb) / 1013.25 to convert to atm. pressure (atm) / 0.98692 to convert to bar.
             #         # DJF 11/12/2024: pCO2(atm) (unchanged) and fCO2(atm) (changed for FEv4.0.9.1) were consistent with PyCO2sys to within 1e-14 and 1e-6 uatm respectively.
-            #         self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * exp(
+            #         self.data["pgas_air_cor"].fdata[i] = self.data["pgas_air_cor"].fdata[i] * np.exp(
             #             (b11_fdata[i] + (2 * d12_fdata[i])) * (
             #                         ((self.data["pressure"].fdata[i] / 1013.25) / 0.98692) / (
             #                             R * self.data["sstskin"].fdata[i])))
@@ -2104,8 +2105,8 @@ class FluxEngine:
         ######################################
         if runParams.TAKAHASHI_DRIVER:  # Assumes CO2 data input is not suppled as concentrations
             # debuggin differences in pH20 values
-            pCO2a_diff_fdata = array([missing_value] * nx * ny)
-            dpCO2_diff_fdata = array([missing_value] * nx * ny)
+            pCO2a_diff_fdata = np.full(nx * ny, missing_value)
+            dpCO2_diff_fdata = np.full(nx * ny, missing_value)
             mask = self.data["pgas_air"].fdata != missing_value
 
             pCO2a_diff_fdata[mask] = self.data["pgas_air_cor"].fdata[mask] - self.data["pgas_air"].fdata[mask]
@@ -2119,9 +2120,9 @@ class FluxEngine:
             #         dpCO2_diff_fdata[i] = (self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air_cor"].fdata[i]) - (
             #                     self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air"].fdata[i])
 
-            pH2O_takahashi_fdata = array([missing_value] * nx * ny)
-            humidity_fdata = array([missing_value] * nx * ny)
-            pH2O_diff_fdata = array([missing_value] * nx * ny)
+            pH2O_takahashi_fdata = np.full(nx * ny, missing_value)
+            humidity_fdata = np.full(nx * ny, missing_value)
+            pH2O_diff_fdata = np.full(nx * ny, missing_value)
             mask = (
                     (self.data["pgas_air"].fdata != missing_value) &
                     (self.data["pH2O"].fdata != missing_value) &
@@ -2131,7 +2132,7 @@ class FluxEngine:
 
             pH2O_takahashi_fdata[mask] = self.data["pressure"].fdata[mask] - \
                                          (self.data["pgas_air"].fdata[mask] * 1e-6 * 1013.25) / (
-                                                     self.data["vgas_air"].fdata[mask] * 1e-6)
+                                                 self.data["vgas_air"].fdata[mask] * 1e-6)
 
             humidity_fdata[mask] = pH2O_takahashi_fdata[mask] / self.data["pH2O"].fdata[mask]
 
@@ -2177,7 +2178,7 @@ class FluxEngine:
             if kParameterisationOutput == False:
                 raise RuntimeError(
                     "%s: k parameterisation component (%s) returned False indicating k has not been calculated successfully." % (
-                    function, kParameterisationFunctor.name));
+                        function, kParameterisationFunctor.name));
 
         # ability to investigate bias on k due to surface biology/slicks
         # assumes that bias values are realistic and that they won't cause the k_fdata to become unrealistic
@@ -2189,11 +2190,11 @@ class FluxEngine:
             if runParams.bias_k_percent_switch == 0:
                 print(
                     "\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of %lf ms^-1 added, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (
-                    function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
+                        function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
             else:
                 print(
                     "\n%s Adding bias to chosen k (k_fdata) parameterisation data (bias value of - %lf percent being used, where biology (biology fdata) is > %lf mg m^-3 and wind speed (windu10) is < %lf m s^-1)" % (
-                    function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
+                        function, runParams.bias_k_value, runParams.bias_k_biology_value, runParams.bias_k_wind_value))
 
         ############################
         # actual flux calculation  #
@@ -2243,7 +2244,7 @@ class FluxEngine:
 
         if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
             print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (
-            function, runParams.kb_asymmetry, runParams.k_parameterisation))
+                function, runParams.kb_asymmetry, runParams.k_parameterisation))
             if runParams.flux_calc == 3:
                 raise ValueError(
                     "kb_asymmetry is not supported for the 'bulk' calculation. Try using 'rapid' or 'equilibrium' instead.");
@@ -2283,19 +2284,19 @@ class FluxEngine:
 
             self.data["FH06"].fdata[mask_kb_asym] = (
                     self.data["kd"].fdata[mask_kb_asym] * k_factor * (
-                        self.data["concw"].fdata[mask_kb_asym] - self.data["conca"].fdata[mask_kb_asym])
+                    self.data["concw"].fdata[mask_kb_asym] - self.data["conca"].fdata[mask_kb_asym])
                     + self.data["kb"].fdata[mask_kb_asym] * k_factor * (self.data["concw"].fdata[mask_kb_asym] - (
-                        runParams.kb_asymmetry * self.data["conca"].fdata[mask_kb_asym]))
+                    runParams.kb_asymmetry * self.data["conca"].fdata[mask_kb_asym]))
             )
             self.data["FH06"].fdata[mask_else] = (
                     self.data["k"].fdata[mask_else] * k_factor * (
-                        self.data["concw"].fdata[mask_else] - self.data["conca"].fdata[mask_else])
+                    self.data["concw"].fdata[mask_else] - self.data["conca"].fdata[mask_else])
             )
 
         elif runParams.flux_calc == 3:
             self.data["FH06"].fdata[mask] = (
                     self.data["k"].fdata[mask] * k_factor * (
-                        self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask])
+                    self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask])
             )
 
         else:
@@ -2381,8 +2382,8 @@ class FluxEngine:
 
         # Adding verification data outputs at same units as T09
         if runParams.TAKAHASHI_DRIVER == True:
-            solskin_takadata = array([missing_value] * nx * ny)
-            FH06_takadata = array([missing_value] * nx * ny)
+            solskin_takadata = np.full(nx * ny, missing_value)
+            FH06_takadata = np.full(nx * ny, missing_value)
             mask_sol = self.data["solubility_skin"].fdata != missing_value
             solskin_takadata[mask_sol] = self.data["solubility_skin"].fdata[mask_sol] * 1000
 
@@ -2396,8 +2397,8 @@ class FluxEngine:
             #     if self.data["FH06"].fdata[i] != missing_value:
             #         FH06_takadata[i] = self.data["FH06"].fdata[i] / 30.5  # from flux per day to flux per month
         else:
-            solskin_takadata = array([missing_value] * nx * ny)
-            FH06_takadata = array([missing_value] * nx * ny)
+            solskin_takadata = np.full(nx * ny, missing_value)
+            FH06_takadata = np.full(nx * ny, missing_value)
 
         #
         # quality control of datasets, following TS (OceanFluxGHG_TS_D2-9_v1.8-signed.pdf) table 7
@@ -2406,7 +2407,7 @@ class FluxEngine:
         if "pgas_sw_cor" in self.data and "pgas_air_cor" in self.data:
             self.add_empty_data_layer("dpco2_cor");
             mask = (self.data["pgas_sw_cor"].fdata != missing_value) & (
-                        self.data["pgas_air_cor"].fdata != missing_value)
+                    self.data["pgas_air_cor"].fdata != missing_value)
             self.data["dpco2_cor"].fdata[mask] = self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air_cor"].fdata[
                 mask]
             self.data["dpco2_cor"].fdata[~mask] = missing_value
@@ -2450,8 +2451,8 @@ class FluxEngine:
         # enabled for TAKAHASHI_DRIVER to enable checking
         if runParams.TAKAHASHI_DRIVER != True:
             if (self.runParams.pco2_data_selection == 0):
-                self.data["pgas_sw"].fdata = array([missing_value] * self.nx * self.ny)
-                self.data["pgas_sw_stddev"].fdata = array([missing_value] * self.nx * self.ny)
+                self.data["pgas_sw"].fdata = np.full(self.nx * self.ny, missing_value)
+                self.data["pgas_sw_stddev"].fdata = np.full(self.nx * self.ny, missing_value)
 
         #
         # procesing indictor attribute layers
@@ -2463,7 +2464,7 @@ class FluxEngine:
                     for inputDataLayer in piFunctor.input_names():  # Check all required inputs exist.
                         if inputDataLayer not in self.data:
                             raise ValueError("%s: Missing input DataLayer (%s) for process indicator functor %s." % (
-                            function, inputDataLayer, piFunctor.name));
+                                function, inputDataLayer, piFunctor.name));
 
                     for outputDataLayer in piFunctor.output_names():  # Add any output DataLayers that don't already exist
                         if outputDataLayer not in self.data:
@@ -2526,7 +2527,7 @@ class FluxEngine:
             self.data["kb"].longName = Template(self.data["kb"].standardName).safe_substitute(GAS=self.runParams.GAS);
 
         ### write out the final ouput to netcdf
-        write_netcdf(self);
+        write_netcdf(self, verbose=True);
         print("%s SUCCESS writing file %s" % (function, runParams.output_path))
         #
         #        #Finally, close the logger

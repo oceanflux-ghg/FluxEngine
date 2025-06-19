@@ -631,7 +631,6 @@ def generate_datetime_points(startStr, endStr, deltaTime=None, singleDate=False)
 def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=False, processLayersOff=True,
                    takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False,
                    customGTVPath=None, useParallel=False, max_workers=os.cpu_count()):
-    print("ererer")
     function = inspect.stack()[0][1] + ", " + inspect.stack()[0][3]
     hostname = socket.gethostname()
     rootPath = path.abspath(path.expanduser(path.join(__file__, "../..")))

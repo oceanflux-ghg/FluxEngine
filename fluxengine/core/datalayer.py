@@ -185,17 +185,20 @@ class DataLayer:
 #Replaces elements in a matrix who's values are outside the specified range [minBound, maxBound] with missing value.
 def validate_range(fdata, minBound, maxBound, missingValue):
     if minBound != None and maxBound != None: #Must handle each case seperately to support any value of missingValue.
-        for i in range(0, len(fdata)):
-            if fdata[i] < minBound or fdata[i] > maxBound:
-                fdata[i] = missingValue;
+        fdata[fdata < minBound or fdata > maxBound] = missingValue
+        # for i in range(0, len(fdata)):
+            # if fdata[i] < minBound or fdata[i] > maxBound:
+                # fdata[i] = missingValue;
     elif minBound != None and maxBound == None:
-        for i in range(0, len(fdata)):
-            if fdata[i] < minBound:
-                fdata[i] = missingValue;
+        fdata[fdata < minBound] = missingValue
+        # for i in range(0, len(fdata)):
+            # if fdata[i] < minBound:
+                # fdata[i] = missingValue;
     elif minBound == None and maxBound != None:
-        for i in range(0, len(fdata)):
-            if fdata[i] > maxBound:
-                fdata[i] = missingValue;
+        fdata[fdata > maxBound] = missingValue
+        # for i in range(0, len(fdata)):
+            # if fdata[i] > maxBound:
+                # fdata[i] = missingValue;
 
 
 

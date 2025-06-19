@@ -10,12 +10,16 @@ def calc_mean(data, missing_value = -999.0):
     
     if hasattr(data, "fdata"): #if we have a datalayer or datalayer like object
         data = data.fdata;
-    
-    t=0.0; n=0;
-    for i in range(len(data)):
-        if data[i] != missing_value:
-            t+= data[i];
-            n+=1;
+
+    mask = data != missing_value
+    t = data[mask].sum()
+    n = mask.sum()
+
+    # t=0.0; n=0;
+    # for i in range(len(data)):
+    #     if data[i] != missing_value:
+    #         t+= data[i];
+    #         n+=1;
     try:
         return t/n;
     except ZeroDivisionError:

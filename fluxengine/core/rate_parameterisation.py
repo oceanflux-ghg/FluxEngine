@@ -386,7 +386,7 @@ class k_Nightingale2000(KCalculationBase):
 
 
 class kt_OceanFluxGHG(KCalculationBase):
-    def __init__(self, kb_weighting, kd_weighting):
+    def __init__(self, kb_weighting=1, kd_weighting=1):
         self.name = self.__class__.__name__
         self.kb_weighting = kb_weighting
         self.kd_weighting = kd_weighting
@@ -759,7 +759,7 @@ class kd_OceanFluxGHG_wind(KCalculationBase):
 
 # Goddijn-Murphy et. al. 2015
 class kt_OceanFluxGHG_kd_wind(KCalculationBase):
-    def __init__(self, kb_weighting, kd_weighting):
+    def __init__(self, kb_weighting=1, kd_weighting=1):
         self.name = self.__class__.__name__
         self.kb_weighting = kb_weighting
         self.kd_weighting = kd_weighting

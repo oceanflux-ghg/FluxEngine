@@ -2522,7 +2522,7 @@ class FluxEngine:
         if "kt" in self.data:
             self.data["kt"].longName = Template(self.data["kt"].standardName).safe_substitute(GAS=self.runParams.GAS);
         if "kd" in self.data:
-            self.data["kd"].longName = Template(self.data["kt"].standardName).safe_substitute(GAS=self.runParams.GAS);
+            self.data["kd"].longName = Template(self.data["kd"].standardName).safe_substitute(GAS=self.runParams.GAS);
         if "kt" in self.data:
             self.data["kb"].longName = Template(self.data["kb"].standardName).safe_substitute(GAS=self.runParams.GAS);
 

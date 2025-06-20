@@ -16,11 +16,11 @@ import inspect
 
 
 ###Methods
-def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, scskin_fdata, nx, ny):
+def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, scskin_fdata):
     # kd gas transfer from Goddijn-Murphy et al., JGR 2012
 
     # kdwind_fdata = array([DataLayer.missing_value] * nx * ny)
-    kdwind_fdata = np.full(nx * ny, DataLayer.missing_value)
+    kdwind_fdata = np.full_like(windu10_fdata, DataLayer.missing_value)
 
     valid_mask = (
             (windu10_fdata != DataLayer.missing_value) &
@@ -751,7 +751,7 @@ class kd_OceanFluxGHG_wind(KCalculationBase):
             return False
 
         # direct component of k using OceanFluxGHG kd-wind parameterisation
-        self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin, self.nx, self.ny)
+        self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin)
         self.k[:] = self.kd
 
         return True
@@ -792,7 +792,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
                                           self.sstskinC, self.pgas_sw, self.scskin)
 
         # overwrite kd with Goddijn-Murphy et al., JGR 2012 gas transfer...
-        self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin, self.nx, self.ny)
+        self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin)
         self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting)
         self.k[:] = self.kt
         return True

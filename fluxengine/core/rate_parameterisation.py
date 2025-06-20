@@ -43,7 +43,7 @@ def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, sc
     return kdwind_fdata
 
 
-def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata, pco2_sw_fdata,
+def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2_fdata, sstskinC_fdata, pgas_sw_fdata,
                    scskin_fdata):
     dataLength = len(sigma0_fdata)
     # determine the combined Goddijn-Murphy 2012 and Fangohr and Woolf parameterisation
@@ -122,7 +122,7 @@ def OceanFluxGHG_k(sigma0_fdata, sig_wv_ht_fdata, windu10_fdata, windu10_moment2
     #         kinematic_fdata[i] = 0.00000183 * exp((-(sstskinC_fdata[i])) / 36.0)
     #     else:
     #         kinematic_fdata[i] = DataLayer.missing_value
-    #     pco2_sw_fdata.shape = (dataLength)
+    #     pgas_sw_fdata.shape = (dataLength)
     #
     #     # wind drag coefficient
     #     # algorithm is only value for a wind speed of up to 26 ms^-1
@@ -392,7 +392,7 @@ class kt_OceanFluxGHG(KCalculationBase):
         self.kd_weighting = kd_weighting
 
     def input_names(self):
-        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pco2_sw", "scskin"]
+        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pgas_sw", "scskin"]
 
     def output_names(self):
         return ["k", "kb", "kd", "kt"]
@@ -416,7 +416,7 @@ class kt_OceanFluxGHG(KCalculationBase):
             return False
 
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2,
-                                          self.sstskinC, self.pco2_sw, self.scskin)
+                                          self.sstskinC, self.pgas_sw, self.scskin)
         # calculate the total kt
         self.kt = OceanFluxGHG_kt(self.kd, self.kb, self.kb_weighting, self.kd_weighting)
         self.k[:] = self.kt
@@ -590,7 +590,7 @@ class kd_OceanFluxGHG_backscatter(KCalculationBase):
         self.name = self.__class__.__name__
 
     def input_names(self):
-        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pco2_sw", "scskin"]
+        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pgas_sw", "scskin"]
 
     def output_names(self):
         return ["k", "kd"]
@@ -613,7 +613,7 @@ class kd_OceanFluxGHG_backscatter(KCalculationBase):
 
         # direct component of k using OceanFluxGHG radar backscatter parameterisation
         self.kd, kb_discard = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2,
-                                             self.sstskinC, self.pco2_sw, self.scskin)
+                                             self.sstskinC, self.pgas_sw, self.scskin)
         self.k[:] = self.kd  # disregards kb
         return True
 
@@ -623,7 +623,7 @@ class kb_OceanFluxGHG(KCalculationBase):
         self.name = self.__class__.__name__
 
     def input_names(self):
-        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pco2_sw", "scskin"]
+        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "sstskinC", "pgas_sw", "scskin"]
 
     def output_names(self):
         return ["k", "kb"]
@@ -645,7 +645,7 @@ class kb_OceanFluxGHG(KCalculationBase):
 
         # bubble mediated component of k using OceanFluxGHG parameterisation
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2,
-                                          self.sstskinC, self.pco2_sw, self.scskin)
+                                          self.sstskinC, self.pgas_sw, self.scskin)
         self.k[:] = self.kb  # disregards kd
         return True
 
@@ -765,7 +765,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
         self.kd_weighting = kd_weighting
 
     def input_names(self):
-        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "windu10_moment3", "sstskinC", "pco2_sw", "scskin"]
+        return ["sigma0", "sig_wv_ht", "windu10", "windu10_moment2", "windu10_moment3", "sstskinC", "pgas_sw", "scskin"]
 
     def output_names(self):
         return ["k", "kb", "kd", "kt"]
@@ -789,7 +789,7 @@ class kt_OceanFluxGHG_kd_wind(KCalculationBase):
 
         # kb portion will be discarded
         self.kd, self.kb = OceanFluxGHG_k(self.sigma0, self.sig_wv_ht, self.windu10, self.windu10_moment2,
-                                          self.sstskinC, self.pco2_sw, self.scskin)
+                                          self.sstskinC, self.pgas_sw, self.scskin)
 
         # overwrite kd with Goddijn-Murphy et al., JGR 2012 gas transfer...
         self.kd = GM12_kd_wind(self.windu10, self.windu10_moment2, self.windu10_moment3, self.scskin, self.nx, self.ny)

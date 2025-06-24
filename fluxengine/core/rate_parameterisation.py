@@ -14,6 +14,9 @@ import numpy as np
 from math import sqrt, exp
 import inspect
 
+"""
+Vectorized
+"""
 
 ###Methods
 def GM12_kd_wind(windu10_fdata, windu10_moment2_fdata, windu10_moment3_fdata, scskin_fdata):

@@ -319,7 +319,7 @@ class k_Ho2006(KCalculationBase):
                 (self.scskin > 0.0)
         )
         self.k[:] = DataLayer.missing_value
-        self.k[valid_k] = 0.266 * self.windu10_moment2[valid_k] * sqrt(600.0 / self.scskin[valid_k])
+        self.k[valid_k] = 0.266 * self.windu10_moment2[valid_k] * np.sqrt(600.0 / self.scskin[valid_k])
 
         # for i in arange(len(self.k)):
         #     self.k[i] = DataLayer.missing_value

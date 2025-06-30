@@ -2279,19 +2279,18 @@ class FluxEngine:
         )
 
         if runParams.flux_calc in [1, 2]:
-            mask_kb_asym = (runParams.kb_asymmetry != 1.0) & (runParams.k_parameterisation == 3) & mask
-            mask_else = mask & ~mask_kb_asym
-
-            self.data["FH06"].fdata[mask_kb_asym] = (
-                    self.data["kd"].fdata[mask_kb_asym] * k_factor * (
-                    self.data["concw"].fdata[mask_kb_asym] - self.data["conca"].fdata[mask_kb_asym])
-                    + self.data["kb"].fdata[mask_kb_asym] * k_factor * (self.data["concw"].fdata[mask_kb_asym] - (
-                    runParams.kb_asymmetry * self.data["conca"].fdata[mask_kb_asym]))
-            )
-            self.data["FH06"].fdata[mask_else] = (
-                    self.data["k"].fdata[mask_else] * k_factor * (
-                    self.data["concw"].fdata[mask_else] - self.data["conca"].fdata[mask_else])
-            )
+            if ((runParams.kb_asymmetry != 1.0) & (runParams.k_parameterisation == 3)):
+                self.data["FH06"].fdata[mask] = (
+                        self.data["kd"].fdata[mask] * k_factor * (
+                        self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask])
+                        + self.data["kb"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - (
+                        runParams.kb_asymmetry * self.data["conca"].fdata[mask]))
+                )
+            else:
+                self.data["FH06"].fdata[mask] = (
+                        self.data["k"].fdata[mask] * k_factor * (
+                        self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask])
+                )
 
         elif runParams.flux_calc == 3:
             self.data["FH06"].fdata[mask] = (

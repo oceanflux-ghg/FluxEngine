@@ -15,6 +15,7 @@ from fluxengine.tools.lib_ofluxghg_flux_budgets import run_flux_budgets;
 from fluxengine.tools.lib_compare_net_budgets import calc_net_budget_percentages
 from argparse import Namespace;
 from os import path;
+import time
 
 #Runs the verification proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
 def run_socat_sst_salinity_gradients_N00_verification(verbose=True):
@@ -72,5 +73,10 @@ def run_socat_sst_salinity_gradients_N00_verification(verbose=True):
             "verification successful?":verificationSuccessful, "percentage difference from reference (dictionary)":diffs};
     
 if __name__ == "__main__":
+    start = time.time()
+
     run_socat_sst_salinity_gradients_N00_verification(verbose=True);
+
+    end = time.time()
+    print(f"Elapsed time: {end - start:.4f} seconds")
 

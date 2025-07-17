@@ -22,39 +22,42 @@ def transpose(datalayer):
 #converts kelvin to celsius
 def kelvin_to_celsius(datalayer):
     print("Converting %s from kelvin to celsius." % datalayer.name);
-    
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] -= 273.15;
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] -= 273.15
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         datalayer.fdata[i] -= 273.15;
 
 #converts celsius to kelvin
 def celsius_to_kelvin(datalayer):
     print("Converting %s from celsius to kelvin." % datalayer.name);
-    
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] += 273.15;
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] += 273.15
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         datalayer.fdata[i] += 273.15;
 
 def pascal_to_millibar(datalayer):
     print("Converting %s from Pa to mbar" % datalayer.name);
-    for i in range(0, len(datalayer.fdata)):
-        if (datalayer.fdata[i] != datalayer.missing_value):
-            datalayer.fdata[i] = datalayer.fdata[i] * 0.01;
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] *= 0.01
+    # for i in range(0, len(datalayer.fdata)):
+    #     if (datalayer.fdata[i] != datalayer.missing_value):
+    #         datalayer.fdata[i] = datalayer.fdata[i] * 0.01;
 
 #convert percentages to proportions
 def percent_to_proportion(datalayer):
     print("Converting %s from percent to fraction" % datalayer.name);
-    
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] /= 100.0;
+
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] /= 100.0
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         datalayer.fdata[i] /= 100.0;
 
 def nano_to_micro(datalayer):
     print("Converting %s from nano<units> to micro<units>" % datalayer.name);
 
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] /= 1000.0;
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] /= 1000.0
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         datalayer.fdata[i] /= 1000.0;
 
 ##Reorder axes. The Required order by FluxEngine is lat, lon.
 ##Reorder (lon, lat) to (lat, long)
@@ -117,9 +120,10 @@ def foc_to_epsilon(datalayer):
     print("Converting datalayer '%s' from 'wave to ocean energy' to 'dissipation rate of turbulent kinetic energy'." % datalayer.name);
     
     waterDensity = 1026.0;
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            datalayer.fdata[i] = datalayer.fdata[i] / (10.0 * waterDensity); #Assumes wave energy (input at surface) is dissipated through over a 10m layer
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] /= (10.0 * waterDensity)
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         datalayer.fdata[i] = datalayer.fdata[i] / (10.0 * waterDensity); #Assumes wave energy (input at surface) is dissipated through over a 10m layer
             
 
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
@@ -132,9 +136,10 @@ def foc_to_epsilon_craig1994(datalayer):
     #Calculate mean dissipation from FOC
     focMeanEps = datalayer.fdata.copy();
     waterDensity = 1026.0;
-    for i in range(len(datalayer.fdata)):
-        if datalayer.fdata[i] != datalayer.missing_value:
-            focMeanEps[i] = datalayer.fdata[i] / (10.0 * waterDensity); #Assumes wave energy (input at surface) is dissipated through over a 10m layer
+    focMeanEps.fdata[datalayer.fdata != datalayer.missing_value] /= (10.0 * waterDensity)
+    # for i in range(len(datalayer.fdata)):
+    #     if datalayer.fdata[i] != datalayer.missing_value:
+    #         focMeanEps[i] = datalayer.fdata[i] / (10.0 * waterDensity); #Assumes wave energy (input at surface) is dissipated through over a 10m layer
     
     #Fit beta for craig depth curve for each grid cell
     def calc_eps_mean(beta, depth0, depth1): #calculate epsilon mean given beta

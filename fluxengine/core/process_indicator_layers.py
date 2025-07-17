@@ -11,6 +11,7 @@ computed in a modular fashion.
 
 from .datalayer import DataLayer;
 from numpy import arange;
+import numpy as np
 
 #Base class from which process indicator layers are derived.
 class ProcessIndicatorBase:
@@ -76,14 +77,18 @@ class low_wind_indicator(ProcessIndicatorBase):
             return False;
        
         #Main logic; generate low_wind mask
-        for i in arange(len(windu10)):
-            if (windu10[i] != DataLayer.missing_value):
-                if (windu10[i] <= self.lowWindThreshold):
-                    low_wind[i] = 1;
-                elif (windu10[i] > self.lowWindThreshold):
-                    low_wind[i] = 0;
-            else:
-                low_wind[i] = DataLayer.missing_value_int;
+        mask = windu10 != DataLayer.missing_value
+        low_wind[~mask] = DataLayer.missing_value_int
+        low_wind[mask] = (windu10[mask] <= self.lowWindThreshold).astype(int)
+
+        # for i in arange(len(windu10)):
+        #     if (windu10[i] != DataLayer.missing_value):
+        #         if (windu10[i] <= self.lowWindThreshold):
+        #             low_wind[i] = 1;
+        #         elif (windu10[i] > self.lowWindThreshold):
+        #             low_wind[i] = 0;
+        #     else:
+        #         low_wind[i] = DataLayer.missing_value_int;
         
         return True;
 
@@ -109,18 +114,24 @@ class bioclass_indicator(ProcessIndicatorBase):
             print("%s: Required data layer for process indicator layer was not found." % function);
             print(type(e), e.args);
             return False;
-        
-        for i in arange(len(biology)):
-            #adding in the > 0.0 condition as preliminary ESA CCI data are missing a load of data attributes
-            if biology[i] != DataLayer.missing_value and biology[i] > 0.0:
-                if  biology[i] <= self.lowThreshold:
-                    bioclass[i] = 1;
-                elif biology[i] <= self.midThreshold:
-                    bioclass[i] = 2;
-                elif biology[i] > self.midThreshold:
-                    bioclass[i] = 3;
-            else:
-                bioclass[i] = DataLayer.missing_value_int;
+
+        mask = (biology != DataLayer.missing_value) & (biology > 0.0)
+        bioclass[mask & (biology <= self.lowThreshold)] = 1
+        bioclass[mask & (biology > self.lowThreshold) & (biology <= self.midThreshold)] = 2
+        bioclass[mask & (biology > self.midThreshold)] = 3
+        bioclass[~mask] = DataLayer.missing_value_int
+
+        # for i in arange(len(biology)):
+        #     #adding in the > 0.0 condition as preliminary ESA CCI data are missing a load of data attributes
+        #     if biology[i] != DataLayer.missing_value and biology[i] > 0.0:
+        #         if  biology[i] <= self.lowThreshold:
+        #             bioclass[i] = 1;
+        #         elif biology[i] <= self.midThreshold:
+        #             bioclass[i] = 2;
+        #         elif biology[i] > self.midThreshold:
+        #             bioclass[i] = 3;
+        #     else:
+        #         bioclass[i] = DataLayer.missing_value_int;
         
         return True;
 
@@ -149,15 +160,25 @@ class diurnal_warming_indicator(ProcessIndicatorBase):
             return False;
         
         #diurnal warming when (sstskin - sstfnd) > differenceThreshold
-        for i in arange(len(sstskin)):
-            if (sstskin[i] != DataLayer.missing_value) and (sstfnd[i] != DataLayer.missing_value):
-                sstDiff = sstskin[i] - sstfnd[i]
-                if ( (sstskin[i] > sstfnd[i]) and (sstDiff > self.differenceThreshold) ): #differenceThreshold condition allows focus on strong gradients
-                    diurnal_warming[i] = 1;
-                else:
-                    diurnal_warming[i] = 0;
-            else:
-                diurnal_warming[i] = DataLayer.missing_value_int;
+        mask = (sstskin != DataLayer.missing_value) & (sstfnd != DataLayer.missing_value)
+        diurnal_warming[~mask] = DataLayer.missing_value_int
+
+        valid_sstskin = sstskin[mask]
+        valid_sstfnd = sstfnd[mask]
+        sstDiff = valid_sstskin - valid_sstfnd
+
+        cond = (valid_sstskin > valid_sstfnd) & (sstDiff > self.differenceThreshold)
+        diurnal_warming[mask] = cond.astype(int)
+
+        # for i in arange(len(sstskin)):
+        #     if (sstskin[i] != DataLayer.missing_value) and (sstfnd[i] != DataLayer.missing_value):
+        #         sstDiff = sstskin[i] - sstfnd[i]
+        #         if ( (sstskin[i] > sstfnd[i]) and (sstDiff > self.differenceThreshold) ): #differenceThreshold condition allows focus on strong gradients
+        #             diurnal_warming[i] = 1;
+        #         else:
+        #             diurnal_warming[i] = 0;
+        #     else:
+        #         diurnal_warming[i] = DataLayer.missing_value_int;
         
         return True;
 
@@ -187,31 +208,43 @@ class oceanic_basins_indicator(ProcessIndicatorBase):
             return False;
         
         #re-assinging values and adding in missing_value entries
-        for i in arange(len(atlantic_ocean_mask)):
-            if atlantic_ocean_mask[i] != DataLayer.missing_value:
-                if atlantic_ocean_mask[i] == 30.0:     
-                    atlantic_ocean_mask[i] = 1.0
-                else:
-                    atlantic_ocean_mask[i] = DataLayer.missing_value
-            
-            if pacific_ocean_mask[i] != DataLayer.missing_value:
-                if pacific_ocean_mask[i] == 70.0:  
-                    pacific_ocean_mask[i] = 1.0
-                else:
-                    pacific_ocean_mask[i] = DataLayer.missing_value
-                  
-            if southern_ocean_mask[i] != DataLayer.missing_value:
-                if southern_ocean_mask[i] == 90.0:     
-                    southern_ocean_mask[i] = 1.0
-                else:
-                    southern_ocean_mask[i] = DataLayer.missing_value
-                  
-            if indian_ocean_mask[i] != DataLayer.missing_value:
-                if indian_ocean_mask[i] == 50.0:   
-                    indian_ocean_mask[i] = 1.0
-                else:
-                    indian_ocean_mask[i] = DataLayer.missing_value
-        
+        mask_atl = atlantic_ocean_mask != DataLayer.missing_value
+        atlantic_ocean_mask[mask_atl] = np.where(atlantic_ocean_mask[mask_atl] == 30.0, 1.0, DataLayer.missing_value)
+
+        mask_pac = pacific_ocean_mask != DataLayer.missing_value
+        pacific_ocean_mask[mask_pac] = np.where(pacific_ocean_mask[mask_pac] == 70.0, 1.0, DataLayer.missing_value)
+
+        mask_sou = southern_ocean_mask != DataLayer.missing_value
+        southern_ocean_mask[mask_sou] = np.where(southern_ocean_mask[mask_sou] == 90.0, 1.0, DataLayer.missing_value)
+
+        mask_ind = indian_ocean_mask != DataLayer.missing_value
+        indian_ocean_mask[mask_ind] = np.where(indian_ocean_mask[mask_ind] == 50.0, 1.0, DataLayer.missing_value)
+
+        # for i in arange(len(atlantic_ocean_mask)):
+        #     if atlantic_ocean_mask[i] != DataLayer.missing_value:
+        #         if atlantic_ocean_mask[i] == 30.0:
+        #             atlantic_ocean_mask[i] = 1.0
+        #         else:
+        #             atlantic_ocean_mask[i] = DataLayer.missing_value
+        #
+        #     if pacific_ocean_mask[i] != DataLayer.missing_value:
+        #         if pacific_ocean_mask[i] == 70.0:
+        #             pacific_ocean_mask[i] = 1.0
+        #         else:
+        #             pacific_ocean_mask[i] = DataLayer.missing_value
+        #
+        #     if southern_ocean_mask[i] != DataLayer.missing_value:
+        #         if southern_ocean_mask[i] == 90.0:
+        #             southern_ocean_mask[i] = 1.0
+        #         else:
+        #             southern_ocean_mask[i] = DataLayer.missing_value
+        #
+        #     if indian_ocean_mask[i] != DataLayer.missing_value:
+        #         if indian_ocean_mask[i] == 50.0:
+        #             indian_ocean_mask[i] = 1.0
+        #         else:
+        #             indian_ocean_mask[i] = DataLayer.missing_value
+
         return True;
     
 
@@ -235,7 +268,7 @@ class longhurst_provinces_indicator(ProcessIndicatorBase):
         except KeyError as e:
             print("%s: Required data layer for process indicator layer was not found." % function);
             print(type(e), e.args);
-            return False;
+            return False
 
             #reassign longhurst provinces
             for i in arange(len(longhurst_mask)):

@@ -15,6 +15,7 @@ from fluxengine.core.fe_setup_tools import run_fluxengine, get_fluxengine_root;
 from fluxengine.tools.lib_ofluxghg_flux_budgets import run_flux_budgets;
 from fluxengine.tools.lib_compare_net_budgets import read_global_core_budgets, calc_net_budget_percentages;
 from argparse import Namespace;
+import time
 
 #Runs the verification proceedure for socat using sst salinity gradients and Nightinggale 2000 k parameterisation.
 #verify_socatv4_sst_salinity_gradients_N00
@@ -165,7 +166,11 @@ def run_takahashi09_verification(verbose=True):
             "verification successful?":verificationSuccessful};
 
 if __name__ == "__main__":
+    start = time.time()
     run_takahashi09_verification(verbose=True);
+
+    end = time.time()
+    print(f"Elapsed time: {end - start:.4f} seconds")
 
 
 

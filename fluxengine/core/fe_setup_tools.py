@@ -630,7 +630,7 @@ def generate_datetime_points(startStr, endStr, deltaTime=None, singleDate=False)
 # Takes a config file, a list of years and months, and runs the flux engine for each month/year combination.
 def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=False, processLayersOff=True,
                    takahashiDriver=False, pco2DirOverride=None, outputDirOverride=None, dailyResolution=False,
-                   customGTVPath=None, useParallel=False, max_workers=os.cpu_count()):
+                   customGTVPath=None, useParallel=False, max_workers=int(os.cpu_count()/2)):
     function = inspect.stack()[0][1] + ", " + inspect.stack()[0][3]
     hostname = socket.gethostname()
     rootPath = path.abspath(path.expanduser(path.join(__file__, "../..")))
@@ -717,12 +717,12 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
                 print(e.args)
                 raise e
 
-            # Skip if file already generated
-            if path.exists(runParameters["output_path"]):
-                print(f"Already wrote to {runParameters['output_path']}")
-                returnCode = 0
-                fe = None
-                continue
+            # # Skip if file already generated
+            # if path.exists(runParameters["output_path"]):
+            #     print(f"Already wrote to {runParameters['output_path']}")
+            #     returnCode = 0
+            #     fe = None
+            #     continue
 
             # Create output file path
             try:

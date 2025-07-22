@@ -76,7 +76,9 @@ http://due.esrin.esa.int/stse/videos/page_video013.php
 Acknowledgements and Funding
 ----
 The FluxEngine software was originally developed by The European Space Agency OceanFlux Greenhouse Gases and Evolution project teams.
+
 The FluxEngine v3.0 updates and extensions were funded by the European Space Agency (ESA) research projects (OceanFlux Evolution, SKIM SciSoc) and two European Union (EU) research projects (Ringo and Integral). The two EU studies are preparatory projects for the European Integrated Carbon Observing System (ICOS).
+
 The FluxEngine v4.0 updates were funded under the ESA project Ocean Carbon for Climate. We thank nguyen-vu-son (and the CO2COAST project) for their time in vectorising FluxEngine.
 
 

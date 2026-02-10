@@ -100,11 +100,13 @@ class RunParameters:
 #
 # writing the final netcdf output
 def write_netcdf(fluxEngineObject, verbose=False):
+
     timeData = fluxEngineObject.time_data;
     dataLayers = fluxEngineObject.data;
     runParams = fluxEngineObject.runParams;
 
     outputChunk = int(runParams.run_count % runParams.output_temporal_chunking);
+    exclude_vars = [val.strip() for val in runParams.exclude_outputs.split(",")]# DJF 23/01/2026: This adds the ability to remove outputs from a FluxEngine netCDF file using a config file setting.
     # fluxEngineObject.logger.debug("Writing netCDF output with output_chunk = %d", outputChunk);
 
     if outputChunk == 0:  # Create a new file and write output to it.
@@ -206,57 +208,61 @@ def write_netcdf(fluxEngineObject, verbose=False):
         # data layers
         #
         for dataLayerName in dataLayers:
-            try:
-                if verbose:
-                    print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
-                        dataLayerName].netCDFName);
-                variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims,
-                                                 fill_value=DataLayer.fill_value, zlib=True, complevel=6)
-                data = dataLayers[
-                    dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
-                data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
-                variable[outputChunk, :, :] = data;
-            except AttributeError as e:
-                print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
-                raise e;
-            except ValueError as e:
-                print(type(e), e.args);
-                print("%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name));
-                raise e;
+            if dataLayerName not in exclude_vars:
+                try:
+                    if verbose:
+                        print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
+                            dataLayerName].netCDFName);
+                    variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims,
+                                                     fill_value=DataLayer.fill_value, zlib=True, complevel=6)
+                    data = dataLayers[
+                        dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
+                    data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
+                    variable[outputChunk, :, :] = data;
+                except AttributeError as e:
+                    print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
+                    raise e;
+                except ValueError as e:
+                    print(type(e), e.args);
+                    print("%s: Cannot resize datalayer '%s'" % (function, dataLayers[dataLayerName].name));
+                    raise e;
 
-            variable.missing_value = missing_value;
-            variable.scale_factor = 1.0;
-            variable.add_offset = 0.0;
+                variable.missing_value = missing_value;
+                variable.scale_factor = 1.0;
+                variable.add_offset = 0.0;
+                variable.internal_name = dataLayerName
 
-            try:
-                if dataLayers[dataLayerName].units != None:
-                    variable.units = dataLayers[dataLayerName].units;
-            except AttributeError:
-                print("%s: No units found for datalayer named '%s'." % (function, dataLayerName));
+                try:
+                    if dataLayers[dataLayerName].units != None:
+                        variable.units = dataLayers[dataLayerName].units;
+                except AttributeError:
+                    print("%s: No units found for datalayer named '%s'." % (function, dataLayerName));
 
-            try:
-                if dataLayers[dataLayerName].minBound != None:
-                    variable.valid_min = dataLayers[dataLayerName].minBound;
-            except AttributeError:
-                print("%s: No minBound found for datalayer named '%s'." % (function, dataLayerName));
+                try:
+                    if dataLayers[dataLayerName].minBound != None:
+                        variable.valid_min = dataLayers[dataLayerName].minBound;
+                except AttributeError:
+                    print("%s: No minBound found for datalayer named '%s'." % (function, dataLayerName));
 
-            try:
-                if dataLayers[dataLayerName].maxBound != None:
-                    variable.valid_max = dataLayers[dataLayerName].maxBound;
-            except AttributeError:
-                print("%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName));
+                try:
+                    if dataLayers[dataLayerName].maxBound != None:
+                        variable.valid_max = dataLayers[dataLayerName].maxBound;
+                except AttributeError:
+                    print("%s: No maxBound found for datalayer named '%s'." % (function, dataLayerName));
 
-            try:
-                if dataLayers[dataLayerName].standardName != None:
-                    variable.standard_name = dataLayers[dataLayerName].standardName;
-            except AttributeError:
-                print("%s: No standardName found for datalayer named '%s'." % (function, dataLayerName));
+                try:
+                    if dataLayers[dataLayerName].standardName != None:
+                        variable.standard_name = dataLayers[dataLayerName].standardName;
+                except AttributeError:
+                    print("%s: No standardName found for datalayer named '%s'." % (function, dataLayerName));
 
-            try:
-                if dataLayers[dataLayerName].longName != None:
-                    variable.long_name = dataLayers[dataLayerName].longName;
-            except AttributeError:
-                print("%s: No longName found for datalayer named '%s'." % (function, dataLayerName));
+                try:
+                    if dataLayers[dataLayerName].longName != None:
+                        variable.long_name = dataLayers[dataLayerName].longName;
+                except AttributeError:
+                    print("%s: No longName found for datalayer named '%s'." % (function, dataLayerName));
+            else:
+                print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
 
         # set some global attributes
         setattr(ncfile, 'Conventions', 'CF-1.6')
@@ -297,17 +303,20 @@ def write_netcdf(fluxEngineObject, verbose=False):
         # Update data layers
         dataLayers = fluxEngineObject.data;
         for dataLayerName in dataLayers:
-            try:
-                if verbose:
-                    print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
-                        dataLayerName].netCDFName);
-                # variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value,zlib=True,  complevel=6  )
-                data = dataLayers[
-                    dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
-                data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
-                ncfile.variables[dataLayers[dataLayerName].netCDFName][outputChunk, :, :] = data;
-            except AttributeError:
-                print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
+            if dataLayerName not in exclude_vars:
+                try:
+                    if verbose:
+                        print("Writing datalayer '" + dataLayerName + "' to netCDF file as " + dataLayers[
+                            dataLayerName].netCDFName);
+                    # variable = ncfile.createVariable(dataLayers[dataLayerName].netCDFName, dtype('float64').char, dims, fill_value=DataLayer.fill_value,zlib=True,  complevel=6  )
+                    data = dataLayers[
+                        dataLayerName].fdata;  # fdata is usually a view by sometimes a copy so it has to be done this way. There is probably a better way to do this.
+                    data.shape = (dataLayers[dataLayerName].nx, dataLayers[dataLayerName].ny);
+                    ncfile.variables[dataLayers[dataLayerName].netCDFName][outputChunk, :, :] = data;
+                except AttributeError:
+                    print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
+            else:
+                print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
 
         # Update data range
         setattr(ncfile, "end_year", fluxEngineObject.runParams.year);
@@ -1857,6 +1866,23 @@ class FluxEngine:
 
         self.data["pH2O"].fdata[~mask] = missing_value
 
+        #DJF: 13/01/2026
+        # If the bubble flux asymetry is enabled then the bubble pCO2atm, and therefore pH20 correction can be calculated at different temperatures too.
+        if runParams.kb_asymmetry != 1.0:
+            self.add_empty_data_layer("pH2O_bub");
+            if runParams.bubble_cool_skin_switch: # If we apply the cool skin to the bubble flux then the pCO2atm needs to be caluclated at the skin temp (as before)
+                self.data["pH2O_bub"].fdata = self.data["pH2O"].fdata
+            else: # If we aren't then the pCO2atm should be caluclated at the foundation
+                mask = (self.data["salinity"].fdata != missing_value) & (self.data["sstfnd"].fdata != missing_value)
+
+                self.data["pH2O_bub"].fdata[mask] = 1013.25 * np.exp(
+                    24.4543
+                    - (67.4509 * (100.0 / self.data["sstfnd"].fdata[mask]))
+                    - (4.8489 * np.log(self.data["sstfnd"].fdata[mask] / 100.0))
+                    - 0.000544 * self.data["salinity"].fdata[mask]
+                )
+                self.data["pH2O_bub"].fdata[~mask] = missing_value
+
         # for i in arange(nx * ny):
         #     # if ( (self.data["salinity_skin"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] != missing_value) and (self.data["pressure"].fdata[i] != missing_value) and (self.data["vgas_air"].fdata[i] != missing_value) and (self.data["sstfnd"].fdata[i] != missing_value) and (self.data["pco2_sst"].fdata[i] != missing_value) and (self.data["pgas_sw"].fdata[i] != missing_value) and (self.data["sstskin"].fdata[i] !=0.0) ):
         #     if (self.data["salinity_skin"].fdata[i] != missing_value) and (
@@ -1938,6 +1964,7 @@ class FluxEngine:
             self.add_empty_data_layer("pgas_air");
             mask = (
                     (self.data["salinity_skin"].fdata != missing_value) &
+                    (self.data["salinity"].fdata != missing_value) &
                     (self.data["sstskin"].fdata != missing_value) &
                     (self.data["pressure"].fdata != missing_value) &
                     (self.data["vgas_air"].fdata != missing_value) &
@@ -1950,8 +1977,19 @@ class FluxEngine:
             if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
                 self.data["pgas_air"].fdata[mask] = (self.data["vgas_air"].fdata[mask] * (
                         self.data["pressure"].fdata[mask] - self.data["pH2O"].fdata[mask])) / 1013.25
+                #DJF: 13/01/2026
+                # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
+                if runParams.kb_asymmetry != 1.0:
+                    self.add_empty_data_layer("pgas_air_bub");
+                    if runParams.bubble_cool_skin_switch:
+                        self.data["pgas_air_bub"].fdata[mask] = self.data["pgas_air"].fdata[mask]
+                    else:
+                        self.data["pgas_air_bub"].fdata[mask] = (self.data["vgas_air"].fdata[mask] * (
+                                self.data["pressure"].fdata[mask] - self.data["pH2O_bub"].fdata[mask])) / 1013.25
             else:
                 self.data["pgas_air"].fdata[:] = self.data["vgas_air"].fdata[:]
+
+
 
             # for i in range(len(self.data["vgas_air"].fdata)):
             #     # If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
@@ -1975,6 +2013,7 @@ class FluxEngine:
         if runParams.TAKAHASHI_DRIVER == False:  # Different for takahashi run to maintain compatability with verification run. This will be updated when verification runs are updated
             mask = (
                     (self.data["salinity_skin"].fdata != missing_value) &
+                    (self.data["salinity"].fdata != missing_value) &
                     (self.data["sstskin"].fdata != missing_value) &
                     (self.data["pressure"].fdata != missing_value) &
                     (self.data["sstfnd"].fdata != missing_value) &
@@ -1985,8 +2024,15 @@ class FluxEngine:
 
             if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
                 self.data["pgas_air_cor"].fdata[mask] = self.data["pgas_air"].fdata[mask] + pco2_increment_air
+                #DJF: 13/01/2026
+                # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
+                if runParams.kb_asymmetry != 1.0:
+                    self.add_empty_data_layer("pgas_air_bub_cor");
+                    self.data["pgas_air_bub_cor"].fdata[mask] = self.data["pgas_air_bub"].fdata[mask] + pco2_increment_air
+
             else:
                 self.data["pgas_air_cor"].fdata[:] = self.data["pgas_air"].fdata[:]
+
 
             # for i in range(len(self.data["pgas_air"].fdata)):
             #     if ((self.data["salinity_skin"].fdata[i] != missing_value) and (
@@ -2051,6 +2097,7 @@ class FluxEngine:
 
             mask = (
                     (self.data["salinity_skin"].fdata != missing_value) &
+                    (self.data["salinity"].fdata != missing_value) &
                     (self.data["sstskin"].fdata != missing_value) &
                     (self.data["pressure"].fdata != missing_value) &
                     (self.data["vgas_air"].fdata != missing_value) &
@@ -2070,6 +2117,23 @@ class FluxEngine:
             self.data["pgas_air_cor"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
                     ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
                     R * self.data["sstskin"].fdata[mask])))
+
+            #DJF: 13/01/2026
+            # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
+            if runParams.kb_asymmetry != 1.0:
+                if runParams.bubble_cool_skin_switch:
+                    self.data["pgas_air_bub_cor"].fdata[mask] = self.data["pgas_air_cor"].fdata[mask]
+                else:
+                    b11_fdata = np.full(nx * ny, missing_value);
+                    d12_fdata = np.full(nx * ny, missing_value);
+                    b11 = -1636.75 + (12.0408 * self.data["sstfnd"].fdata[mask]) - (
+                            0.0327957 * self.data["sstfnd"].fdata[mask] ** 2) + (
+                                  3.16528e-5 * self.data["sstfnd"].fdata[mask] ** 3)
+                    d12 = 57.7 - (0.118 * self.data["sstfnd"].fdata[mask])
+
+                    self.data["pgas_air_bub_cor"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
+                            ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
+                            R * self.data["sstfnd"].fdata[mask])))
 
             # for i in range(len(self.data["pgas_air_cor"].fdata)):
             #     # If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
@@ -2241,13 +2305,13 @@ class FluxEngine:
                                                                                      DeltaT_fdata, self.nx, self.ny,
                                                                                      runParams.schmidt_parameterisation,
                                                                                      runParams.GAS.lower());
-
-        if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
-            print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (
-                function, runParams.kb_asymmetry, runParams.k_parameterisation))
-            if runParams.flux_calc == 3:
-                raise ValueError(
-                    "kb_asymmetry is not supported for the 'bulk' calculation. Try using 'rapid' or 'equilibrium' instead.");
+        #DJF: I think this is legacy for older implementations of the bubble flux
+        # if ((runParams.kb_asymmetry != 1.0) and (runParams.k_parameterisation == 3)):
+        #     print("%s kb asymetry has been enabled (runParams.kb_asymmetry:%lf and runParams.k_parameterisation:%d)" % (
+        #         function, runParams.kb_asymmetry, runParams.k_parameterisation))
+        #     if runParams.flux_calc == 3:
+        #         raise ValueError(
+        #             "kb_asymmetry is not supported for the 'bulk' calculation. Try using 'rapid' or 'equilibrium' instead.");
 
         ###################################################
         # If concentration data are not provided as input #
@@ -2269,6 +2333,21 @@ class FluxEngine:
             calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_cor"].fdata,
                             self.data["conca"].fdata);  # calculate conca
 
+        if runParams.kb_asymmetry != 1.0:
+            self.add_empty_data_layer("conca_bub");
+            print("%s kb asymetry has been enabled (runParams.kb_asymmetry: %lf and runParams.k_parameterisation: %s)" % (
+                    function, runParams.kb_asymmetry, runParams.k_parameterisation))
+            print(runParams.bubble_cool_skin_switch)
+            if runParams.bubble_cool_skin_switch:
+
+                print('Bubble cool skin on')
+                calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_bub_cor"].fdata,
+                                self.data["conca_bub"].fdata);  # calculate conca
+            else:
+                print('Bubble cool skin off')
+                calculate_conca(concFactor, self.data["solubility_fnd"].fdata, self.data["pgas_air_bub_cor"].fdata,
+                                self.data["conca_bub"].fdata);  # calculate conca
+
         ##############################
         # Main flux calculation loop # #assume corrected pco2 data at the moment #################################
         ##############################
@@ -2279,12 +2358,10 @@ class FluxEngine:
         )
 
         if runParams.flux_calc in [1, 2]:
-            if ((runParams.kb_asymmetry != 1.0) & (runParams.k_parameterisation == 3)):
+            if (runParams.kb_asymmetry != 1.0): #& (runParams.k_parameterisation == 3)): # DJF 13/01/2026 - Dont think this toggle is needed anymore as k_parameterisation is now a string and not a value...
                 self.data["FH06"].fdata[mask] = (
-                        self.data["kd"].fdata[mask] * k_factor * (
-                        self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask])
-                        + self.data["kb"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - (
-                        runParams.kb_asymmetry * self.data["conca"].fdata[mask]))
+                        self.data["kd"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask]) # Direct flux (or interfacial flux
+                        + self.data["kb"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - (runParams.kb_asymmetry * self.data["conca_bub"].fdata[mask])) # Bubble mediated flux - which has a specific bubble atmospheric CO2
                 )
             else:
                 self.data["FH06"].fdata[mask] = (

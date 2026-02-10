@@ -194,8 +194,8 @@
 			 </DataLayer>
 
 		<DataLayer name="kd" netCDFName="OKD" units="cm h-1" minBound="0.0" maxBound="100.0"
-			 standardName="direct_gas_transfer_velocity_of_${GAS}_from_backscatter"
-			 longName="Direct gas transfer velocity">
+			 standardName="direct_gas_transfer_velocity_of_${GAS}"
+			 longName="Direct (Interfacial) gas transfer velocity">
 		</DataLayer>
 		<DataLayer name="kb" netCDFName="OKB1" units="cm h-1" minBound="0.0" maxBound="100.0"
 			 standardName="bubble_gas_transfer_velocity_of_carbon_dioxide"
@@ -452,6 +452,7 @@
 		<Variable name="bias_pco2_value" required="true" type="float" default="0.0"></Variable>
 
 		<Variable name="kb_asymmetry" required="true" type="float" default="1.0"></Variable>
+		<Variable name="bubble_cool_skin" required="true" type="switch" default="no"></Variable>
 
 		<Variable name="bias_sstskin_due_rain" required="true" type="switch" default="no"></Variable>
 		<Variable name="bias_sstskin_due_rain_value" required="true" type="float" default="0.0"></Variable>
@@ -467,6 +468,7 @@
 		<Variable name="output_structure" required="true" type="string" default="&lt;YYYY&gt;/&lt;MM&gt;"></Variable>
 		<Variable name="output_file" required="true" type="string" default="OceanFluxGHG-month&lt;MM&gt;-&lt;mmm&gt;-&lt;YYYY&gt;-v0.nc"></Variable>
 		<Variable name="output_temporal_chunking" required="true" type="integer" default="1"> </Variable>
+		<Variable name="exclude_outputs" required="false" type="string" default=""></Variable>
 
 	</ConfigParameters>
 </Settings>

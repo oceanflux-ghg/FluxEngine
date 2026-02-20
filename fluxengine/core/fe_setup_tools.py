@@ -530,6 +530,7 @@ def get_preprocessing_funcs(funcNamesArg):
 # Constructs a fluxengine object based on a set of run parameters.
 # The resulting fe object is ready to run.
 def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, customGTVPath=None, verbose=False):
+    runParameters['verbose'] = verbose
     fe = fluxengine.FluxEngine(runParameters)
 
     # Add the k parameterisation functor
@@ -734,10 +735,10 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
 
             if useParallel:
                 futures.append(executor.submit(process_timestep, runParameters, metadata, processLayersOff,
-                                               customGTVPath=customGTVPath, verbose=False))
+                                               customGTVPath=customGTVPath, verbose=verbose))
             else:
                 #Create fluxengine object to use runParameters
-                fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, customGTVPath=customGTVPath, verbose=False)
+                fe = fe_obj_from_run_parameters(runParameters, metadata, processLayersOff, customGTVPath=customGTVPath, verbose=verbose)
                 #Run fluxengine
                 if fe != None:
                     returnCode = fe.run()

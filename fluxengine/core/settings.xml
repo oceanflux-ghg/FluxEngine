@@ -102,10 +102,10 @@
 			longName="Concentration ${GAS} in dry air (ppm) or dry molecular fraction of ${GAS} in the atmosphere (umol mol-1)">
 		</DataLayer>
 
-		<DataLayer name="pgas_air" netCDFName="pgas_air" units="microatm" minBound="0.0" maxBound="600.0"
-			standardName="partial_pressure_of_${GAS}_in_air"
-			longName="partial pressure of ${GAS} in air">
-		</DataLayer>
+		<!-- <DataLayer name="pgas_air" netCDFName="pgas_air" units="microatm" minBound="0.0" maxBound="600.0"
+			standardName="{GAS_TYPE}_of_${GAS}_in_air"
+			longName="{GAS_TYPE} of ${GAS} in air">
+		</DataLayer> -->
 
 		<DataLayer name="sstgrad" netCDFName="OFA05" units="count" minBound="0.0" maxBound="100.0"
 			standardName="sea_surface_temperature_gradients"
@@ -147,26 +147,26 @@
 			longName="Longhurst provinces">
 		</DataLayer>
 
-		<DataLayer name="pgas_sw" netCDFName="SFUG_krig" units="microatm" minBound="0.0" maxBound="2000.0"
-			 standardName="surface_partial_pressure_of_${GAS}_in_sea_water"
+		<!-- <DataLayer name="pgas_sw" netCDFName="SFUG_krig" units="microatm" minBound="0.0" maxBound="2000.0"
+			 standardName="surface_${GAS_TYPE}_of_${GAS}_in_sea_water"
 			 longName="p${GAS} in sea water from climtology">
-		</DataLayer>
+		</DataLayer> -->
 
 		<DataLayer name="pco2_sst" units="degreeC" minBound="-2.0" maxBound="40.0"></DataLayer>
 
-		<DataLayer name="pgas_sw_stddev" netCDFName="SFUG_stddev" units="microatm" minBound="0.0" maxBound="2000.0"
-			 standardName="surface_partial_pressure_of_${GAS}_in_sea_water"
-			 longName="p${GAS} in sea water from climtology">
+		<!-- <DataLayer name="pgas_sw_stddev" netCDFName="SFUG_stddev" units="microatm" minBound="0.0" maxBound="2000.0"
+			 standardName="surface_${GAS_TYPE}_of_${GAS}_in_sea_water"
+			 longName="${GAS_TYPE} ${GAS} in sea water from climatology">
+		</DataLayer> -->
+
+		<DataLayer name="pgas_air" netCDFName="OAPC1" units="microatm" minBound="0.0" maxBound="600.0"
+			 standardName="water_surface_${GAS_TYPE}_of_${GAS}_in_air"
+			 longName="Water surface ${GAS_TYPE} of ${GAS} in air from climtology corrected using modelled sea level pressure">
 		</DataLayer>
 
-		<DataLayer name="pgas_air_cor" netCDFName="OAPC1" units="microatm" minBound="0.0" maxBound="600.0"
-			 standardName="water_surface_partial_pressure_of_${GAS}_in_air"
-			 longName="Water surface partial pressure of ${GAS} in air from climtology corrected using modelled sea level pressure">
-		</DataLayer>
-
-		<DataLayer name="pgas_sw_cor" netCDFName="OBPC" units="microatm" minBound="0.0" maxBound="2000.0"
-			 standardName="sub_skin_partial_pressure_of_${GAS}_in_sea_water"
-			 longName="Sub skin partial pressure of ${GAS}">
+		<DataLayer name="pgas_sw" netCDFName="OBPC" units="microatm" minBound="0.0" maxBound="2000.0"
+			 standardName="sub_skin_${GAS_TYPE}_of_${GAS}_in_sea_water"
+			 longName="Sub skin ${GAS_TYPE} of ${GAS}">
 		</DataLayer>
 
 		<DataLayer name="scskin" netCDFName="SC" units="count" minBound="0.0" maxBound="4000.0"
@@ -198,7 +198,7 @@
 			 longName="Direct (Interfacial) gas transfer velocity">
 		</DataLayer>
 		<DataLayer name="kb" netCDFName="OKB1" units="cm h-1" minBound="0.0" maxBound="100.0"
-			 standardName="bubble_gas_transfer_velocity_of_carbon_dioxide"
+			 standardName="bubble_gas_transfer_velocity_of_${GAS}"
 			 longName="Bubble mediated gas transfer velocity">
 			 </DataLayer>
 
@@ -225,13 +225,13 @@
 -->
 
 		<DataLayer name="concw" netCDFName="OSFC" units="g m-3" minBound="0.0" maxBound="500.0"
-			standardName="sub_skin_concentration_of_carbon_dioxide_in_sea_water"
-			longName="Sub skin concentration of carbon dioxide in sea water g-C m^-3">
+			standardName="sub_skin_concentration_of_${GAS}_in_sea_water"
+			longName="Sub skin concentration of carbon dioxide in sea water">
 		</DataLayer>
 
 		<DataLayer name="conca" netCDFName="OIC1" units="g m-3" minBound="0.0" maxBound="400.0"
-			standardName="concentration_of_carbon_dioxide_at_the_sea_air_interface"
-			longName="Concentration of carbon dioxide at the sea water and air interface in g-C m^-3">
+			standardName="concentration_of_${GAS}_at_the_sea_air_interface"
+			longName="Concentration of ${GAS} at the sea water and air interface">
 		</DataLayer>
 
 <!--
@@ -245,8 +245,8 @@
 			longName="Concentration of carbon dioxide at the sea water and air interface in g-C m^-3">
 		</DataLayer>
 -->
-		<DataLayer name="dpco2_cor" netCDFName="dpCO2" units="mictoatm" minBound="-1000.0" maxBound="1000.0"
-			standardName="difference_in_water_and_air_partial_pressure_of_carbon_dioxide"
+		<DataLayer name="dpco2" netCDFName="dpCO2" units="mictoatm" minBound="-1000.0" maxBound="1000.0"
+			standardName="difference_in_water_and_air_${GAS_TYPE}_of_${GAS}"
 			longName="Delta pCO2">
 		</DataLayer>
 
@@ -321,7 +321,7 @@
 			longName="water vapour pressure from salinity and SST relationship of Weiss and Price 1980 Marine Chemistry">
 		</DataLayer>
 
-		<DataLayer name="dpconc_cor" netCDFName="Dconc" units="g m-3" minBound="-500.0" maxBound="500.0"
+		<DataLayer name="dpconc" netCDFName="Dconc" units="g m-3" minBound="-500.0" maxBound="500.0"
 			standardName="difference_in_mass_boundary_layer_and_interface_concentrations_carbon_dioxide"
 			longName="difference between the interface and mass boundary layer concentrations">
 		</DataLayer>

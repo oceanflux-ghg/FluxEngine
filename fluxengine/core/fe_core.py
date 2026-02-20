@@ -262,7 +262,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 except AttributeError:
                     print("%s: No longName found for datalayer named '%s'." % (function, dataLayerName));
             else:
-                print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
+                if verbose:
+                    print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
 
         # set some global attributes
         setattr(ncfile, 'Conventions', 'CF-1.6')
@@ -316,7 +317,8 @@ def write_netcdf(fluxEngineObject, verbose=False):
                 except AttributeError:
                     print("%s:No netCDFName or data attribute found in DataLayer '%s'." % (function, dataLayerName));
             else:
-                print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
+                if verbose:
+                    print("Datalayer '" + dataLayerName + "' included in exclude_outputs config setting. Therefore not written to netCDF file in " + dataLayers[dataLayerName].netCDFName);
 
         # Update data range
         setattr(ncfile, "end_year", fluxEngineObject.runParams.year);
@@ -1437,13 +1439,14 @@ class FluxEngine:
             #             i] * self.data["windu10"].fdata[i]
 
         # some specific pco2 conditions
-        # TODO: This shouldn't be randomly here.
-        if "pgas_sw" in self.data:
-            self.data["pgas_sw"].fdata[abs(self.data["pgas_sw"].fdata) < 0.1] = DataLayer.missing_value  # IGA_SOCATv4
+        # TODO: This shouldn't be randomly here. - DJF: 20/02/2026: Should be covered by min max in outputs.
+        # if "pgas_sw" in self.data:
+        #     self.data["pgas_sw"].fdata[abs(self.data["pgas_sw"].fdata) < 0.1] = DataLayer.missing_value  # IGA_SOCATv4
 
-        if (runParams.pco2_data_selection != 1):
-            # signifies that we're NOT using SOCAT data, which means there is no stddev data for pgas_sw
-            self.add_empty_data_layer("pgas_sw_stddev");
+        #DJF: 20/02/2026: If this isn't provided I dont know why we are then generating it...
+        # if (runParams.pco2_data_selection != 1):
+        #     # signifies that we're NOT using SOCAT data, which means there is no stddev data for pgas_sw
+        #     self.add_empty_data_layer("pgas_sw_stddev");
 
         # initialising some data structures for the calculations
         self.add_empty_data_layer("scskin");
@@ -1470,9 +1473,10 @@ class FluxEngine:
                 function, runParams.saline_skin_value))
 
         # conversion of rain data from mm day-1 to mm hr^-1
-        if "rain" in self.data:
-            mask = self.data["rain"].fdata != DataLayer.missing_value
-            self.data["rain"].fdata[mask] /= 24.0
+        #DJF: 19/02/2025: THis should be a data preprocessing in a config and not hard coded here. So added a data preprocessing layer.
+        # if "rain" in self.data:
+        #     mask = self.data["rain"].fdata != DataLayer.missing_value
+        #     self.data["rain"].fdata[mask] /= 24.0
 
             # for i in arange(self.nx * self.ny):
             #     if (self.data["rain"].fdata[i] != DataLayer.missing_value):
@@ -1913,7 +1917,7 @@ class FluxEngine:
 
         # if pCO2 data in sea water is provided calculated corrected values.
         if "pgas_sw" in self.data:  # Only calculate partial pressure data is available
-            self.add_empty_data_layer("pgas_sw_cor");
+            # self.add_empty_data_layer("pgas_sw_cor");
             mask = (
                     (self.data["salinity_skin"].fdata != missing_value) &
                     (self.data["sstskin"].fdata != missing_value) &
@@ -1925,16 +1929,16 @@ class FluxEngine:
             )
 
             if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
-                self.data["pgas_sw_cor"].fdata[mask] = pco2_increment + (
+                self.data["pgas_sw"].fdata[mask] = pco2_increment + (
                         self.data["pgas_sw"].fdata[mask] * np.exp(
                     (0.0423 * (self.data["sstfndC"].fdata[mask] - self.data["pco2_sst"].fdata[mask]))
                     - (0.0000435 * ((self.data["sstfndC"].fdata[mask] ** 2) - (self.data["pco2_sst"].fdata[mask] ** 2)))
                     + pCO2_salinity_term
                 )
                 )
-                self.data["pgas_sw_cor"].fdata[~mask] = self.data["pgas_sw"].fdata[~mask]
+                self.data["pgas_sw"].fdata[~mask] = self.data["pgas_sw"].fdata[~mask]
             else:
-                self.data["pgas_sw_cor"].fdata[mask] = self.data["pgas_sw"].fdata[mask]
+                self.data["pgas_sw"].fdata[mask] = self.data["pgas_sw"].fdata[mask]
 
             # for i in range(len(self.data["pgas_sw"].fdata)):
             #     # If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
@@ -2008,7 +2012,7 @@ class FluxEngine:
 
         # Now calculate corrected values for pCO2 at the interface/air
         ###Converts from ppm to microatm TH
-        self.add_empty_data_layer("pgas_air_cor");
+        # self.add_empty_data_layer("pgas_air_cor"); # DJF: 20/02/2026 removing the pgas_air_cor notation.
         # If statement added below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
         if runParams.TAKAHASHI_DRIVER == False:  # Different for takahashi run to maintain compatability with verification run. This will be updated when verification runs are updated
             mask = (
@@ -2023,15 +2027,15 @@ class FluxEngine:
             )
 
             if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
-                self.data["pgas_air_cor"].fdata[mask] = self.data["pgas_air"].fdata[mask] + pco2_increment_air
-                #DJF: 13/01/2026
-                # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
+                self.data["pgas_air"].fdata[mask] = self.data["pgas_air"].fdata[mask] + pco2_increment_air
+                # #DJF: 13/01/2026
+                # # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
                 if runParams.kb_asymmetry != 1.0:
-                    self.add_empty_data_layer("pgas_air_bub_cor");
-                    self.data["pgas_air_bub_cor"].fdata[mask] = self.data["pgas_air_bub"].fdata[mask] + pco2_increment_air
+                    self.add_empty_data_layer("pgas_air_bub");
+                    self.data["pgas_air_bub"].fdata[mask] = self.data["pgas_air_bub"].fdata[mask] + pco2_increment_air
 
             else:
-                self.data["pgas_air_cor"].fdata[:] = self.data["pgas_air"].fdata[:]
+                self.data["pgas_air"].fdata[:] = self.data["pgas_air"].fdata[:]
 
 
             # for i in range(len(self.data["pgas_air"].fdata)):
@@ -2059,15 +2063,15 @@ class FluxEngine:
             )
 
             if runParams.GAS == 'CO2' and runParams.ATMGAS == 'V':
-                self.data["pgas_air_cor"].fdata[mask] = (
+                self.data["pgas_air"].fdata[mask] = (
                         self.data["vgas_air"].fdata[mask] * 1e-6 *
                         (self.data["pressure"].fdata[mask] - self.data["pH2O"].fdata[mask]) / (1e-6 * 1013.25)
                         + pco2_increment_air
                 )
-                self.data["pgas_air_cor"].fdata[~mask] = self.data["pgas_air_cor"].fdata[
+                self.data["pgas_air"].fdata[~mask] = self.data["pgas_air"].fdata[
                     ~mask]  # keep existing values if any
             else:
-                self.data["pgas_air_cor"].fdata[:] = self.data["vgas_air"].fdata[:]
+                self.data["pgas_air"].fdata[:] = self.data["vgas_air"].fdata[:]
 
             # for i in range(len(self.data["vgas_air"].fdata)):
             #     # If statement below to maintain a consistent calculation with previous versions. Perhaps not needed but would invalidate reference data otherwise.
@@ -2114,7 +2118,7 @@ class FluxEngine:
 
             R = 83.1451
 
-            self.data["pgas_air_cor"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
+            self.data["pgas_air"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
                     ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
                     R * self.data["sstskin"].fdata[mask])))
 
@@ -2122,7 +2126,7 @@ class FluxEngine:
             # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
             if runParams.kb_asymmetry != 1.0:
                 if runParams.bubble_cool_skin_switch:
-                    self.data["pgas_air_bub_cor"].fdata[mask] = self.data["pgas_air_cor"].fdata[mask]
+                    self.data["pgas_air_bub"].fdata[mask] = self.data["pgas_air"].fdata[mask]
                 else:
                     b11_fdata = np.full(nx * ny, missing_value);
                     d12_fdata = np.full(nx * ny, missing_value);
@@ -2131,7 +2135,7 @@ class FluxEngine:
                                   3.16528e-5 * self.data["sstfnd"].fdata[mask] ** 3)
                     d12 = 57.7 - (0.118 * self.data["sstfnd"].fdata[mask])
 
-                    self.data["pgas_air_bub_cor"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
+                    self.data["pgas_air_bub"].fdata[mask] *= np.exp((b11 + 2 * d12) * (
                             ((self.data["pressure"].fdata[mask] / 1013.25) / 0.98692) / (
                             R * self.data["sstfnd"].fdata[mask])))
 
@@ -2167,44 +2171,44 @@ class FluxEngine:
         ######################################
         # Takahashi verification information #  ##TODO: CHECK IF THIS CAN BE REMOVED?
         ######################################
-        if runParams.TAKAHASHI_DRIVER:  # Assumes CO2 data input is not suppled as concentrations
-            # debuggin differences in pH20 values
-            pCO2a_diff_fdata = np.full(nx * ny, missing_value)
-            dpCO2_diff_fdata = np.full(nx * ny, missing_value)
-            mask = self.data["pgas_air"].fdata != missing_value
-
-            pCO2a_diff_fdata[mask] = self.data["pgas_air_cor"].fdata[mask] - self.data["pgas_air"].fdata[mask]
-            dpCO2_diff_fdata[mask] = (self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air_cor"].fdata[mask]) - \
-                                     (self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air"].fdata[mask])
-
-            # for i in arange(nx * ny):
-            #     # Additional pCO2 outputs for Takahashi verification
-            #     if self.data["pgas_air"].fdata[i] != missing_value:
-            #         pCO2a_diff_fdata[i] = self.data["pgas_air_cor"].fdata[i] - self.data["pgas_air"].fdata[i]
-            #         dpCO2_diff_fdata[i] = (self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air_cor"].fdata[i]) - (
-            #                     self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air"].fdata[i])
-
-            pH2O_takahashi_fdata = np.full(nx * ny, missing_value)
-            humidity_fdata = np.full(nx * ny, missing_value)
-            pH2O_diff_fdata = np.full(nx * ny, missing_value)
-            mask = (
-                    (self.data["pgas_air"].fdata != missing_value) &
-                    (self.data["pH2O"].fdata != missing_value) &
-                    (self.data["pressure"].fdata != missing_value) &
-                    (self.data["vgas_air"].fdata != missing_value)
-            )
-
-            pH2O_takahashi_fdata[mask] = self.data["pressure"].fdata[mask] - \
-                                         (self.data["pgas_air"].fdata[mask] * 1e-6 * 1013.25) / (
-                                                 self.data["vgas_air"].fdata[mask] * 1e-6)
-
-            humidity_fdata[mask] = pH2O_takahashi_fdata[mask] / self.data["pH2O"].fdata[mask]
-
-            pH2O_diff_fdata[mask] = (humidity_fdata[mask] - 1.0) * 100.0
-
-            pH2O_takahashi_fdata[~mask] = missing_value
-            humidity_fdata[~mask] = missing_value
-            pH2O_diff_fdata[~mask] = missing_value
+        # if runParams.TAKAHASHI_DRIVER:  # Assumes CO2 data input is not suppled as concentrations
+        #     # debuggin differences in pH20 values
+        #     pCO2a_diff_fdata = np.full(nx * ny, missing_value)
+        #     dpCO2_diff_fdata = np.full(nx * ny, missing_value)
+        #     mask = self.data["pgas_air"].fdata != missing_value
+        #
+        #     pCO2a_diff_fdata[mask] = self.data["pgas_air_cor"].fdata[mask] - self.data["pgas_air"].fdata[mask]
+        #     dpCO2_diff_fdata[mask] = (self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air_cor"].fdata[mask]) - \
+        #                              (self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air"].fdata[mask])
+        #
+        #     # for i in arange(nx * ny):
+        #     #     # Additional pCO2 outputs for Takahashi verification
+        #     #     if self.data["pgas_air"].fdata[i] != missing_value:
+        #     #         pCO2a_diff_fdata[i] = self.data["pgas_air_cor"].fdata[i] - self.data["pgas_air"].fdata[i]
+        #     #         dpCO2_diff_fdata[i] = (self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air_cor"].fdata[i]) - (
+        #     #                     self.data["pgas_sw_cor"].fdata[i] - self.data["pgas_air"].fdata[i])
+        #
+        #     pH2O_takahashi_fdata = np.full(nx * ny, missing_value)
+        #     humidity_fdata = np.full(nx * ny, missing_value)
+        #     pH2O_diff_fdata = np.full(nx * ny, missing_value)
+        #     mask = (
+        #             (self.data["pgas_air"].fdata != missing_value) &
+        #             (self.data["pH2O"].fdata != missing_value) &
+        #             (self.data["pressure"].fdata != missing_value) &
+        #             (self.data["vgas_air"].fdata != missing_value)
+        #     )
+        #
+        #     pH2O_takahashi_fdata[mask] = self.data["pressure"].fdata[mask] - \
+        #                                  (self.data["pgas_air"].fdata[mask] * 1e-6 * 1013.25) / (
+        #                                          self.data["vgas_air"].fdata[mask] * 1e-6)
+        #
+        #     humidity_fdata[mask] = pH2O_takahashi_fdata[mask] / self.data["pH2O"].fdata[mask]
+        #
+        #     pH2O_diff_fdata[mask] = (humidity_fdata[mask] - 1.0) * 100.0
+        #
+        #     pH2O_takahashi_fdata[~mask] = missing_value
+        #     humidity_fdata[~mask] = missing_value
+        #     pH2O_diff_fdata[~mask] = missing_value
 
             # for i in arange(nx * ny):
             #     # Additional humidity outputs for Takahashi verification
@@ -2323,14 +2327,14 @@ class FluxEngine:
         if "concw" not in self.data:
             self.add_empty_data_layer("concw");
             if runParams.flux_calc == 3:  # Bulk calculation, so should use the same solubility as conca
-                calculate_concw(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_sw_cor"].fdata,
+                calculate_concw(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_sw"].fdata,
                                 self.data["concw"].fdata);  # calculate concw
             else:  # Not bulk, so use the solubility at foundation layer
-                calculate_concw(concFactor, self.data["solubility_fnd"].fdata, self.data["pgas_sw_cor"].fdata,
+                calculate_concw(concFactor, self.data["solubility_fnd"].fdata, self.data["pgas_sw"].fdata,
                                 self.data["concw"].fdata);  # calculate concw
         if "conca" not in self.data:
             self.add_empty_data_layer("conca");
-            calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_cor"].fdata,
+            calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air"].fdata,
                             self.data["conca"].fdata);  # calculate conca
 
         if runParams.kb_asymmetry != 1.0:
@@ -2341,11 +2345,11 @@ class FluxEngine:
             if runParams.bubble_cool_skin_switch:
 
                 print('Bubble cool skin on')
-                calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_bub_cor"].fdata,
+                calculate_conca(concFactor, self.data["solubility_skin"].fdata, self.data["pgas_air_bub"].fdata,
                                 self.data["conca_bub"].fdata);  # calculate conca
             else:
                 print('Bubble cool skin off')
-                calculate_conca(concFactor, self.data["solubility_fnd"].fdata, self.data["pgas_air_bub_cor"].fdata,
+                calculate_conca(concFactor, self.data["solubility_fnd"].fdata, self.data["pgas_air_bub"].fdata,
                                 self.data["conca_bub"].fdata);  # calculate conca
 
         ##############################
@@ -2480,13 +2484,13 @@ class FluxEngine:
         # quality control of datasets, following TS (OceanFluxGHG_TS_D2-9_v1.8-signed.pdf) table 7
         #
         # calculate takahashi style DpCO2 and check range
-        if "pgas_sw_cor" in self.data and "pgas_air_cor" in self.data:
-            self.add_empty_data_layer("dpco2_cor");
-            mask = (self.data["pgas_sw_cor"].fdata != missing_value) & (
-                    self.data["pgas_air_cor"].fdata != missing_value)
-            self.data["dpco2_cor"].fdata[mask] = self.data["pgas_sw_cor"].fdata[mask] - self.data["pgas_air_cor"].fdata[
+        if "pgas_sw" in self.data and "pgas_air" in self.data:
+            self.add_empty_data_layer("dpco2");
+            mask = (self.data["pgas_sw"].fdata != missing_value) & (
+                    self.data["pgas_air"].fdata != missing_value)
+            self.data["dpco2"].fdata[mask] = self.data["pgas_sw"].fdata[mask] - self.data["pgas_air"].fdata[
                 mask]
-            self.data["dpco2_cor"].fdata[~mask] = missing_value
+            self.data["dpco2"].fdata[~mask] = missing_value
 
             # for i in arange(self.nx * self.ny):
             #     if ((self.data["pgas_sw_cor"].fdata[i] != missing_value) and (
@@ -2496,10 +2500,10 @@ class FluxEngine:
             #     else:
             #         self.data["dpco2_cor"].fdata[i] = missing_value
 
-        self.add_empty_data_layer("dpconc_cor");
+        self.add_empty_data_layer("dpconc");
         mask = (self.data["concw"].fdata != missing_value) & (self.data["conca"].fdata != missing_value)
-        self.data["dpconc_cor"].fdata[mask] = self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask]
-        self.data["dpconc_cor"].fdata[~mask] = missing_value
+        self.data["dpconc"].fdata[mask] = self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask]
+        self.data["dpconc"].fdata[~mask] = missing_value
 
         # for i in arange(self.nx * self.ny):
         #     if ((self.data["concw"].fdata[i] != missing_value) and (self.data["conca"].fdata[i] != missing_value)):
@@ -2510,16 +2514,17 @@ class FluxEngine:
         # Calculate the total number of quality violations per grid location
         self.add_empty_data_layer("failed_quality")
         # self.d = {};
-        for outputVar in ["FH06", "kt", "k", "kd", "kb", "salinity", "sstskinC", "concw", "conca", "dpco2_cor",
-                          "sstfndC", "pgas_sw_cor"]:
+        for outputVar in ["FH06", "kt", "k", "kd", "kb", "salinity", "sstskinC", "concw", "conca", "dpco2",
+                          "sstfndC", "pgas_sw"]:
             if outputVar in self.data:  # Only check outputs that we've actually created...
                 check_output_dataset(self.data[outputVar], self.data["failed_quality"].fdata);
                 # self.d[outputVar] = self.data["failed_quality"].fdata.copy();
                 # self.d[outputVar].shape = self.data["failed_quality"].data.shape;
 
-        # whitecapping data using relationship from TS and parameters from table 1 of Goddijn-Murphy et al., 2010, equation r1
-        self.add_empty_data_layer("whitecap");
-        self.data["whitecap"].fdata = calculate_whitecapping(self.data["windu10"], self.data["whitecap"]);
+        #DJF: 19/02/2026 - This should be a data preprocessing step instead of always applied.
+        # # whitecapping data using relationship from TS and parameters from table 1 of Goddijn-Murphy et al., 2010, equation r1
+        # self.add_empty_data_layer("whitecap");
+        # self.data["whitecap"].fdata = calculate_whitecapping(self.data["windu10"], self.data["whitecap"]);
 
         # runParams.pco2_data_selection == 1 signifies that we're using SOCAT data
         # this dataset is filled with missing_values prior to output, otherwise non-socat data will appear in the SFUG field in the netcdf
@@ -2552,58 +2557,78 @@ class FluxEngine:
                     print("Exiting...");
                     return 1;
 
+        # DJF: 19/02/2026: Changing the gas type when the pCO2 selection is set to fugacity (instead of all variables being in fugacity)
+        if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
+            gas_type = 'fugacity'
+        else:
+            gas_type = 'partial_= pressure'
         # Substitute gas name into meta data / human-readable descriptions
-        if "vgas_air" in self.data:
-            self.data["vgas_air"].standardName = Template(self.data["vgas_air"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["vgas_air"].longName = Template(self.data["vgas_air"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "pgas_air" in self.data:
-            self.data["pgas_air"].standardName = Template(self.data["pgas_air"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["pgas_air"].longName = Template(self.data["pgas_air"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "pgas_sw" in self.data:
-            self.data["pgas_sw"].standardName = Template(self.data["pgas_sw"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["pgas_sw"].longName = Template(self.data["pgas_sw"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "pgas_sw_stddev" in self.data:
-            self.data["pgas_sw_stddev"].standardName = Template(
-                self.data["pgas_sw_stddev"].standardName).safe_substitute(GAS=self.runParams.GAS);
-            self.data["pgas_sw_stddev"].longName = Template(self.data["pgas_sw_stddev"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "pgas_air_cor" in self.data:
-            self.data["pgas_air_cor"].standardName = Template(self.data["pgas_air_cor"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["pgas_air_cor"].longName = Template(self.data["pgas_air_cor"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "pgas_sw_cor" in self.data:
-            self.data["pgas_sw_cor"].standardName = Template(self.data["pgas_sw_cor"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["pgas_sw_cor"].longName = Template(self.data["pgas_sw_cor"].longName).safe_substitute(
-                GAS=self.runParams.GAS);
-        if "FH06" in self.data:
-            self.data["FH06"].standardName = Template(self.data["FH06"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["FH06"].longName = Template(self.data["FH06"].longName).safe_substitute(GAS=self.runParams.GAS);
-        if "conca" in self.data:
-            self.data["conca"].standardName = Template(self.data["conca"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["conca"].longName = Template(self.data["conca"].longName).safe_substitute(GAS=self.runParams.GAS);
-        if "concw" in self.data:
-            self.data["concw"].standardName = Template(self.data["concw"].standardName).safe_substitute(
-                GAS=self.runParams.GAS);
-            self.data["concw"].longName = Template(self.data["concw"].longName).safe_substitute(GAS=self.runParams.GAS);
-        if "kt" in self.data:
-            self.data["kt"].longName = Template(self.data["kt"].standardName).safe_substitute(GAS=self.runParams.GAS);
-        if "kd" in self.data:
-            self.data["kd"].longName = Template(self.data["kd"].standardName).safe_substitute(GAS=self.runParams.GAS);
-        if "kt" in self.data:
-            self.data["kb"].longName = Template(self.data["kb"].standardName).safe_substitute(GAS=self.runParams.GAS);
+        dataLayers = self.data
+        for datalayer in dataLayers:
+            try:
+                self.data[datalayer].standardName = Template(self.data[datalayer].standardName).safe_substitute(
+                    GAS=self.runParams.GAS,GAS_TYPE=gas_type);
+            except:
+                if runParams.verbose:
+                    print(datalayer + ' does not contain a standard name in settings.xml')
+            try:
+                self.data[datalayer].longName = Template(self.data[datalayer].longName).safe_substitute(
+                    GAS=self.runParams.GAS,GAS_TYPE=gas_type);
+            except:
+                if runParams.verbose:
+                    print(datalayer + ' does not contain a long name in settings.xml')
+        # DJF 19/02/2026: Removed this and turned it into a loop that cycles through all data layers instead
+        # if "vgas_air" in self.data:
+        #     self.data["vgas_air"].standardName = Template(self.data["vgas_air"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS,GAS_TYPE=gas_type);
+        #     self.data["vgas_air"].longName = Template(self.data["vgas_air"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS,GAS_TYPE=gas_type));
+        # if "pgas_air" in self.data:
+        #     self.data["pgas_air"].standardName = Template(self.data["pgas_air"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["pgas_air"].longName = Template(self.data["pgas_air"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        # if "pgas_sw" in self.data:
+        #     self.data["pgas_sw"].standardName = Template(self.data["pgas_sw"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["pgas_sw"].longName = Template(self.data["pgas_sw"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        # if "pgas_sw_stddev" in self.data:
+        #     self.data["pgas_sw_stddev"].standardName = Template(
+        #         self.data["pgas_sw_stddev"].standardName).safe_substitute(GAS=self.runParams.GAS);
+        #     self.data["pgas_sw_stddev"].longName = Template(self.data["pgas_sw_stddev"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        # if "pgas_air_cor" in self.data:
+        #     self.data["pgas_air_cor"].standardName = Template(self.data["pgas_air_cor"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["pgas_air_cor"].longName = Template(self.data["pgas_air_cor"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        # if "pgas_sw_cor" in self.data:
+        #     self.data["pgas_sw_cor"].standardName = Template(self.data["pgas_sw_cor"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["pgas_sw_cor"].longName = Template(self.data["pgas_sw_cor"].longName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        # if "FH06" in self.data:
+        #     self.data["FH06"].standardName = Template(self.data["FH06"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["FH06"].longName = Template(self.data["FH06"].longName).safe_substitute(GAS=self.runParams.GAS);
+        # if "conca" in self.data:
+        #     self.data["conca"].standardName = Template(self.data["conca"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["conca"].longName = Template(self.data["conca"].longName).safe_substitute(GAS=self.runParams.GAS);
+        # if "concw" in self.data:
+        #     self.data["concw"].standardName = Template(self.data["concw"].standardName).safe_substitute(
+        #         GAS=self.runParams.GAS);
+        #     self.data["concw"].longName = Template(self.data["concw"].longName).safe_substitute(GAS=self.runParams.GAS);
+        # if "kt" in self.data:
+        #     self.data["kt"].longName = Template(self.data["kt"].standardName).safe_substitute(GAS=self.runParams.GAS);
+        # if "kd" in self.data:
+        #     self.data["kd"].longName = Template(self.data["kd"].standardName).safe_substitute(GAS=self.runParams.GAS);
+        # if "kt" in self.data:
+        #     self.data["kb"].longName = Template(self.data["kb"].standardName).safe_substitute(GAS=self.runParams.GAS);
 
         ### write out the final ouput to netcdf
-        write_netcdf(self, verbose=True);
+        write_netcdf(self, verbose=runParams.verbose);
         print("%s SUCCESS writing file %s" % (function, runParams.output_path))
         #
         #        #Finally, close the logger

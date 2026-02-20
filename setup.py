@@ -50,7 +50,7 @@ with open(path.join('README.md'), encoding='utf-8') as f:
 #Main setup object.
 setuptools.setup(
     name="fluxengine",
-    version="4.1.pre1",
+    version="4.1.pre2",
     author="Daniel Ford, Tom Holding and Jamie Shutler",
     author_email="d.ford@exeter.ac.uk, j.d.shutler@exeter.ac.uk",
     description="Open-source toolkit for calculating atmosphere-ocean gas transfer",

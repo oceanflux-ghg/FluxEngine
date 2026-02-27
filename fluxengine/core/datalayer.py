@@ -174,6 +174,7 @@ class DataLayer:
 
     #Create a view of 'data' which is 1D. Note: Sometimes makes a copy of the data so this shouldn't re relied on.
     def calculate_fdata(self):
+        #TODO: replacing ravel with reshape(-1) should eliminate the need for this, but can always check if it returns a view or copy and update as needed.
         self.fdata = ravel(self.data);
         if ma.is_masked(self.fdata):
             self.fdata.unshare_mask(); #TMH: masked array behaviour is changing in future versions of numpy. This avoids ambiguity between current and future behaviour.

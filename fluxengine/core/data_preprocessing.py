@@ -11,6 +11,7 @@ Created on Mon Mar 26 14:42:46 2018
 def no_preprocessing(datalayer):
     pass;
 
+
 #transpose data
 def transpose(datalayer):
     from numpy import transpose as nptranspose;
@@ -18,6 +19,7 @@ def transpose(datalayer):
     datalayer.calculate_fdata(); #must updata fdata after changing data.
     datalayer.ny = datalayer.data.shape[0];
     datalayer.nx = datalayer.data.shape[1];
+
 
 #converts kelvin to celsius
 def kelvin_to_celsius(datalayer):
@@ -27,6 +29,7 @@ def kelvin_to_celsius(datalayer):
     #     if datalayer.fdata[i] != datalayer.missing_value:
     #         datalayer.fdata[i] -= 273.15;
 
+
 #converts celsius to kelvin
 def celsius_to_kelvin(datalayer):
     print("Converting %s from celsius to kelvin." % datalayer.name);
@@ -35,12 +38,14 @@ def celsius_to_kelvin(datalayer):
     #     if datalayer.fdata[i] != datalayer.missing_value:
     #         datalayer.fdata[i] += 273.15;
 
+
 def pascal_to_millibar(datalayer):
     print("Converting %s from Pa to mbar" % datalayer.name);
     datalayer.fdata[datalayer.fdata != datalayer.missing_value] *= 0.01
     # for i in range(0, len(datalayer.fdata)):
     #     if (datalayer.fdata[i] != datalayer.missing_value):
     #         datalayer.fdata[i] = datalayer.fdata[i] * 0.01;
+
 
 #convert percentages to proportions
 def percent_to_proportion(datalayer):
@@ -51,6 +56,7 @@ def percent_to_proportion(datalayer):
     #     if datalayer.fdata[i] != datalayer.missing_value:
     #         datalayer.fdata[i] /= 100.0;
 
+
 def nano_to_micro(datalayer):
     print("Converting %s from nano<units> to micro<units>" % datalayer.name);
 
@@ -58,6 +64,7 @@ def nano_to_micro(datalayer):
     # for i in range(len(datalayer.fdata)):
     #     if datalayer.fdata[i] != datalayer.missing_value:
     #         datalayer.fdata[i] /= 1000.0;
+
 
 ##Reorder axes. The Required order by FluxEngine is lat, lon.
 ##Reorder (lon, lat) to (lat, long)
@@ -75,6 +82,7 @@ def flip_longitude(datalayer):
     datalayer.data = flipud(datalayer.data);
     datalayer.calculate_fdata(); #must update fdata after changing data.
 
+
 def flip_latitude(datalayer):
     print("Preprocessing %s: Flipping latitude orientation." % datalayer.name);
     from numpy import fliplr;
@@ -84,11 +92,15 @@ def flip_latitude(datalayer):
 
 #E.g. as rough way to approximate second moment (not recommented)
 def pow2(datalayer):
-    datalayer.fdata = datalayer.fdata**2;
+    mask = datalayer.fdata != datalayer.missing_value
+    datalayer.fdata[mask] **= 2
+
 
 #E.g. as rough way to approximate third moment (not recommended)
 def pow3(datalayer):
-    datalayer.fdata = datalayer.fdata**3;
+    mask = datalayer.fdata != datalayer.missing_value
+    datalayer.fdata[mask] **= 3
+
 
 #Resamples the datalayer which used latitude grid lines starting on the 'line'
 #to be at the centre of grid points. This results in a latitude dimension with
@@ -106,16 +118,22 @@ def lat_grid_lines_to_centre_of_cells(datalayer):
     datalayer.calculate_fdata(); #Update the 'fdata' after changing 'data'
     datalayer.ny, datalayer.nx = datalayer.data.shape; #Shape has changed so this must be updated too
 
+
 #Rolls the dataset 180 degree in the east-west direction. This is useful for converting between
 #longitude conventions of -180 to 180 and 0 to 360.
 def longitude_roll_180(datalayer):
     from numpy import roll;
-    datalayer.data = roll(datalayer.data, 180, axis=1);
+    rollAmount = datalayer.data.shape[1]//2
+    datalayer.data = roll(datalayer.data, rollAmount, axis=1);
     datalayer.calculate_fdata(); #recalculate the 'fdata' after changing 'data'
 
+
 def daytohour(datalayer):
-    datalayer.data = datalayer.data/24
+    mask = datalayer.data != datalayer.missing_value
+    datalayer.data[mask] /= 24
     datalayer.calculate_fdata();
+   
+    
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy in the top 10m (mean)
 def foc_to_epsilon(datalayer):

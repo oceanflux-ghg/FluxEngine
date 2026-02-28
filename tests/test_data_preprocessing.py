@@ -10,36 +10,15 @@ import pytest
 import numpy as np
 import fluxengine.core.data_preprocessing as fe_preprocessing
 from fluxengine.core.datalayer import DataLayer
+#from test_tools.mock import mock_datalayer_metadata
 
 
-# def test_matrix_horizontal_stripes(ncols, nrows):
-#     mat = np.repeat(np.arange(nrows)+1, ncols)
-#     mat.shape = (nrows, ncols)
-#     return mat
-
-# def test_matrix_vertical_stripes(ncols, nrows):
-#     mat = np.tile(np.arange(ncols)+1, nrows)
-#     mat.shape = (nrows, ncols)
-#     return mat
-
-
-
-@pytest.fixture
-def mock_datalayer_metadata():
-    class MockDataLayerMetaData:
-        def __init__(self):
-            self.minBound = None
-            self.maxBound = None
-    return MockDataLayerMetaData
-
-
-
-def test_transpose_basic(mock_datalayer_metadata):
+def test_transpose_basic(mockDataLayerMetaData):
     """
     Check that data is correctly transposed. Fdata is updated. Dimensions are correct
     """
     testData = np.arange(1, 7).reshape(2, 3)
-    testDataLayer = DataLayer("test_data", testData.copy(), mock_datalayer_metadata(), -999.9)
+    testDataLayer = DataLayer("test_data", testData.copy(), mockDataLayerMetaData, -999.9)
     fe_preprocessing.transpose(testDataLayer)
     #dimensions transposed
     assert(testDataLayer.nx == 2) #Note: FluxEngine uses column first indexing (possibly to match netCDF4?)
@@ -112,20 +91,17 @@ def test_transpose_basic(mock_datalayer_metadata):
                 np.array([[1, 0.5, 1/24], [2, 7, 30.5]], dtype=float)
             ),
             (
-                #Note: daytohour is named poorly. It does the opposite, converting horus to days. TODO: make github issue...
                 fe_preprocessing.flip_longitude, False,
                 np.array([[1, 2, 3], [10, 20, 30]], dtype=float),
                 np.array([[10, 20, 30], [1, 2, 3]], dtype=float)
             ),
             (
-                #Note: daytohour is named poorly. It does the opposite, converting horus to days. TODO: make github issue...
                 fe_preprocessing.flip_latitude, False,
                 np.array([[1.0, 2.0, 3.0], [1.5, 2.5, 3.5]], dtype=float),
                 np.array([[3.0, 2.0, 1.0], [3.5, 2.5, 1.5]], dtype=float)
             ),
             
             (
-                #Note: daytohour is named poorly. It does the opposite, converting horus to days. TODO: make github issue...
                 fe_preprocessing.longitude_roll_180, False,
                 np.array([[1, 2, 3, 4], [5, 6, 7, 8]], dtype=float),
                 np.array([[3, 4, 1, 2], [7, 8, 5, 6]], dtype=float)
@@ -134,7 +110,7 @@ def test_transpose_basic(mock_datalayer_metadata):
         ]
     )
 
-def test_unit_conversion_common_contract(conversion_func, hasStableElements, inputData, expectedOutput, mock_datalayer_metadata):
+def test_unit_conversion_common_contract(conversion_func, hasStableElements, inputData, expectedOutput, mockDataLayerMetaData):
     """
     Tests common behavioural requirements for unit conversion functions:
         1) input is transformed to expected output
@@ -145,7 +121,7 @@ def test_unit_conversion_common_contract(conversion_func, hasStableElements, inp
     expectedFlatOutput = expectedOutput.flatten()
     
     #1) correct conversion (in shaped 'data' field)
-    testData = DataLayer("test_data", inputData.copy(), mock_datalayer_metadata(), DataLayer.missing_value)
+    testData = DataLayer("test_data", inputData.copy(), mockDataLayerMetaData, DataLayer.missing_value)
     #testData = mock_datalayer_simple(fdata=inputData.copy())
     conversion_func(testData)
     assert np.allclose(testData.data, expectedOutput)
@@ -157,12 +133,12 @@ def test_unit_conversion_common_contract(conversion_func, hasStableElements, inp
     inputDataWithMissing = inputData.copy()
     inputDataWithMissing[0, 0] = DataLayer.missing_value
     inputDataWithMissing[-1, -1] = DataLayer.missing_value
-    testData = DataLayer("test_data", inputDataWithMissing, mock_datalayer_metadata(), DataLayer.missing_value)
+    testData = DataLayer("test_data", inputDataWithMissing, mockDataLayerMetaData, DataLayer.missing_value)
     #testData = mock_datalayer_simple(fdata=inputDataWithMissing)
     wMissing = testData.data == testData.missing_value
     conversion_func(testData)
     if hasStableElements == False: #If the positions aren't stable, missing data values will move. Put the missing data locations through the same transformation to track the where they end up.
-        missingLocs = DataLayer("track_missing", wMissing, mock_datalayer_metadata(), DataLayer.missing_value)
+        missingLocs = DataLayer("track_missing", wMissing, mockDataLayerMetaData, DataLayer.missing_value)
         conversion_func(missingLocs)
         wMissing = missingLocs.data
     assert np.all(testData.data[wMissing] == testData.missing_value)
@@ -170,7 +146,7 @@ def test_unit_conversion_common_contract(conversion_func, hasStableElements, inp
     
         
 
-def test_lat_grid_lines_to_centre_of_cells_basic(mock_datalayer_metadata):
+def test_lat_grid_lines_to_centre_of_cells_basic(mockDataLayerMetaData):
     """
     Tests expected output is correct (values should be means across a two element wide lattitude window)
     Tests that the dimensions are correct (n-1, m) where (n, m) are the input dimensions
@@ -179,7 +155,7 @@ def test_lat_grid_lines_to_centre_of_cells_basic(mock_datalayer_metadata):
     inputData = np.array([[2, 20], [4, 40], [6, 60], [8, 80], [10, 100]], dtype=float)
     expectedOutput = np.array([[3, 30], [5, 50], [7, 70], [9, 90]], dtype=float)
     
-    metadata = mock_datalayer_metadata()
+    metadata = mockDataLayerMetaData
     testData = DataLayer("test_data", inputData.copy(), metadata, DataLayer.missing_value)
     fe_preprocessing.lat_grid_lines_to_centre_of_cells(testData)
     

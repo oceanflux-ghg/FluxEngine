@@ -128,11 +128,11 @@ def longitude_roll_180(datalayer):
     datalayer.calculate_fdata(); #recalculate the 'fdata' after changing 'data'
 
 
-def daytohour(datalayer):
+def hour_to_day(datalayer):
     mask = datalayer.data != datalayer.missing_value
     datalayer.data[mask] /= 24
     datalayer.calculate_fdata();
-   
+
     
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy in the top 10m (mean)

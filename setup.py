@@ -69,7 +69,7 @@ setuptools.setup(
     package_data={"fluxengine": allPackageDataPaths},
 
     install_requires=dependencies,
-    extra_require={
+    extras_require={
         "dev": ["pytest>=9.0"]
         }
     );

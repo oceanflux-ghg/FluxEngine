@@ -16,7 +16,10 @@ from fluxengine.core.datalayer import DataLayer
 
 def test_create_empty_datalayer(mockDataLayerMetaData):
     """
-    Tests...
+    Tests the creation of empty DataLayer:
+    1) Correct fill value
+    2) Correct name and dimensions
+    3) Correct metadata
     """
     assert(True)
     #DataLayer.create_empty_datalayer("test_data", 5, 3, metadata, fillValue=0.0)

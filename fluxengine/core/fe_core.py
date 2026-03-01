@@ -18,21 +18,20 @@
 # netcdf bits
 from netCDF4 import Dataset
 import sys
-from math import log, exp, pow, isnan;
-from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid, where;
+from numpy import size, flipud, mean, zeros, nonzero, resize, ma, arange, dtype, ones, meshgrid, where;
 from numpy import any as npany;
 import numpy as np
 from random import normalvariate
 import logging;
 from os import path;
 from string import Template;
+from datetime import timedelta, datetime;
 
 from .datalayer import DataLayer, DataLayerMetaData;
 from .settings import Settings;
 from .. import __version__ as fe_v
-# from .debug_tools import calc_mean; #calculate mean ignoring missing values.
 
-from datetime import timedelta, datetime;
+
 
 # debug mode switches
 DEBUG = False

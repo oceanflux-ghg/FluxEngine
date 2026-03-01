@@ -4,7 +4,7 @@
 from netCDF4 import Dataset
 from numpy import flipud, ma, ravel, transpose, full, array, squeeze, isnan;
 from numpy import all as npall;
-from .debug_tools import calc_mean;
+
 
 #Simple class for storing metadata about a datalayer.
 #These values are used as the default values for datalayers, unless they're overwritten by the config file.

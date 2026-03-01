@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from netCDF4 import Dataset
-from numpy import flipud, ma, ravel, transpose, full, array, squeeze;
+from numpy import flipud, ma, ravel, transpose, full, array, squeeze, isnan;
 from numpy import all as npall;
 from .debug_tools import calc_mean;
 
@@ -48,11 +48,9 @@ class DataLayer:
     DEBUG = False;
 
     @classmethod
-    def create_empty_datalayer(cls, name, nx, ny, metadata, fillValue=None):
-        if fillValue == None:
-            fillValue = DataLayer.missing_value;
-        data = full((ny, nx), fillValue);
-        return cls(name, data, metadata, fillValue);
+    def create_empty_datalayer(cls, nx, ny, metadata):
+        data = full((ny, nx), cls.missing_value);
+        return cls(data, metadata, cls.missing_value);
 
     #preprocessing is a list of functions to modify fdata
     #Throws IOError is netCDF file isn't found
@@ -60,14 +58,14 @@ class DataLayer:
     #Throws ValueError if an unexpected number of dimensions are found
     #TODO: transposeData should be handled as a preprocessing function
     @classmethod
-    def create_from_file(cls, name, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
+    def create_from_file(cls, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
         function = "(DataLayer.create_from_file)"
 
         #Open netCDF file
         try:
             dataset = Dataset(infile);
         except IOError as e:
-            print("\n%s: %s inputfile %s does not exist" % (function, name, infile))
+            print("\n%s: %s inputfile %s does not exist" % (function, metadata.name, infile))
             print(e.args);
 
         #Check netCDF file: Prints some info when in DEBUG mode.
@@ -90,12 +88,12 @@ class DataLayer:
                 elif dims.index(metadata.timeDimensionName) == 2:
                     data = ncVariable[:, :, timeIndex];
             else:
-                raise RuntimeError("Time dimension name ('%s') for Datalayer '%s' was not found. Try setting this manually in the configuration file using (for example) datalayername_timeDimensionName = time"%(metadata.timeDimensionName, name));
+                raise RuntimeError("Time dimension name ('%s') for Datalayer '%s' was not found. Try setting this manually in the configuration file using (for example) datalayername_timeDimensionName = time"%(metadata.timeDimensionName, metadata.name));
         #No time dimension anyway
         elif len(dims) == 2:
             data = ncVariable[:];
         else: #
-            raise RuntimeError("Invalid number of dimensions (%d) when reading datalayer '%s' from '%s'"%(len(dims), name, infile));
+            raise RuntimeError("Invalid number of dimensions (%d) when reading datalayer '%s' from '%s'"%(len(dims), metadata.name, infile));
 
         #TODO: APPLY PREPROCESSING HERE instead of later.
 
@@ -112,7 +110,7 @@ class DataLayer:
         #check number of dimensions
         dataDims = data.shape;
         if len(dataDims) != 2:
-            raise ValueError("\n%sError: Unexpected number of dimensions (%d) in %s when reading in %s variable from %s" % (function, len(dataDims), name, prod, infile));
+            raise ValueError("\n%sError: Unexpected number of dimensions (%d) in %s when reading in %s variable from %s" % (function, len(dataDims), metadata.name, prod, infile));
 
         #Convert from a masked array (np.ma.array) to a plain np.array
         data = array(data);
@@ -124,7 +122,8 @@ class DataLayer:
               data.mask = False; #Remove the mask...
 
         #If necessary flip the data #TODO: remove this as this should be handled in the pre-processing functions by the user
-        data, flipped = flip_data(dataset, data, name); #If different from takahashi orientation, flip data.
+        #TODO: Should use data preprocessing to handle this, not this separate function?
+        data, flipped = flip_data(dataset, data); #If different from takahashi orientation, flip data.
 
         #Extract fill value from netCDF if it exists. Note that this will overwrite fill default or config specified fill value.
         if hasattr(ncVariable, "_FillValue"):
@@ -134,12 +133,12 @@ class DataLayer:
         else:
             fillValue = DataLayer.missing_value;
         dataset.close() #DJF - 14/11/2024 - Close the "dataset" file as it will be reopened if needed. This causes issues if the input file is opened in an 'append' mode, as its still open in 'read' and causes a HDF error (DJF found this through eddy CO2 flux work)
-        return cls(name, data, metadata, fillValue, preprocessing=preprocessing);
+        return cls(data, metadata, fillValue, preprocessing=preprocessing);
 
 
-    def __init__(self, name, data, metadata, fillValue, preprocessing=None):
+    #Note: fillValue is the .nc specific value used for missing 'fill' data, NOT the data to fill the matrix with...
+    def __init__(self, data, metadata, fillValue, preprocessing=None):
         #function = "(DataLayer.__init__)";
-        self.name = name; #Human readable name for the data layer
         self.data = data;
         self.ny = data.shape[0];
         self.nx = data.shape[1];
@@ -151,7 +150,9 @@ class DataLayer:
 
         #TODO: this only applies to data from file, so move to create_from_file
         #replace fill value with standardised missing_value
-        if fillValue != self.missing_value:
+        if isnan(fillValue): #np.nan == np.nan is always False, so need to check for this separately using np.isnan
+            self.data[isnan(self.data)] = DataLayer.missing_value
+        elif fillValue != self.missing_value:
             self.data[self.data == fillValue] = self.missing_value;
 
         #Create a view of 'data' which is 1D. Note: MAY sometimes copy data. This should be checked...
@@ -170,7 +171,7 @@ class DataLayer:
 
 
         #Replace anything outside of the valid range with missing_value
-        validate_range(self.fdata, self.minBound, self.maxBound, self.missing_value);
+        self.validate_range();
 
     #Create a view of 'data' which is 1D. Note: Sometimes makes a copy of the data so this shouldn't re relied on.
     def calculate_fdata(self):
@@ -183,28 +184,22 @@ class DataLayer:
     #   pass;
 
 
-#Replaces elements in a matrix who's values are outside the specified range [minBound, maxBound] with missing value.
-def validate_range(fdata, minBound, maxBound, missingValue):
-    if minBound != None and maxBound != None: #Must handle each case seperately to support any value of missingValue.
-        fdata[(fdata < minBound) | (fdata > maxBound)] = missingValue
-        # for i in range(0, len(fdata)):
-            # if fdata[i] < minBound or fdata[i] > maxBound:
-                # fdata[i] = missingValue;
-    elif minBound != None and maxBound == None:
-        fdata[fdata < minBound] = missingValue
-        # for i in range(0, len(fdata)):
-            # if fdata[i] < minBound:
-                # fdata[i] = missingValue;
-    elif minBound == None and maxBound != None:
-        fdata[fdata > maxBound] = missingValue
-        # for i in range(0, len(fdata)):
-            # if fdata[i] > maxBound:
-                # fdata[i] = missingValue;
+    #Replaces elements in a matrix who's values are outside the specified range [minBound, maxBound] with missing values.
+    def validate_range(self):
+        if self.minBound != None and self.maxBound != None: #Must handle each case seperately to support any value of missingValue.
+            self.fdata[(self.fdata < self.minBound) | (self.fdata > self.maxBound)] = DataLayer.missing_value
+
+        elif self.minBound != None and self.maxBound == None:
+            self.fdata[self.fdata < self.minBound] = DataLayer.missing_value
+
+        elif self.minBound == None and self.maxBound != None:
+            self.fdata[self.fdata > self.maxBound] = DataLayer.missing_value
 
 
 
 
-def flip_data(dataset, this_variable, name):
+
+def flip_data(dataset, this_variable):
     '''#IGA - for a netcdf data set, determine whether latitude orientation matches 'taka' and if not, flip the variable provided using flipud'''
     try:
         data_latitude_prod = [str(x) for x in list(dataset.variables.keys()) if 'lat' in str(x).lower()] #finds the correct latitude name for data
@@ -221,7 +216,7 @@ def flip_data(dataset, this_variable, name):
 
         return this_variable_out, flipped
     except IndexError:
-        print("Assuming correct orientation for %s. Variable has not been flipped." % name);
+        print("Assuming correct orientation for %s. Variable has not been flipped." % dataset.name);
         return this_variable, False;
 
 

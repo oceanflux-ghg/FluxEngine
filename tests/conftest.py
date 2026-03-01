@@ -9,10 +9,12 @@ Contains common fixtures / other reused testing tools
 
 import pytest
 
+#Minimal mocked DataLayerMetaData object
 @pytest.fixture(name="mockDataLayerMetaData")
 def mock_datalayer_metadata():
     class MockDataLayerMetaData:
         def __init__(self):
+            self.name = "mocked_DataLayerMetaData"
             self.minBound = None
             self.maxBound = None
     return MockDataLayerMetaData()

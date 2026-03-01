@@ -18,28 +18,13 @@ def test_transpose_basic(mockDataLayerMetaData):
     Check that data is correctly transposed. Fdata is updated. Dimensions are correct
     """
     testData = np.arange(1, 7).reshape(2, 3)
-    testDataLayer = DataLayer("test_data", testData.copy(), mockDataLayerMetaData, -999.9)
+    testDataLayer = DataLayer(testData.copy(), mockDataLayerMetaData, -999.9)
     fe_preprocessing.transpose(testDataLayer)
     #dimensions transposed
     assert(testDataLayer.nx == 2) #Note: FluxEngine uses column first indexing (possibly to match netCDF4?)
     assert(testDataLayer.ny == 3)
     assert(np.all(testDataLayer.data == np.array([[1,4],[2,5],[3,6]]))) #transpose works as expected
     assert(np.all(testDataLayer.fdata == np.array([[1,4],[2,5],[3,6]]).ravel())) #fdata view is updated
-
-
-
-
-
-# @pytest.fixture
-# def mock_datalayer_simple():
-#     class MockDataLayer:
-#         def __init__(self, fdata:np.ndarray, name:str="test_datalayer", missing_value:float=DataLayer.missing_value):
-#             self.name = "test_datalayer"
-#             self.missing_value = missing_value
-#             self.fdata = np.array(fdata, copy=True)
-#     return MockDataLayer
-
-
 
 
 #### Testing common 'contract' for unit conversions
@@ -86,7 +71,7 @@ def test_transpose_basic(mockDataLayerMetaData):
             ),
             (
                 #Note: daytohour is named poorly. It does the opposite, converting horus to days. TODO: make github issue...
-                fe_preprocessing.daytohour, True,
+                fe_preprocessing.hour_to_day, True,
                 np.array([[24, 12, 1], [48, 168, 732]], dtype=float),
                 np.array([[1, 0.5, 1/24], [2, 7, 30.5]], dtype=float)
             ),
@@ -121,7 +106,7 @@ def test_unit_conversion_common_contract(conversion_func, hasStableElements, inp
     expectedFlatOutput = expectedOutput.flatten()
     
     #1) correct conversion (in shaped 'data' field)
-    testData = DataLayer("test_data", inputData.copy(), mockDataLayerMetaData, DataLayer.missing_value)
+    testData = DataLayer(inputData.copy(), mockDataLayerMetaData, DataLayer.missing_value)
     #testData = mock_datalayer_simple(fdata=inputData.copy())
     conversion_func(testData)
     assert np.allclose(testData.data, expectedOutput)
@@ -133,18 +118,18 @@ def test_unit_conversion_common_contract(conversion_func, hasStableElements, inp
     inputDataWithMissing = inputData.copy()
     inputDataWithMissing[0, 0] = DataLayer.missing_value
     inputDataWithMissing[-1, -1] = DataLayer.missing_value
-    testData = DataLayer("test_data", inputDataWithMissing, mockDataLayerMetaData, DataLayer.missing_value)
+    testData = DataLayer(inputDataWithMissing, mockDataLayerMetaData, DataLayer.missing_value)
     #testData = mock_datalayer_simple(fdata=inputDataWithMissing)
     wMissing = testData.data == testData.missing_value
     conversion_func(testData)
     if hasStableElements == False: #If the positions aren't stable, missing data values will move. Put the missing data locations through the same transformation to track the where they end up.
-        missingLocs = DataLayer("track_missing", wMissing, mockDataLayerMetaData, DataLayer.missing_value)
+        missingLocs = DataLayer(wMissing, mockDataLayerMetaData, DataLayer.missing_value)
         conversion_func(missingLocs)
         wMissing = missingLocs.data
     assert np.all(testData.data[wMissing] == testData.missing_value)
     assert np.allclose(testData.data[wMissing==False], expectedOutput[wMissing==False])
     
-        
+    
 
 def test_lat_grid_lines_to_centre_of_cells_basic(mockDataLayerMetaData):
     """
@@ -156,7 +141,7 @@ def test_lat_grid_lines_to_centre_of_cells_basic(mockDataLayerMetaData):
     expectedOutput = np.array([[3, 30], [5, 50], [7, 70], [9, 90]], dtype=float)
     
     metadata = mockDataLayerMetaData
-    testData = DataLayer("test_data", inputData.copy(), metadata, DataLayer.missing_value)
+    testData = DataLayer(inputData.copy(), metadata, DataLayer.missing_value)
     fe_preprocessing.lat_grid_lines_to_centre_of_cells(testData)
     
     assert(testData.ny == expectedOutput.shape[0])
@@ -165,16 +150,14 @@ def test_lat_grid_lines_to_centre_of_cells_basic(mockDataLayerMetaData):
     assert(np.allclose(testData.fdata, expectedOutput.ravel()))
 
 
-
-
-
+#TODO?:
 #def test_foc_to_epsilon
 #def test_foc_to_epsilon_craig1994
 
 
 if __name__ == "__main__":
     pytest.main(["-v", "--pdb"])
-    #pytest.main()
+
 
     
     

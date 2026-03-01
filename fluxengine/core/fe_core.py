@@ -1236,12 +1236,12 @@ class FluxEngine:
     # Metadata can be overwritten in the config file using the the datalayer name and the xml attribute from the settings.xml file, e.g.:
     #       datalayername_units = C m^2s^-1
     #       datalayername_maxBound = 100.0
-    def add_empty_data_layer(self, name, nx=None, ny=None, fillValue=DataLayer.missing_value):
+    def add_empty_data_layer(self, name, nx=None, ny=None):
         if nx == None: nx = self.nx;
         if ny == None: ny = self.ny;
 
         metaData = self._extract_data_layer_meta_data(name);
-        dl = DataLayer.create_empty_datalayer(name, nx, ny, metaData, fillValue=fillValue);
+        dl = DataLayer.create_empty_datalayer(name, nx, ny, metaData);
 
         self.data[name] = dl;
 

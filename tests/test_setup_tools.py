@@ -285,16 +285,33 @@ def test_get_preprocessing_funcs():
         assert funcs == [dpp.kelvin_to_celsius, dpp.pow2, dpp.pow3]
     
 
+def test_create_run_parameters():
+    """
+    Converts '_infile' variables for data layers with correct datetime substitutions
+    """
+    configVars = fe_setup_tools.read_config_file(path.join(fe_setup_tools.get_fluxengine_root(), "test_data", "test_config_valid_partial.conf"))
+    metadata = fe_setup_tools.read_config_metadata(path.join(fe_setup_tools.get_fluxengine_root(), "core", "settings.xml"))
+    fe_setup_tools.verify_config_variables(configVars, metadata)
     
+    timePoint = datetime.datetime(2010, 1, 1, 0, 0, 0)
+    runParams = fe_setup_tools.create_run_parameters(configVars, metadata, timePoint, 0, None, None , False, None)
+    assert "sstskin_infile" in runParams
+    assert "20100101" in runParams["sstskin_infile"] #<YYYY><MM><DD> substition
+    
+    #Increment one month
+    timePoint = datetime.datetime(2010, 2, 1, 0, 0, 0)
+    runParams = fe_setup_tools.create_run_parameters(configVars, metadata, timePoint, 0, None, None , False, None)
+    assert "20100201" in runParams["sstskin_infile"] #<YYYY><MM><DD> substition
+
+    
+
 
 #TODO: These functions are not (yet?) tested
 # match_filenames
-# create_run_parameters
  #fe_obj_from_run_parameters
 # generate_datetime_points
 # run_fluxengine
 # process_timestep
-
 
 
 

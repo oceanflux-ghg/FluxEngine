@@ -9,7 +9,6 @@ Created on Fri Feb 27 19:02:31 2026
 import pytest
 import numpy as np
 from os import path
-import netCDF4
 
 from fluxengine.core.datalayer import DataLayerMetaData, DataLayer
 import fluxengine.core.data_preprocessing as fe_preprocessing

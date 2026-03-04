@@ -1224,7 +1224,7 @@ class FluxEngine:
 
         inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
         timeIndex = inputChunk * (metaData.temporalSkipInterval + 1);
-        dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData,
+        dl = DataLayer.create_from_file(infile, prod, metaData, timeIndex, transposeData=transposeData,
                                         preprocessing=preprocessing);
         self.data[name] = dl;
 
@@ -1240,7 +1240,7 @@ class FluxEngine:
         if ny == None: ny = self.ny;
 
         metaData = self._extract_data_layer_meta_data(name);
-        dl = DataLayer.create_empty_datalayer(name, nx, ny, metaData);
+        dl = DataLayer.create_empty_datalayer(nx, ny, metaData);
 
         self.data[name] = dl;
 

@@ -646,6 +646,7 @@ class k_CustomGtvTest(KCalculationBase):
         return True
 \end{lstlisting}
 
+Since the above example gas transfer parameterisation requires one parameter, \texttt{k\_CustomGtvTest\_some\_parameter}, this parameter must be defined in the configuration file, for example by including a line like this \texttt{k\_CustomGtvTest\_some\_parameter = 2.5}. FluxEngine will automatically extract the parameter value and use it to construct the gas transfer parameterisation functor.
 
 You can pass the file path containing custom gas transfer velocity parameterisations to FluxEngine in two ways. Firstly, using the command line \texttt{fe\_run.py} tool, you can supply the path using \texttt{-custom\_gas\_transfer\_parameterisation} (\texttt{-gtvp} for short) followed by a string containing the relative or absolute file path. For example:
 

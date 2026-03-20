@@ -30,6 +30,6 @@
 \contentsline {section}{\numberline {9}Guide for developers}{23}{}%
 \contentsline {subsection}{\numberline {9.1}Adding pre-processing functions}{23}{}%
 \contentsline {subsection}{\numberline {9.2}Adding k-parametrisation functors}{24}{}%
-\contentsline {subsubsection}{\numberline {9.2.1}Adding configuration variables}{26}{}%
-\contentsline {subsection}{\numberline {9.3}Contributing}{26}{}%
+\contentsline {subsubsection}{\numberline {9.2.1}Adding configuration variables}{27}{}%
+\contentsline {subsection}{\numberline {9.3}Contributing}{27}{}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

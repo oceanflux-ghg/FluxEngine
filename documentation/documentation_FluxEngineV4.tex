@@ -6,6 +6,19 @@
 \usepackage[obeyspaces]{url}
 
 
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{green!50!black},
+    showstringspaces=false,
+    breaklines=true
+}
+
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -572,7 +585,9 @@ If version information is missing from an old configuration file, you can mannua
 
 
 \section{Guide for developers} \label{developer_notes}
-In FluxEngine v3.0 we have made changes to make it easier for people to modify and extend the functionality of FluxEngine. We have implemented a more consistent structure to the code and added the ability to easily extent certain aspects of FluxEngine's functionality without modifying the core code. The following sections provide some background information on how to do this. This is intended for users who are comfortable programming in Python.
+If you're interested in modifying, contributing to, or extending FluxEngine, you can install the package locally and its dependencies, including dev-dependencies, by cloning the git repository and running \texttt{pip install -e ".[dev]"} from the repository root directory. It's recommended to do this in a fresh virtual environment to avoid package clashes. You should only need to do this if you intend to modify the core code.
+
+In FluxEngine v3.0 we have made changes to make it easier for people to modify and extend the certain aspects of FluxEngine's functionality without modifying the core code. The following sections provide some background information on how to do this. This is intended for users who are comfortable programming in Python.
 
 \subsection{Adding pre-processing functions}
 Pre-processing functions are defined in \textit{fluxengine{\textbackslash}core{\textbackslash}data\_preprocessing.py}. When parsing \texttt{*\_preprocessing} data layer proprties in configuration files, FluxEngine searches the function names defined in this file, and so any function which is added will be immediately available for use as a pre-processing function. However, there are certain requirements for the function to operate harmoniously with FluxEngine. These are listed below:
@@ -587,6 +602,50 @@ Pre-processing functions are defined in \textit{fluxengine{\textbackslash}core{\
 The gas transfer velocity calculation is fully customisable and is is possible to write custom 'functor' classes to add to the built-in parameterisations available. There is an example of how to do this by extending a base k-parameterisation class (look for \texttt{k\_example} in \texttt{fluxengine{\char`\\}core{\char`\\}rate\_parameterisation.py}). Custom k-parameterisations can expose parameters to change their behaviour. These parameters should be passed as arguments to their \texttt{\_\_init\_\_} function, and the values must then be defined as a configuration variable in the config file (see section \ref{adding_custom_config_variables} for how to add custom configuration variables). Important note: the custom configuration variables must exactly match the argument names use by k-parameterisation implementations \texttt{\_\_init\_\_} function. It is advisable to give these a prefix unique to the custom k-parameterisation, even if this is a little verbose, as this minimised the risk of name clashes. E.g., something like \texttt{MyProjectNamesKParam\_scaling\_coefficient = 2.0} is generally better than \texttt{scaling\_coefficient = 2.0}.
 
 In older version of FluxEngine, custom k-parameterisations were added directly to the parameterisations to the \texttt{fluxengine{\char`\\}core{\char`\\}rate\_parameterisation.py} file, thereby making them globally available to any project. As of FluxEngine v4.0.3, the new recommended way to add parameterisations is to implement them in a separate file which can be stored with your other project files / config files etc. You can then pass the path to this file as an argument when running FluxEngine and the contents of the file will be executed, and any parameterisations will be available for use in configuration files. The advantages to this are 1) Parameterisations can be stored with other project-specific files, such as config files, and therefore moved around with them. 2) Custom parameterisations aren't lost when updating FluxEngine. And 3) parameterisations can be easily shared, e-mails or attached as supplementary material to manuscripts.
+
+Here is an example of a simple (but nonsensible) implementation of a custom k-parameterisation, which is used for testing.
+
+\begin{lstlisting}
+from fluxengine.core.rate_parameterisation import KCalculationBase
+from fluxengine.core.datalayer import DataLayer
+
+
+#A nonsense custom gas transfer velocity parameterisation, implemented in a separate file
+#Used to test third-party execution of custom GTVs
+class k_CustomGtvTest(KCalculationBase):
+    # Optional initialiser arguments can be used, but their names must correspond to names in the config file.
+    # For example k_CustomGtvTest_some_parameter is used here.
+    #Note: In the input arguments, it's best to append the parameterisation's
+    # name or some other unique namespace to the arg names. This avoids polluting
+    # the config/runParameter's namespace (minimises risk of name clashes)
+    def __init__(self, k_CustomGtvTest_some_parameter):
+        self.name = self.__class__.__name__
+        self.someParameter = k_CustomGtvTest_some_parameter  # 'k_CustomGtvTest_some_parameter' needs to be defined in the configuration file
+        #Note: the internal name (self.someParameter) can have any name it like and does not need to correspond to a configuration variable
+
+    # Must return a list of strings corresponding to the input data layers required by the k calculations. These must already exist.
+    def input_names(self):
+        return ["scskin"]
+
+    # Must return a list of strings corresponding to the names of data layers which it will write to. These may or may not already exist.
+    # If they don't exist, they'll be created by FluxEngine as float DataLayer objects, and initialised to missing_value before the GTV is executed.
+    def output_names(self):
+        return ["k"]
+
+    # Main k calculation. Input and output datalayers can be extracted from 'data'.
+    # Should modify output layers in place (i.e. without copying), and return True or False to indicate successful execution.
+    def __call__(self, data):
+        print("Using", self.name, "with some_parameter =", self.someParameter)
+        
+        validMask = data["scskin"].fdata != DataLayer.missing_value
+        
+        #Example nonsense gas transfer velocity calculation
+        data["k"].fdata[validMask] = data["scskin"].fdata[validMask] * self.someParameter
+
+        #Return true, indicating everything went correctly
+        return True
+\end{lstlisting}
+
 
 You can pass the file path containing custom gas transfer velocity parameterisations to FluxEngine in two ways. Firstly, using the command line \texttt{fe\_run.py} tool, you can supply the path using \texttt{-custom\_gas\_transfer\_parameterisation} (\texttt{-gtvp} for short) followed by a string containing the relative or absolute file path. For example:
 

@@ -8,8 +8,10 @@ Created on Tue Mar  3 06:13:09 2026
 import pytest
 from os import path
 import datetime
+import numpy as np
 
 import fluxengine.core.fe_setup_tools as fe_setup_tools
+from fluxengine.core.datalayer import DataLayer
 
 
 #Test importing of configuration files
@@ -359,6 +361,17 @@ def test_run_fluxengine_custom_gtv():
         #Ocean gas flux output variable exists
         dataset = Dataset(expectedOutputPath, "r")
         assert "OF" in dataset.variables.keys()
+        
+        #Output selected gas transfer velocity data exiss, and has the expected value
+        assert "OK3" in dataset.variables.keys()
+        assert "SC" in dataset.variables.keys() #'scskin' name in NetCDF output is 'SC'
+        kData = dataset.variables["OK3"][:]
+        scskinData = dataset.variables["SC"][:]
+        #Checking 
+        missingMaskK = kData == DataLayer.missing_value
+        missingMaskScskin = scskinData == DataLayer.missing_value
+        assert np.all(missingMaskK == missingMaskScskin) #missing values match
+        assert np.all(kData[missingMaskK==False] == scskinData[missingMaskScskin==False]*2.5) #2.5 is the test GTV's parameter, and scskin*2.5 is the example nonsense k calculation    
 
 
 #TODO: These functions are not (yet?) tested

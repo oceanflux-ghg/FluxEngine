@@ -10,10 +10,12 @@ from os import path
 import tempfile #for auto-deleting temporary directories
 import subprocess
 import sys
+import numpy as np
 
 from netCDF4 import Dataset
 
 from fluxengine.core.fe_setup_tools import get_fluxengine_root
+from fluxengine.core.datalayer import DataLayer
 
 
 def test_script_fe_run_basic():
@@ -48,8 +50,6 @@ def test_script_fe_run_custom_gtv():
     Minimal test calling fe_run.py to run fluxengine using a custom gas transfer velocity functor
     """
     
-    pass
-
     with tempfile.TemporaryDirectory() as tmpDir:
         scriptPath = path.abspath(path.join(get_fluxengine_root(), "scripts", "fe_run.py"))
         configPath = path.abspath(path.join(get_fluxengine_root(), "test_data", "test_config_valid_custom_gtv.conf"))
@@ -71,15 +71,21 @@ def test_script_fe_run_custom_gtv():
         expectedOutputPath = path.join(tmpDir, "2010", "01", "OceanFluxGHG-month01-jan-2010-v0.nc")
         assert path.exists(expectedOutputPath)
         
-        #Ocean gas flux output variable exists
+        #Ocean gas flux output data exist
         dataset = Dataset(expectedOutputPath, "r")
         assert "OF" in dataset.variables.keys()
         
+        #Output selected gas transfer velocity data exiss, and has the expected value
+        assert "OK3" in dataset.variables.keys()
+        assert "SC" in dataset.variables.keys() #'scskin' name in NetCDF output is 'SC'
+        kData = dataset.variables["OK3"][:]
+        scskinData = dataset.variables["SC"][:]
+        #Checking 
+        missingMaskK = kData == DataLayer.missing_value
+        missingMaskScskin = scskinData == DataLayer.missing_value
+        assert np.all(missingMaskK == missingMaskScskin) #missing values match
+        assert np.all(kData[missingMaskK==False] == scskinData[missingMaskScskin==False]*2.5) #2.5 is the test GTV's parameter, and scskin*2.5 is the example nonsense k calculation    
     
-    
-    
-    
-
 
     
 

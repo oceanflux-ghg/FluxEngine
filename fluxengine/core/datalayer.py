@@ -60,7 +60,16 @@ class DataLayer:
     @classmethod
     def create_from_file(cls, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
         function = "(DataLayer.create_from_file)"
-
+        
+        #helper which extracts the NC variable data to a numpy array.
+        #converts unsigned integers to signed equivalents (necessary because missing_value values usually use negative values)
+        def nc_variable_to_numpy(ncVar):
+            arr = ncVar[:]
+            if arr.dtype.kind == "u": #Convert unsigned integers to equivalent signed integer
+                arr = arr.astype("int"+str(arr.dtype.itemsize * 8))
+            return arr
+        
+        
         #Open netCDF file
         try:
             dataset = Dataset(infile);
@@ -75,6 +84,7 @@ class DataLayer:
         #dataset = Dataset(infile); #DJF - 14/11/2024 - Removed this line, as if try loop at start of file succeeds then this is redundant (i.e opening a file that is already open). If try loop fails, then an except is pushed.
         ncVariable = dataset.variables[prod];
 
+
         #Find the right time dimension index and slice/copy the data appropriately
         dims = ncVariable.dimensions;
 
@@ -82,21 +92,20 @@ class DataLayer:
         if len(dims) == 3:
             if metadata.timeDimensionName in dims:
                 if dims.index(metadata.timeDimensionName) == 0:
-                    data = ncVariable[timeIndex, :, :];
+                    data = nc_variable_to_numpy(ncVariable[timeIndex, :, :])
                 elif dims.index(metadata.timeDimensionName) == 1:
-                    data = ncVariable[:, timeIndex, :];
+                    data = nc_variable_to_numpy(ncVariable[:, timeIndex, :])
                 elif dims.index(metadata.timeDimensionName) == 2:
-                    data = ncVariable[:, :, timeIndex];
+                    data = nc_variable_to_numpy(ncVariable[:, :, timeIndex])
             else:
                 raise RuntimeError("Time dimension name ('%s') for Datalayer '%s' was not found. Try setting this manually in the configuration file using (for example) datalayername_timeDimensionName = time"%(metadata.timeDimensionName, metadata.name));
         #No time dimension anyway
         elif len(dims) == 2:
-            data = ncVariable[:];
+            data = nc_variable_to_numpy(ncVariable)
         else: #
             raise RuntimeError("Invalid number of dimensions (%d) when reading datalayer '%s' from '%s'"%(len(dims), metadata.name, infile));
 
         #TODO: APPLY PREPROCESSING HERE instead of later.
-
 
         #Extract just the dimensions we want.
         #requiredDims = [None if v in ['latitude', 'lat', 'longitude', 'lon'] else 0 for v in ncVariable.dimensions]

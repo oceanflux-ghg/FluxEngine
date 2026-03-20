@@ -485,7 +485,6 @@ def build_k_functor(runParameters, customGTVPath=None):
                 importDict = {}
                 exec(customGTVString, importDict)
                 for key in importDict:
-                    print(key, ":: ", importDict[key])
                     gtvList.append((key, importDict[key]))
 
         # Search for the specified k parameterisation class
@@ -516,7 +515,7 @@ def build_k_functor(runParameters, customGTVPath=None):
                             "%s: Could not find all the required initialiser arguments. Are they specified correctly in the config file?\nExpected arguments are: " % function,
                             initialiserArgNames)
                         print("KeyError.args: ", e.args)
-                        return None
+                        raise RuntimeError("Error when parsing initialisation parameters for the gas transfer velocity parameterisation. Configuration file variable names must exactly match the names used in the parameterisation initialiser. In this case, a parameter named '"+key+"' was expected, but wasn't found in the config file.")
 
                     # Finally create and return the k functor instance
                     return ClassHandle(**argDict)
@@ -557,7 +556,7 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, c
     fe = fluxengine.FluxEngine(runParameters)
 
     # Add the k parameterisation functor
-    kFunctor = build_k_functor(runParameters, customGTVPath)
+    kFunctor = build_k_functor(runParameters, customGTVPath=customGTVPath)
 
     if kFunctor != None:
         fe.add_k_parameterisation_component(kFunctor)

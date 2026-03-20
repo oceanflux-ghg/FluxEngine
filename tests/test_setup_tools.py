@@ -305,12 +305,66 @@ def test_create_run_parameters():
 
     
 
+def test_run_fluxengine_basic():
+    """
+    Minimal test demonstrating that fluxengine can be ran
+    """
+    
+    import tempfile
+    from netCDF4 import Dataset
+    
+    
+    with tempfile.TemporaryDirectory() as tempOutputDir:
+        configPath = path.abspath(path.join(fe_setup_tools.get_fluxengine_root(), "test_data", "test_config_valid_full.conf"))
+        
+        (status, feObj) = fe_setup_tools.run_fluxengine(configPath, 2010, 2010, singleRun=True,
+                                                        outputDirOverride=tempOutputDir);
+        
+        #Script exited correctly without issue. Note: if exception occurred, test will automatically fail.
+        assert status == 0
+        
+        #Output file exists
+        expectedOutputPath = path.join(tempOutputDir, "2010", "01", "OceanFluxGHG-month01-jan-2010-v0.nc")
+        assert path.exists(expectedOutputPath)
+        
+        #Ocean gas flux output variable exists
+        dataset = Dataset(expectedOutputPath, "r")
+        assert "OF" in dataset.variables.keys()
+
+    
+    
+def test_run_fluxengine_custom_gtv():
+    """
+    Minimal test demonstrating that fluxengine can be ran using a custom gas transfer velocity parameterisation implementation
+    """
+    
+    import tempfile
+    from netCDF4 import Dataset
+    
+    with tempfile.TemporaryDirectory() as tempOutputDir:
+        configPath = path.abspath(path.join(fe_setup_tools.get_fluxengine_root(), "test_data", "test_config_valid_custom_gtv.conf"))
+        customGtvPath = path.abspath(path.join(fe_setup_tools.get_fluxengine_root(), "test_data", "example_custom_gtv.py"))
+        
+        (status, feObj) = fe_setup_tools.run_fluxengine(configPath, 2010, 2010, singleRun=True,
+                                                        outputDirOverride=tempOutputDir,
+                                                        customGTVPath = customGtvPath);
+        
+        #Script exited correctly without issue. Note: if exception occurred, test will automatically fail.
+        assert status == 0
+        
+        #Output file exists
+        expectedOutputPath = path.join(tempOutputDir, "2010", "01", "OceanFluxGHG-month01-jan-2010-v0.nc")
+        assert path.exists(expectedOutputPath)
+        
+        #Ocean gas flux output variable exists
+        dataset = Dataset(expectedOutputPath, "r")
+        assert "OF" in dataset.variables.keys()
+
 
 #TODO: These functions are not (yet?) tested
 # match_filenames
- #fe_obj_from_run_parameters
+# fe_obj_from_run_parameters
 # generate_datetime_points
-# run_fluxengine
 # process_timestep
 
 

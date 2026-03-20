@@ -409,10 +409,8 @@ class kt_OceanFluxGHG(KCalculationBase):
             # for ease of access, simply assign attributes to each input/output.
             for name in self.input_names() + self.output_names():
                 setattr(self, name, data[name].fdata)
-            data[
-                "k"].standardName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide"
-            data[
-                "k"].longName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide"
+            data["k"].standardName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide"
+            data["k"].longName = "total (direct_from_backscatter plus bubble mediated) component of gas transfer velocity of carbon dioxide"
         except KeyError as e:
             print("%s: Required data layer for selected k parameterisation was not found." % function)
             print(type(e), e.args)

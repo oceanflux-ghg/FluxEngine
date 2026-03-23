@@ -37,3 +37,6 @@ fluxengine/tutorials/04_N2O_fluxes/N2O_rapid_N00_surfactants.conf
 
 ### test/scratchpad configuration file ###
 configs/scratchpad.conf
+
+### temporary test data
+fluxengine/test_data/temporary_output/

@@ -49,22 +49,28 @@ def read_config_file(configPath, verbose=False):
         for line in open(configPath):
             line = line.split('#', 1)[0]  # Ignores comments
             if "=" in line:  # The format we're looking for is "<name> = <value>" format
-                try:  # Extracting they name value pair
-                    name, value = line.split('=', 1)
-                    name = name.strip()
-                    value = value.strip()
-                    if (name in configVariables) == False:  # Duplicate definition of same variable?
-                        configVariables[name] = value
-                    else:
-                        print(
-                            "Warning: Duplicate definition in config file for '%s'. The first definition will be used." % name)
-                except:  # Will only happen if there isn't both left and righthand sides to the '=' assignment
-                    print("%s: Error parsing config file line:\n" % function, line)
-                    return None
-    except Exception as e:
+                name, value = line.split('=', 1)
+                name = name.strip()
+                value = value.strip()
+                if value == "":
+                    raise ValueError("Config entry '"+name+"' is specified but has no value.")
+                if (name in configVariables) == False:  # Duplicate definition of same variable?
+                    configVariables[name] = value
+                else:
+                    print("Warning: Duplicate definition in config file for '%s'. The first definition will be used." % name)
+                    
+            else: #All none variable assignment lines
+                if line == "" or line.strip() == "" or line.strip()[0] == "#": #ignore blank and comment lines
+                    continue
+                if "#?FluxEngineConfigVersion" in line: #config version tag is the only other non-assignment line allowed
+                    continue
+                #If we get to here, it's an invalid config line
+                raise ValueError("Invalid line in configuration file. Couldn't parse config. Offending line:\n"+line)
+    except Exception as e: #Catch-all other parse errors and report the offending line
+        #Print additional info then reraise the exception    
         print("Error while parsing config file at path:", configPath)
         print(type(e), e.args)
-        return None
+        raise(e)
 
     if verbose:
         print("\nParsed configurable variables as follows:")
@@ -75,8 +81,8 @@ def read_config_file(configPath, verbose=False):
 
 # Given a string, parse it for configuration file version information
 def parse_config_version_tag(firstline):
-    if "#?FluxEngineConfigVersion:" in firstline:
-        return float(firstline.split(":")[1])
+    if "#?FluxEngineConfigVersion" in firstline:
+        return float(firstline.split(":")[1].strip())
     else:
         raise ValueError("No version tag found in configuration file. Instead found:\n\t" + firstline)
 
@@ -93,7 +99,7 @@ def read_config_metadata(settingsPath, verbose=False):
         print("Parsing settings file at:", settingsPath)
     tree = ET.parse(settingsPath)
     root = tree.getroot()
-
+    
     # Read config metadata for each variable
     varMetadata = {}
     configParametersElement = root.find("ConfigParameters")
@@ -133,7 +139,7 @@ def read_config_metadata(settingsPath, verbose=False):
                         varMetadata[element.attrib["name"] + "_minBound"] = {"name": element.attrib["name"],
                                                                              "required": "false",
                                                                              "type": "float"}
-                        varMetadata[element.attrib["name"] + "_maxBound"] = {"name": "false",
+                        varMetadata[element.attrib["name"] + "_maxBound"] = {"name": element.attrib["name"],
                                                                              "required": element.attrib["required"],
                                                                              "type": "float"}
                         varMetadata[element.attrib["name"] + "_standardName"] = {"name": element.attrib["name"],
@@ -167,8 +173,7 @@ def read_config_metadata(settingsPath, verbose=False):
 
 
 # Verifies config variables contain valid values. Reports missing variables or invalid values.
-# Converts variables to appropriate types expected by FluxEngine.
-# Modified configVariables in place.
+# Converts 'configVariables' entries from strings to the types expected by FluxEngine (in-place)
 # configVariables is a dictionary detailing name:value for each variable defined in the config file
 # metadata is a dictionary or dictionaries containing the metadata for each variable
 def verify_config_variables(configVariables, metadata, verbose=False):
@@ -230,7 +235,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
         # Int: string to int
         elif metadata[varName]["type"] == "integer":
             try:
-                configVariables[varName] = float(configVariables[varName])
+                configVariables[varName] = int(configVariables[varName])
             except ValueError:
                 print("%s: Config variable '%s' requires a whole / integer number. Got %s instead." % (
                 function, varName, configVariables[varName]))
@@ -268,10 +273,26 @@ def verify_config_variables(configVariables, metadata, verbose=False):
 
     # Now process custom vars. Try to convert them to a float, but if they fail assume they're supposed to be a string.
     for varName in customVars:
+        #is it a bool?
+        if configVariables[varName] == "no":
+            configVariables[varName] = False
+            continue
+        elif configVariables[varName] == "yes":
+            configVariables[varName] = True
+            continue
+        #is it an int?
+        try:
+            configVariables[varName] = int(configVariables[varName])
+            continue
+        except ValueError:
+            pass #try float
+            
+        #is it a float?
         try:
             configVariables[varName] = float(configVariables[varName])
         except ValueError:
-            pass  # Leave it as a string.
+            pass
+        #Not a bool, int or float so leave it as a string.
 
 
 # Substitutes various time tokens into the input string.
@@ -464,7 +485,6 @@ def build_k_functor(runParameters, customGTVPath=None):
                 importDict = {}
                 exec(customGTVString, importDict)
                 for key in importDict:
-                    print(key, ":: ", importDict[key])
                     gtvList.append((key, importDict[key]))
 
         # Search for the specified k parameterisation class
@@ -495,7 +515,7 @@ def build_k_functor(runParameters, customGTVPath=None):
                             "%s: Could not find all the required initialiser arguments. Are they specified correctly in the config file?\nExpected arguments are: " % function,
                             initialiserArgNames)
                         print("KeyError.args: ", e.args)
-                        return None
+                        raise RuntimeError("Error when parsing initialisation parameters for the gas transfer velocity parameterisation. Configuration file variable names must exactly match the names used in the parameterisation initialiser. In this case, a parameter named '"+key+"' was expected, but wasn't found in the config file.")
 
                     # Finally create and return the k functor instance
                     return ClassHandle(**argDict)
@@ -511,10 +531,12 @@ def build_k_functor(runParameters, customGTVPath=None):
 def get_preprocessing_funcs(funcNamesArg):
     function = inspect.stack()[0][1] + ", " + inspect.stack()[0][3]
     functionList = []
-
+    
     # get a list of each funcName by splitting on commas
     funcNames = [s.strip() for s in funcNamesArg.split(',')]
     for funcName in funcNames:
+        if funcName == "": #ignore empty strings
+            continue
         # Search for the specified function and return is
         for name, obj in inspect.getmembers(data_preprocessing):
             if name == funcName:
@@ -534,7 +556,7 @@ def fe_obj_from_run_parameters(runParameters, metadata, processLayersOff=True, c
     fe = fluxengine.FluxEngine(runParameters)
 
     # Add the k parameterisation functor
-    kFunctor = build_k_functor(runParameters, customGTVPath)
+    kFunctor = build_k_functor(runParameters, customGTVPath=customGTVPath)
 
     if kFunctor != None:
         fe.add_k_parameterisation_component(kFunctor)

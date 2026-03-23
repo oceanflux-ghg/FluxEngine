@@ -18,21 +18,20 @@
 # netcdf bits
 from netCDF4 import Dataset
 import sys
-from math import log, exp, pow, isnan;
-from numpy import size, flipud, mean, zeros, nonzero, array, resize, ma, arange, dtype, ones, meshgrid, where;
+from numpy import size, flipud, mean, zeros, nonzero, resize, ma, arange, dtype, ones, meshgrid, where;
 from numpy import any as npany;
 import numpy as np
 from random import normalvariate
 import logging;
 from os import path;
 from string import Template;
+from datetime import timedelta, datetime;
 
 from .datalayer import DataLayer, DataLayerMetaData;
 from .settings import Settings;
 from .. import __version__ as fe_v
-# from .debug_tools import calc_mean; #calculate mean ignoring missing values.
 
-from datetime import timedelta, datetime;
+
 
 # debug mode switches
 DEBUG = False
@@ -1225,7 +1224,7 @@ class FluxEngine:
 
         inputChunk = int(self.runParams.run_count % metaData.temporalChunking);
         timeIndex = inputChunk * (metaData.temporalSkipInterval + 1);
-        dl = DataLayer.create_from_file(name, infile, prod, metaData, timeIndex, transposeData=transposeData,
+        dl = DataLayer.create_from_file(infile, prod, metaData, timeIndex, transposeData=transposeData,
                                         preprocessing=preprocessing);
         self.data[name] = dl;
 
@@ -1236,12 +1235,12 @@ class FluxEngine:
     # Metadata can be overwritten in the config file using the the datalayer name and the xml attribute from the settings.xml file, e.g.:
     #       datalayername_units = C m^2s^-1
     #       datalayername_maxBound = 100.0
-    def add_empty_data_layer(self, name, nx=None, ny=None, fillValue=DataLayer.missing_value):
+    def add_empty_data_layer(self, name, nx=None, ny=None):
         if nx == None: nx = self.nx;
         if ny == None: ny = self.ny;
 
         metaData = self._extract_data_layer_meta_data(name);
-        dl = DataLayer.create_empty_datalayer(name, nx, ny, metaData, fillValue=fillValue);
+        dl = DataLayer.create_empty_datalayer(nx, ny, metaData);
 
         self.data[name] = dl;
 

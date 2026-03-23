@@ -1,0 +1,31 @@
+name: CI dev branch
+
+on:
+  push:
+    branches:
+      - 'fe_v4-dev/*'
+  pull_request:
+    branches:
+      - 'fe_v4-dev/*'
+
+jobs:
+  unittests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: upgrade pip and setuptools
+        run: python -m pip install --upgrade pip setuptools wheel
+      
+      - name: install fluxengine
+        run: python -m pip install -e ".[dev]"
+
+      - name: run unit tests
+        run: pytest --maxfail=1 -v #stop on first failure

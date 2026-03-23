@@ -6,43 +6,70 @@ Created on Mon Mar  2 06:24:22 2026
 """
 
 import pytest
+from os import path
 
-import fluxengine.core.fe_core
+import fluxengine.core.fe_core as fe_core
 
 
 def test_RunParameters():
     """
-    Run parameters are copied and updated correctly
+    Run parameter objects are created and updated correctly
     """
-    pass
+    #RunParameters are constructed with no parameters
+    params = fe_core.RunParameters()
+    assert len(vars(params)) == 0
+    
+    #Adding parameters adds them as attributes
+    params.set_parameters({"testParam1": 42, "testParam2": 3.141})
+    assert len(vars(params)) == 2
+    assert params.testParam1 == 42
+    assert params.testParam2 == 3.141
+    
+    #Setting parameters clears any previous parameters
+    params.set_parameters({"exampleParam1": "some value"})
+    assert hasattr(params, "testParam1") == False
+    assert hasattr(params, "testParam2") == False
+    assert len(vars(params)) == 1
+    assert params.exampleParam1 == "some value"
 
 
-def test_write_netcdf():
-    """
-    ...
-    """
-    pass
+
+# def test_write_netcdf(mockFluxEngineObject_outputs):
+#     """
+#     ...
+#     """
+#     # import tempfile #for auto-deleting temporary directories
+#     # tmpDir = tempfile.TemporaryDirectory()
+    
+#     # mockFluxEngineObject_outputs.runParams.output_path = path.join(tmpDir.name, "test_output.nc")
+    
+#     # fe_core.write_netcdf(mockFluxEngineObject_outputs)
+    
+#     pass
+    
+    
+    
 
 
-def test_calculate_solubility_distilled():
-    """
-    ...
-    """
-    pass
+# def test_calculate_solubility_distilled():
+#     """
+#     ...
+#     """
+#     pass
 
 
-def test_calculate_whitecapping():
-    """
-    ...
-    """
-    pass
+# def test_calculate_whitecapping():
+#     """
+#     ...
+#     """
+#     pass
 
 
-def test_add_noise():
-    """
-    ...
-    """
-    pass
+# def test_add_noise():
+#     """
+#     ...
+#     """
+#     pass
 
 
 

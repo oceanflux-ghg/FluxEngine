@@ -232,14 +232,14 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
                                    salinity_col, salinity_sub_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_sub_col, air_pressure_equ_col, \
                                    fCO2_col, expocode_col, socatversion, notsocatformat):
     stndColNames = ["expocode", "year", "month", "day", "hour", "minute", "second", "longitude", "latitude", "salinity", "sst", "T_equ", \
-                    "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2", "fCO2_qc_flag"];
-    colDTypes = ['U24', '<i8', '<i8', '<i8', '<i8', '<i8', '<i8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<i8'];
+                    "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2", "fCO2_qc_flag", "SOCAT_QC_Flag"];
+    colDTypes = ['U24', '<i8', '<i8', '<i8', '<i8', '<i8', '<i8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<f8', '<i8', 'S2'];
     #colDTypes = [str, int, int, int, int, int, int, float, float, float, float, float, float, float, float, float, float, int];
 
     if notsocatformat: #Specify the columns as given by the command line parameters.
         colIdentifiers = [expocode_col, year_col, month_col, day_col, hour_col, minute_col, second_col, longitude_col, latitude_col, \
                                    salinity_col, SST_C_col, Tequ_col, air_pressure_col, air_pressure_equ_col, salinity_sub_col, air_pressure_sub_col, \
-                                   fCO2_col, None];
+                                   fCO2_col, None, None];
     else: #using socat so use socatversion to determine correct columns
         if socatversion == 2:
             colIdentifiers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '10', '11', '12', '13', '14', '15', '16', '20', '22'];
@@ -281,7 +281,7 @@ def construct_column_info(year_col, month_col, day_col, hour_col, minute_col, se
 #             'fCO2rec [uatm]',
 #             'fCO2rec_flag']
         elif socatversion in [2020]:
-            colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '29', '31'];
+            colIdentifiers = ['0', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15', '16', '17', '18', '19', '29', '31', '3'];
         else:
             raise ValueError("No value columns could be generated. Only socat version 2, 3, 4, 5, 6, 2019, and 2020 are supported.");
 

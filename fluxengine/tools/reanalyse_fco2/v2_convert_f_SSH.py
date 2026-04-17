@@ -314,12 +314,12 @@ def ReadInData(inputfile, columnInfo, socatversion, delimiter='\t'):
         data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
                      ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
                     ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
-                    ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<f8')]);
+                    ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<f8'), ('SOCAT_QC_Flag', '<f8')]);
     else: #fCO2_qc_flag was provided by the data file, so set type as int.
         data = data.astype([('expocode', 'S24'), ('year','<i8'), ('month','<i8'), ('day','<i8'), ('hour','<i8'), ('minute','<i8'), ('second','<i8'),
                          ('longitude','<f8'), ('latitude','<f8'), ('salinity', '<f8'),
                         ('SST', '<f8'), ('T_equ', '<f8'), ('air_pressure', '<f8'), ('air_pressure_equ', '<f8'),
-                        ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8')]);
+                        ('salinity_sub', '<f8'), ('air_pressure_sub', '<f8'), ('fCO2', '<f8'), ('fCO2_qc_flag', '<i8'), ('SOCAT_QC_Flag', 'S1')]);
 
     return data;
 
@@ -543,7 +543,7 @@ def ConvertYears(data,year_range,sstdir,ssttail,prefix,outputdir,extrapolatetoye
    #Optionally update names to be more sensible - could do this at data import instead
    #Note this ASSUMES the order of the column naming - FIXME: should do this more robustly #TMH: Fixed: Order is now determined by the columnInfo object after parsing command line args.
    #newnames=['yr','mon','day','hh','mm','ss','lon','lat','sal','SST_C','Teq_C','P','Peq','sal_woa','P_ncep','fCO2_rec','expocode']
-   newnames=["expocode", "year", "month", "day", "hour", "minute", "second", "longitude", "latitude", "salinity", "sst", "T_equ", "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2"];
+   newnames=["expocode", "year", "month", "day", "hour", "minute", "second", "longitude", "latitude", "salinity", "sst", "T_equ", "air_pressure", "air_pressure_equ", "salinity_sub", "air_pressure_sub", "fCO2", "SOCAT_QC_Flag"];
    data_subset.dtype.names=newnames
    #keep track of the number of data points that are used (for output info only)
    number_of_data_points=data_subset.shape
@@ -705,7 +705,7 @@ def WriteOutToAsciiList(month_data,outputfile,extrapolatetoyear):
 
     if output_data.size > 0:
         print("Writing to: %s"%outputfile)
-        numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
+        numpy.savetxt(outputfile,output_data,fmt="%.7f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%s",
                       header=",".join(output_data.dtype.names),delimiter=',')
 
 def CreateBinnedData(month_data):

@@ -20,10 +20,10 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Tcls_unc,Peq_cls,extrapolatetoyear=
     Also returns result as a structured array.
    """
    #Run the conversion function
-   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_C_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
+   jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_C_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf, fCO2_Tym_final_unc, pCO2_Tym_final_unc = v2_f_conversion(jds, data_array['year'],data_array['month'],data_array['day'],data_array['hour'],data_array['minute'],data_array['second'],
                                                       data_array['longitude'], data_array['latitude'], data_array['sst'],data_array['salinity'], data_array['T_equ'],
                                                       data_array['air_pressure'], data_array['air_pressure_equ'], data_array['salinity_sub'],data_array['air_pressure_sub'],
-                                                      data_array['fCO2'], Tcls,Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling);
+                                                      data_array['fCO2'], Tcls,Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling,data_array['SOCAT_QC_Flag']);
 
    if jd is None:
       #this is only if there were no usable data after the validity checks
@@ -46,6 +46,8 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Tcls_unc,Peq_cls,extrapolatetoyear=
                                            ('fCO2_Tym',float),
                                            ('pCO2_SST',float),
                                            ('pCO2_Tym',float),
+                                           ('pCO2_Tym_unc',float),
+                                           ('fCO2_Tym_unc',float),
                                            ('qf',int)]);
       result['jd']=jd
       result['yr']=yr;
@@ -61,15 +63,17 @@ def v2_f_conversion_wrap(jds,data_array,Tcls,Tcls_unc,Peq_cls,extrapolatetoyear=
       result['Tcl_C_unc'] = Tcl_C_unc
       result['fCO2_SST']=fCO2_SST
       result['fCO2_Tym']=fCO2_Tym_final
+      result['fCO2_Tym_unc'] = fCO2_Tym_final_unc
       result['pCO2_SST']=pCO2_SST
       result['pCO2_Tym']=pCO2_Tym_final
+      result['pCO2_Tym_unc'] = pCO2_Tym_final_unc
       result['qf']=qf
 
    return result
 
 
 def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sals, Teq_Cs, Ps, Peqs, sal_woas1, \
-   P_nceps, fCO2_recs, Tcls, Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling):
+   P_nceps, fCO2_recs, Tcls, Tcls_unc, Peq_cls,extrapolatetoyear,temperature_handling,quality_flag):
    """Recalculates CO2 flux from the ocean:
       Arguments (all numpy arrays):
         jds - days since 0/1/0000 (from datenum.py)
@@ -96,6 +100,29 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
         fCO2_SST - fCO2 recomputed by SOCAT for SST_C (uatm)
         fCO2_Tym - fCO2 recomputed for Tcl_C (uatm)
         qf - quality flag?"""
+   # This dictionary sets out the uncertainty (precision) in the in situ [temperature (degC), pressure (hPa), fCO2sw (uatm)] as described
+   # in the SOCAT quality processing documentation. For each flag the list provides these.
+   # These are then used to construct uncertainty arrays for the in situ observations that are then propagated through PYCO2SYS.
+   # Dictionary last updated by DJF 09/04/2026
+   quality_dictionary = {
+        'A': [0.05,2,2],
+        'B': [0.05,2,2],
+        'C': [0.2,5,5],
+        'D': [0.2,5,5],
+        'E': [0.2,5,10]
+   }
+
+   quality_flag = quality_flag.astype(str)
+   ins_temp_unc = np.zeros((len(jds))); ins_temp_unc[:] = np.nan
+   ins_press_unc = np.copy(ins_temp_unc)
+   ins_fco2_unc = np.copy(ins_temp_unc)
+   print(list(quality_dictionary.keys()))
+
+   for i in list(quality_dictionary.keys()):
+       f = np.where(quality_flag == i)
+       ins_temp_unc[f] = quality_dictionary[i][0]
+       ins_press_unc[f] = quality_dictionary[i][1]
+       ins_fco2_unc[f] = quality_dictionary[i][2]
 
    print('FluxEngine using temperature handler number: ' + str(temperature_handling) + ' - refer to pyCO2sys for details')
    #Because this function changes the values of the sal_woas array we should copy it and change the copy instead
@@ -121,13 +148,14 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
       #there are no records with valid  Tcls, fCO2_recs and SST_cs
       #raise Exception("No data records with valid Tcls, fCO2_recs and SST_Cs. Cannot reanalyse these data.")
       #return a list of Nones of the length that needs to be unpacked
-      return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None];
+      return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None];
 
    jd, lon, lat, SST_C, sal = jds[goodpoints], lons[goodpoints], lats[goodpoints], SST_Cs[goodpoints], sals[goodpoints]
    yr, mon, day, hh, mm, ss = yrs[goodpoints], mons[goodpoints], days[goodpoints], hhs[goodpoints], mms[goodpoints], sss[goodpoints];
    Teq_C, P, Peq, sal_woa = Teq_Cs[goodpoints], Ps[goodpoints], Peqs[goodpoints], sal_woas[goodpoints]
    P_ncep, fCO2_rec, Tcl, Peq_cl = P_nceps[goodpoints], fCO2_recs[goodpoints], Tcls[goodpoints], Peq_cls[goodpoints]
-   Tcl_unc = Tcls_unc[goodpoints]
+   Tcl_unc,quality_flag = Tcls_unc[goodpoints],quality_flag[goodpoints]
+   ins_temp_unc, ins_press_unc,ins_fco2_unc = ins_temp_unc[goodpoints],ins_press_unc[goodpoints],ins_fco2_unc[goodpoints]
    n = np.size(jd)
    Tcl_C  = Tcl - 273.15
    # if sal_woas is invalid, use 35.
@@ -157,6 +185,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    P *= hPa2atm # [atm]
    Peq *= hPa2atm # [atm]
    Peq_cl *= hPa2atm  # [atm]
+   ins_press_unc*=hPa2atm # [atm]
 
    # DJF 20/12/2024: Don't need to do these conversions as this will be handled by PyCO2sys
    # fCO2_SST = fCO2_rec * 1E-06 # [atm]
@@ -194,6 +223,10 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    # Teq using Takahashi then go forwards to the subskin temp (from satellite etc) using the method defined.
    # Either Takahashi linear, Takahashi quadratic or the Humpreys 2024 apporahc (new default)
 
+   # DJF: 09/04/2026: Now added uncertainty propagation to the approach, based on the in situ SOCAT quality flags, and
+   # the reference satellite temperature uncertainty. THese are propagated through all stages, and then output as
+   # a pCO2sw and fCO2sw uncertainty.
+
    pyco2_equil = pyco2.sys(
             par1 = fCO2_rec, # SOCAT recommended fCO2(sw)
             par1_type = 5, # Specifying that above input is fCO2(sw) in uatm (5) - could also be pCO2sw in uatm (4) or xCO2sw in ppm (9)
@@ -204,8 +237,10 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
             temperature_out = Teq_C, # The temperature that we want the output to be at (i.e the Teq)
             pressure_atmosphere = P, # This will be the sea level pressure
             pressure_atmosphere_out = Peq, # And we want the output to be at the equlibrator pressure
-            opt_adjust_temperature = 5 # This sets pyCO2sys to use the Takahashi et al. (1993) linear temperature correction -
+            opt_adjust_temperature = 5, # This sets pyCO2sys to use the Takahashi et al. (1993) linear temperature correction -
             # THis is the approach used by SOCAT to get to fCO2rec (Bakker et al. 2016) - so we are coverting back to then move forwards with the method selected in the fucntion.
+            uncertainty_into = ['pCO2_out'],
+            uncertainty_from = {'temperature':ins_temp_unc,'temperature_out':ins_temp_unc,'pressure_atmosphere':ins_press_unc,'pressure_atmosphere_out':ins_press_unc}
    )
 
    pyco2_subskin = pyco2.sys(
@@ -218,7 +253,9 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
             temperature_out = Tcl_C,# The temperature that we want the output to be at (i.e the satellite subskin data)
             pressure_atmosphere = Peq, #Pressure at equlibrator
             pressure_atmosphere_out = P, # Pressure at sea level
-            opt_adjust_temperature = temperature_handling #
+            opt_adjust_temperature = temperature_handling, #
+            uncertainty_into = ['pCO2_out'],
+            uncertainty_from = {'par1':pyco2_equil['u_pCO2_out'],'temperature':ins_temp_unc,'temperature_out':Tcl_unc,'pressure_atmosphere':ins_press_unc,'pressure_atmosphere_out':ins_press_unc}
    )
 
    pCO2_Tym = pyco2_subskin['pCO2_out']
@@ -238,7 +275,7 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
       # rename the variable so that the succeeding script will work and continue
       # would be better not doing this (from intuitive point of view) but easiest way.
       pCO2_Tym_final = pCO2_Tym
-
+   pCO2_Tym_final_unc = pyco2_subskin['u_pCO2_out']
    # Convert from subskin pCO2sw to subskin fCO2sw
    pyco2_subskin_fco2 = pyco2.sys(
             par1 = pCO2_Tym_final, #pCO2sw corrected to the subskin, with extrapolation to year above applied
@@ -248,9 +285,12 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
             salinity = sal, # Provides the salinity, or the WOA salinity or a fixed value (35.0) - salinity maybe needed
             temperature = Tcl_C,# The temperature that the data is at in the equilibrator (i.e the Teq)
             pressure_atmosphere = P, #Pressure at equlibrator
+            uncertainty_into = ['fCO2'],
+            uncertainty_from = {'par1': pyco2_subskin['u_pCO2_out'],'temperature':Tcl_unc,'pressure_atmosphere':ins_press_unc}
    )
 
    fCO2_Tym_final = pyco2_subskin_fco2['fCO2']
+   fCO2_Tym_final_unc = pyco2_subskin_fco2['u_fCO2']
    fCO2_SST = fCO2_rec
 
    # Converting fCO2swrec to pCO2swrec
@@ -278,4 +318,4 @@ def v2_f_conversion(jds, yrs, mons, days, hhs, mms, sss, lons, lats, SST_Cs, sal
    # fCO2_SST *= 1E+06 # uatm (this is the same as fCO2_rec)
    # pCO2_SST *= 1E+06 # uatm
 
-   return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf];
+   return [jd, yr, mon, day, hh, mm, ss, lon, lat, SST_C, Tcl_C, Tcl_unc, fCO2_SST, fCO2_Tym_final, pCO2_SST, pCO2_Tym_final, qf, fCO2_Tym_final_unc,pCO2_Tym_final_unc];

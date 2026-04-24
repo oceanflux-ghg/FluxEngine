@@ -2037,7 +2037,6 @@ class FluxEngine:
                 # #DJF: 13/01/2026
                 # # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
                 if runParams.kb_asymmetry != 1.0:
-                    self.add_empty_data_layer("pgas_air_bub");
                     self.data["pgas_air_bub"].fdata[mask] = self.data["pgas_air_bub"].fdata[mask] + pco2_increment_air
 
             else:
@@ -2398,8 +2397,8 @@ class FluxEngine:
                     "Cannot use wet deposition (rain_wet_deposition_switch) without specifying pCO2 or vCO2 data.")
             else:
                 self.data["FKo07"].fdata[mask] = -(
-                        self.data["rain"].fdata[mask] * (24.0 / 1000.0) * concFactor *
-                        self.data["solubility_distilled"].fdata[mask] * self.data["pgas_air_cor"].fdata[mask]
+                        self.data["rain"].fdata[mask] * k_factor * concFactor *
+                        self.data["solubility_distilled"].fdata[mask] * self.data["pgas_air"].fdata[mask]
                 )
 
                 valid_FH06_mask = mask & (self.data["FH06"].fdata != missing_value)
@@ -2568,7 +2567,7 @@ class FluxEngine:
         if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
             gas_type = 'fugacity'
         else:
-            gas_type = 'partial_= pressure'
+            gas_type = 'partial_pressure'
         # Substitute gas name into meta data / human-readable descriptions
         dataLayers = self.data
         for datalayer in dataLayers:

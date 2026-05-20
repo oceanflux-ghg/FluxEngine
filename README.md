@@ -4,7 +4,7 @@ Main contacts: Jamie D. Shutler (j.d.shutler@exeter.ac.uk) and Daniel J. Ford (d
 
 The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 23 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency research projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
 
-Known issues with v4.1.0
+Known issues with v4.2.0
 ----
 01 Sep 2022 - There is a known error with calculating fluxes using concentration data (thanks Silvie Lainela for finding this error and Tom Holding for identify the work around). With this option you have to set and use conca and concw as the main inputs. But the tools incorrectly request pgas_air and pgas_sw inputs (which are not used in the flux calculation when you use concentration data). To overcome this simply define and pass pgas_air and pgas_sw data as an additional input i.e. create a file containing NaN or 0s and add the information into the configuration file. This will allow the calculations to complete and the pgas data will not be used in the calculation. This error will be fixed in the next release of the fluxengine.
 
@@ -13,6 +13,8 @@ Known issues with v4.1.0
 
 Version 4.
 ----
+v4.2.0 released May 2026 - The SOCAT recalculation uncertainty update and bubble update. This release updates the SOCAT recalculation functions to include uncertainty propagation based on the SOCAT quality flag. The update also includes many improvements to the bubble exchange components of FluxEngine which allow further modifications to the bubble asymmetry terms and allowing bubbles to have a cool skin (or not; default). Finally some general bug fixes around verbose statements, updating netCDF variable names dependent on partial pressure or fugacity, and the ability to specify data layer outputs that should not be saved.
+
 v4.1.0 released July 2025 - The SOCAT recalculation update + vectorisation. This release updates the recalculation of the SOCAT functions to be more flexible on the temperature datasets used, and the spatial and temporal resolution of the datasets (and incorporates changes made within the production of the recalculated SOCAT datasets). The approach also updates the temperature sensitivities that can be used to transform SOCAT fCO2sw to different temperature, and incorporates pyCO2sys. pyCO2sys in now a dependency of FluxEngine. Thanks to nguyen-vu-son (and the CO2COAST project), FluxEngine is now vectorised and uses netCDF4 for the saving. Verification runs were all successful, and the University of Exeter Global Carbon Budget submission (UExP-FNN-U) was recalculated with FE 4.1.0 finding differences in the 4-6 decimal place on individual fluxes, and when integrated differences around 0.001-0.01 Pg C yr-1 on the integrated ocean sink (compared to FE 4.0.9.1).
 
 v4.0.9.1 released December 2024 - Update to apply additional fix to the atmospheric fCO2 error. This fix has now been verified against output from pyCO2sys v1.8.3.3, and confirms that FluxEngine is consistent (to 1e-6 uatm).
@@ -23,7 +25,7 @@ v4.0.8 released November 2024 - Small update that fixes: 1) Fixes issues in newe
 
 v4.0.7 released May 2022 - Small update adding flexibility to custom gas transfer velocity parameterisations.
 
-v4.0.2 released July 2020 - released as major FluxEngine v4 release - Small updates for re-analysis tool compatbility with SOCATv2020 release.
+v4.0.2 released July 2020 - released as major FluxEngine v4 release - Small updates for re-analysis tool compatibility with SOCATv2020 release.
 
 v4.0.1 released May 2020.
 
@@ -33,9 +35,9 @@ Please reference these journal publications when using this toolbox and presenti
 
 Recalculated SOCAT datasets
 ----
-Each year we used the FluxEngine to recalculate the latest version of the Surface Ocean CO2 Atlas (SOCAT) database (https://www.socat.info).  We provide this service for free and typically provide links to the recalculated data a few weeks after the new release of the SOCAT database. The original SOCAT data are all sampled from different depths and each measurement is tied to a temperature values, but the sources of the temperature data varies. This makes these data less ideal for global air-sea flux analyses. To enable an accurate air-sea flux calculation they need to be reanalysed to a common depth and temperature dataset. The reanalysed SOCAT data that we provide are all referenced to a common sampling depth and temperature dataset and the pairing between CO2 data and temperature is retained.  The tools and methods that perform the recalculation are detailed within the FluxEngine publications. The recaclculated datasets contain the individual cruise version of the SOCAT database and the gridded SOCAT data.
+Each year we used the FluxEngine to recalculate the latest version of the Surface Ocean CO2 Atlas (SOCAT) database (https://www.socat.info).  We provide this service for free and typically provide links to the recalculated data a few weeks after the new release of the SOCAT database. The original SOCAT data are all sampled from different depths and each measurement is tied to a temperature values, but the sources of the temperature data varies. This makes these data less ideal for global air-sea flux analyses. To enable an accurate air-sea flux calculation they need to be reanalysed to a common depth and temperature dataset. The reanalysed SOCAT data that we provide are all referenced to a common sampling depth and temperature dataset and the pairing between CO2 data and temperature is retained.  The tools and methods that perform the recalculation are detailed within the FluxEngine publications. The recalculated datasets contain the individual cruise version of the SOCAT database and the gridded SOCAT data.
 
-Please read the dataset metadata when using these data and please follow the guidelines in the metadata when referencing and acknowleging their use.
+Please read the dataset metadata when using these data and please follow the guidelines in the metadata when referencing and acknowledging their use.
 
 Ford, D. J., Shutler, J. D., Ashton, I., Sims, R. P., & Holding, T. (2025). Recalculated (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2025 (v0-1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.15656803
 
@@ -86,9 +88,15 @@ The FluxEngine v4.0 updates were funded under the ESA project Ocean Carbon for C
 Journal publications (which use FluxEngine and/or FluxEngine outputs)
 ----
 
-Friedlingstein, et al. Global Carbon Budget 2024, Earth Syst. Sci. Data, 17, 965–1039, (2025)  https://doi.org/10.5194/essd-17-965-2025
+Mucci, A. and Jutras M. (2026) Seasonally-variable surface-water CO2 gradients and fluxes along the Gulf and St. Lawrence Estuary (Quebec, Canada). Marine Chemistry. https://doi.org/10.1016/j.marchem.2026.104637
 
-Ford, D.J., Shutler, J.D., Blanco-Sacristán, J. et al. Enhanced ocean CO2 uptake due to near-surface temperature gradients. Nat. Geosci. (2024). https://doi.org/10.1038/s41561-024-01570-7
+Friedlingstein, et al. (2026) Global Carbon Budget 2025, Earth Syst. Sci. Data, 18, 3211–3288, https://doi.org/10.5194/essd-18-3211-2026.
+
+Ford, D. J., Shutler, J. D., Sheen, K. L., Tilstone, G. H., and Kitidis, V. (2026) UEx-L-Eddies: decadal and global long-lived mesoscale eddy trajectories with coincident air–sea CO2 fluxes and environmental conditions, Earth Syst. Sci. Data, 18, 969–988, https://doi.org/10.5194/essd-18-969-2026.
+
+Friedlingstein, et al. (2025) Global Carbon Budget 2024, Earth Syst. Sci. Data, 17, 965–1039,   https://doi.org/10.5194/essd-17-965-2025
+
+Ford, D.J., Shutler, J.D., Blanco-Sacristán, J. et al. (2024) Enhanced ocean CO2 uptake due to near-surface temperature gradients. Nat. Geosci. https://doi.org/10.1038/s41561-024-01570-7
 
 Ford, D.J., Blannin, J., Watts, J., Watson, A.J., Landschützer, P., Jersild, A. and Shutler, J.D., 2024. A comprehensive analysis of air‐sea CO2 flux uncertainties constructed from surface ocean data products. Global Biogeochemical Cycles, 38(11), p.e2024GB008188.
 

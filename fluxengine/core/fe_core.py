@@ -1458,6 +1458,13 @@ class FluxEngine:
         # TODO: Why are these hard-coded values. Should be using minBound and maxBound? - Done DJF 18/11/2024
         self.add_empty_data_layer("salinity_skin");
 
+        # DJF 06/04/2026: Adding to allow kb assymetry to be modified by k_parameterisations - allows wind speed varying kb etc
+        # This sets up a data field, which if a fixed value is used will act in the same way as the old implementation, but
+        # allows k_parameterisations to modify as needed.
+        if runParams.kb_asymmetry != 1.0:
+            self.add_empty_data_layer("kb_asymmetry")
+            self.data["kb_asymmetry"].fdata[:] = runParams.kb_asymmetry
+
         # DJF 18/11/2024 - Removed the hardcoding as todo above suggests (not sure why it was selective?). If salinity goes below 0 should be covered by the minBound.
         # for i in arange(self.nx * self.ny):
         #     if (self.data["salinity"].fdata[i] >= 0.0) and (self.data["salinity"].fdata[i] <= 50.0):
@@ -2030,7 +2037,6 @@ class FluxEngine:
                 # #DJF: 13/01/2026
                 # # If the bubble flux asymetry is enabled then the bubble pCO2atm can be calculated at different temperatures too.
                 if runParams.kb_asymmetry != 1.0:
-                    self.add_empty_data_layer("pgas_air_bub");
                     self.data["pgas_air_bub"].fdata[mask] = self.data["pgas_air_bub"].fdata[mask] + pco2_increment_air
 
             else:
@@ -2362,9 +2368,10 @@ class FluxEngine:
 
         if runParams.flux_calc in [1, 2]:
             if (runParams.kb_asymmetry != 1.0): #& (runParams.k_parameterisation == 3)): # DJF 13/01/2026 - Dont think this toggle is needed anymore as k_parameterisation is now a string and not a value...
+                #DJF 06/04/2026: Modified equation to have kb asymmetry as a data layer that is defined near the start of run_fluxengine. Allows kb_asymmetry to be modified by k_parameterisations.
                 self.data["FH06"].fdata[mask] = (
                         self.data["kd"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - self.data["conca"].fdata[mask]) # Direct flux (or interfacial flux
-                        + self.data["kb"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - (runParams.kb_asymmetry * self.data["conca_bub"].fdata[mask])) # Bubble mediated flux - which has a specific bubble atmospheric CO2
+                        + self.data["kb"].fdata[mask] * k_factor * (self.data["concw"].fdata[mask] - (self.data["kb_asymmetry"].fdata[mask] * self.data["conca_bub"].fdata[mask])) # Bubble mediated flux - which has a specific bubble atmospheric CO2
                 )
             else:
                 self.data["FH06"].fdata[mask] = (
@@ -2390,8 +2397,8 @@ class FluxEngine:
                     "Cannot use wet deposition (rain_wet_deposition_switch) without specifying pCO2 or vCO2 data.")
             else:
                 self.data["FKo07"].fdata[mask] = -(
-                        self.data["rain"].fdata[mask] * (24.0 / 1000.0) * concFactor *
-                        self.data["solubility_distilled"].fdata[mask] * self.data["pgas_air_cor"].fdata[mask]
+                        self.data["rain"].fdata[mask] * k_factor * concFactor *
+                        self.data["solubility_distilled"].fdata[mask] * self.data["pgas_air"].fdata[mask]
                 )
 
                 valid_FH06_mask = mask & (self.data["FH06"].fdata != missing_value)
@@ -2560,7 +2567,7 @@ class FluxEngine:
         if runParams.pco2_data_selection == 2 or runParams.pco2_data_selection == 4 or runParams.pco2_data_selection == 45:
             gas_type = 'fugacity'
         else:
-            gas_type = 'partial_= pressure'
+            gas_type = 'partial_pressure'
         # Substitute gas name into meta data / human-readable descriptions
         dataLayers = self.data
         for datalayer in dataLayers:

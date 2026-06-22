@@ -35,9 +35,11 @@ Please reference these journal publications when using this toolbox and presenti
 
 Recalculated SOCAT datasets
 ----
-Each year we used the FluxEngine to recalculate the latest version of the Surface Ocean CO2 Atlas (SOCAT) database (https://www.socat.info).  We provide this service for free and typically provide links to the recalculated data a few weeks after the new release of the SOCAT database. The original SOCAT data are all sampled from different depths and each measurement is tied to a temperature values, but the sources of the temperature data varies. This makes these data less ideal for global air-sea flux analyses. To enable an accurate air-sea flux calculation they need to be reanalysed to a common depth and temperature dataset. The reanalysed SOCAT data that we provide are all referenced to a common sampling depth and temperature dataset and the pairing between CO2 data and temperature is retained.  The tools and methods that perform the recalculation are detailed within the FluxEngine publications. The recalculated datasets contain the individual cruise version of the SOCAT database and the gridded SOCAT data.
+Each year we used the FluxEngine to recalculate the latest version of the Surface Ocean CO2 Atlas (SOCAT) database (https://www.socat.info).  We provide this service for free and typically provide links to the recalculated data a few weeks after the new release of the SOCAT database. The original SOCAT data are all sampled from different depths and each measurement is tied to a temperature values, but the sources of the temperature data varies. This makes these data less ideal for global air-sea flux analyses. To enable an accurate air-sea flux calculation they need to be reanalysed to a common depth and temperature dataset. The reanalysed SOCAT data that we provide are all referenced to a common sampling depth and temperature dataset and the pairing between CO2 data and temperature is retained.  The tools and methods that perform the recalculation are detailed within the FluxEngine publications. The recalculated datasets contain the individual cruise version of the SOCAT database and the gridded SOCAT data. The methodology and dataset are described in Ford et al. (2026; https://doi.org/10.1038/s41597-026-07532-5).
 
 Please read the dataset metadata when using these data and please follow the guidelines in the metadata when referencing and acknowledging their use.
+
+Ford, D. J., Shutler, J. D., Ashton, I., Sims, R. P., & Holding, T. (2026). Recalculated (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2026 (v0-1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.20757579
 
 Ford, D. J., Shutler, J. D., Ashton, I., Sims, R. P., & Holding, T. (2025). Recalculated (depth and temperature consistent) surface ocean CO₂ atlas (SOCAT) version 2025 (v0-1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.15656803
 
@@ -87,6 +89,7 @@ The FluxEngine v4.0 updates were funded under the ESA project Ocean Carbon for C
 
 Journal publications (which use FluxEngine and/or FluxEngine outputs)
 ----
+Ford, D.J., Shutler, J.D., Holding, T. et al. Recalculating the Surface Ocean CO2 Atlas (SOCAT) to a sea surface temperature climate data record. Sci Data (2026). https://doi.org/10.1038/s41597-026-07532-5
 
 Mucci, A. and Jutras M. (2026) Seasonally-variable surface-water CO2 gradients and fluxes along the Gulf and St. Lawrence Estuary (Quebec, Canada). Marine Chemistry. https://doi.org/10.1016/j.marchem.2026.104637
 

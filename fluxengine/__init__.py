@@ -7,4 +7,4 @@ Created on Sun Apr 15 17:07:16 2018
 """
 
 
-__version__ = "4.2.0";
+__version__ = "4.2.pre1";

@@ -1664,7 +1664,21 @@ class FluxEngine:
                 self.add_empty_data_layer("pco2_sst");
                 self.data["pco2_sst"].fdata = self.data["sstfnd"].fdata - 273.15;  # copy/convert sstfnd
             except (IOError, KeyError, ValueError) as e:
-                print("pco2_sst data not available and could read sstfnd so cannot proceed.");
+                print("pco2_sst data not available and couldn't read sstfnd so cannot proceed.");
+                print(type(e), "\n" + e.args);
+                return 1;
+
+        # 24/06/2026 DJF: Added ability to specify a salinity paired to p/fCO2 and allows it to be converted to the salinity dataset following Sacrimento and Gruber.
+        if "pco2_sss" in self.data:
+            print('Check that supplied pco2_sss is correct.')
+        if "pco2_sss" not in self.data:  # SOCATv4
+            try:
+                print(
+                    "No pco2_sss data were supplied. Salinity will be used instead ")
+                self.add_empty_data_layer("pco2_sss");
+                self.data["pco2_sss"].fdata = self.data["salinity"].fdata;  # copy salinity
+            except (IOError, KeyError, ValueError) as e:
+                print("pco2_sss data not available and couldn't read salinity so cannot proceed.");
                 print(type(e), "\n" + e.args);
                 return 1;
 
@@ -1911,15 +1925,17 @@ class FluxEngine:
         #######################################################
         # this may be needed when using SMOS salinity data
         # To-DO: awaiting info from Lonneke and David before implementing fully
-        pCO2_salinity_term = 0;
+
+        #24/06/2025 DJF: Adding ability to modify the pCO2sw due to salinity changes
+        # pCO2_salinity_term = 0;
         # dSalinity = salinity_rmse
         # if (salinity_option == 1):
-        #  # need to determine dS/S using original salinity (its been modified above to add the salinity_rmse)
-        #  # so (self.data["salinity"].fdata[i] - salinity_rmse) ensures that we are dealing with the original value of salinity
-        #  # using Ys=1 as a global correction following Sarmiento and Gruber, 2006)
-        # pCO2_salinity_term = 1.0*(dSalinity/(self.data["salinity"].fdata[i] - salinity_rmse) ) #TH: Commented this out, but should not be removed as may be used in the future.
+        # need to determine dS/S using original salinity (its been modified above to add the salinity_rmse)
+        # so (self.data["salinity"].fdata[i] - salinity_rmse) ensures that we are dealing with the original value of salinity
+        # using Ys=1 as a global correction following Sarmiento and Gruber, 2006)
+        # pCO2_salinity_term = runParams.gammma * ((self.data['salinity'] - self.data["pco2_sss"]) /self.data["pco2_sss"].fdata[i]) #DJF: Added this back in so we can modify pCO2sw by salinity.
         # else:
-        # pCO2_salinity_term = 0.0
+        #     pCO2_salinity_term = 0.0
 
         # if pCO2 data in sea water is provided calculated corrected values.
         if "pgas_sw" in self.data:  # Only calculate partial pressure data is available
@@ -1931,10 +1947,14 @@ class FluxEngine:
                     (self.data["sstfnd"].fdata != missing_value) &
                     (self.data["pco2_sst"].fdata != missing_value) &
                     (self.data["pgas_sw"].fdata != missing_value) &
-                    (self.data["sstskin"].fdata != 0.0)
+                    (self.data["sstskin"].fdata != 0.0) &
+                    (self.data["pco2_sss"].fdata != missing_value)
             )
 
             if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
+                self.add_empty_data_layer("pCO2_salinity_term");
+                self.data["pCO2_salinity_term"].fdata[mask] = runParams.gammma * ((self.data['salinity'].fdata[mask] - self.data["pco2_sss"].fdata[mask]) / self.data["pco2_sss"].fdata[mask]) #DJF: Added this back in so we can modify pCO2sw by salinity.
+
                 self.data["pgas_sw"].fdata[mask] = pco2_increment + (
                         self.data["pgas_sw"].fdata[mask] * np.exp(
                     (0.0423 * (self.data["sstfndC"].fdata[mask] - self.data["pco2_sst"].fdata[mask]))
@@ -1942,7 +1962,7 @@ class FluxEngine:
                     + pCO2_salinity_term
                 )
                 )
-                self.data["pgas_sw"].fdata[~mask] = self.data["pgas_sw"].fdata[~mask]
+                # self.data["pgas_sw"].fdata[~mask] = self.data["pgas_sw"].fdata[~mask] #DJF 24/06/2026: Dont think this is needed as above now modifies pgas_sw directly so anything not modified above within mask is unchanged.
             else:
                 self.data["pgas_sw"].fdata[mask] = self.data["pgas_sw"].fdata[mask]
 

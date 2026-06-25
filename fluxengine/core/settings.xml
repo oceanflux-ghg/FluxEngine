@@ -454,6 +454,8 @@
 		<Variable name="kb_asymmetry" required="true" type="float" default="1.0"></Variable>
 		<Variable name="bubble_cool_skin" required="true" type="switch" default="no"></Variable>
 
+		<Variable name="gamma" required="true" type="float" default="1.0"></Variable>
+
 		<Variable name="bias_sstskin_due_rain" required="true" type="switch" default="no"></Variable>
 		<Variable name="bias_sstskin_due_rain_value" required="true" type="float" default="0.0"></Variable>
 		<Variable name="bias_sstskin_due_rain_intensity" required="true" type="float" default="0.0"></Variable>

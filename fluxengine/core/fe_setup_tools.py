@@ -58,7 +58,7 @@ def read_config_file(configPath, verbose=False):
                     configVariables[name] = value
                 else:
                     print("Warning: Duplicate definition in config file for '%s'. The first definition will be used." % name)
-                    
+
             else: #All none variable assignment lines
                 if line == "" or line.strip() == "" or line.strip()[0] == "#": #ignore blank and comment lines
                     continue
@@ -67,7 +67,7 @@ def read_config_file(configPath, verbose=False):
                 #If we get to here, it's an invalid config line
                 raise ValueError("Invalid line in configuration file. Couldn't parse config. Offending line:\n"+line)
     except Exception as e: #Catch-all other parse errors and report the offending line
-        #Print additional info then reraise the exception    
+        #Print additional info then reraise the exception
         print("Error while parsing config file at path:", configPath)
         print(type(e), e.args)
         raise(e)
@@ -99,7 +99,7 @@ def read_config_metadata(settingsPath, verbose=False):
         print("Parsing settings file at:", settingsPath)
     tree = ET.parse(settingsPath)
     root = tree.getroot()
-    
+
     # Read config metadata for each variable
     varMetadata = {}
     configParametersElement = root.find("ConfigParameters")
@@ -286,7 +286,7 @@ def verify_config_variables(configVariables, metadata, verbose=False):
             continue
         except ValueError:
             pass #try float
-            
+
         #is it a float?
         try:
             configVariables[varName] = float(configVariables[varName])
@@ -531,7 +531,7 @@ def build_k_functor(runParameters, customGTVPath=None):
 def get_preprocessing_funcs(funcNamesArg):
     function = inspect.stack()[0][1] + ", " + inspect.stack()[0][3]
     functionList = []
-    
+
     # get a list of each funcName by splitting on commas
     funcNames = [s.strip() for s in funcNamesArg.split(',')]
     for funcName in funcNames:
@@ -767,7 +767,7 @@ def run_fluxengine(configFilePath, startDate, endDate, singleRun=False, verbose=
 
                 #Check for successful run, if one fails don't run the rest.
                 if returnCode != 0:
-                    print(("There was an error running flux engine: "+returnCode+"\n"%function))
+                    print(("There was an error running flux engine: "+str(returnCode)+"\n"%function))
                     print("Exiting...")
                     return (returnCode, fe)
                 else:

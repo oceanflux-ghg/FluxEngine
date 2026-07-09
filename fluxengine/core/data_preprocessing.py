@@ -133,7 +133,11 @@ def hour_to_day(datalayer):
     datalayer.data[mask] /= 24
     datalayer.calculate_fdata();
 
-    
+def plus_one(datalayer):
+    # Data preprocessing useful for testing - it simple adds one to the dataset...
+    mask = datalayer.data != datalayer.missing_value
+    datalayer.fdata[datalayer.fdata != datalayer.missing_value] += 1
+
 #Converts 'wave to ocean energy' (foc in WaveWatch) to dissipation rate of turbulent kinetic energy (epsilon)
 #Calculates dissipation rate of turbulent energy in the top 10m (mean)
 def foc_to_epsilon(datalayer):

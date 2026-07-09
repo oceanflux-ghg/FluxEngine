@@ -1953,13 +1953,13 @@ class FluxEngine:
 
             if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:
                 self.add_empty_data_layer("pCO2_salinity_term");
-                self.data["pCO2_salinity_term"].fdata[mask] = runParams.gammma * ((self.data['salinity'].fdata[mask] - self.data["pco2_sss"].fdata[mask]) / self.data["pco2_sss"].fdata[mask]) #DJF: Added this back in so we can modify pCO2sw by salinity.
+                self.data["pCO2_salinity_term"].fdata[mask] = runParams.gamma * ((self.data['salinity'].fdata[mask] - self.data["pco2_sss"].fdata[mask]) / self.data["pco2_sss"].fdata[mask]) #DJF: Added this back in so we can modify pCO2sw by salinity.
 
                 self.data["pgas_sw"].fdata[mask] = pco2_increment + (
                         self.data["pgas_sw"].fdata[mask] * np.exp(
                     (0.0423 * (self.data["sstfndC"].fdata[mask] - self.data["pco2_sst"].fdata[mask]))
                     - (0.0000435 * ((self.data["sstfndC"].fdata[mask] ** 2) - (self.data["pco2_sst"].fdata[mask] ** 2)))
-                    + pCO2_salinity_term
+                    + self.data["pCO2_salinity_term"].fdata[mask]
                 )
                 )
                 # self.data["pgas_sw"].fdata[~mask] = self.data["pgas_sw"].fdata[~mask] #DJF 24/06/2026: Dont think this is needed as above now modifies pgas_sw directly so anything not modified above within mask is unchanged.

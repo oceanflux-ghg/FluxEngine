@@ -196,6 +196,12 @@ def foc_to_epsilon_craig1994(datalayer):
             datalayer.fdata[i] = depth_function(0.2, a=beta);
 
 def Kudry_waterside_friction_velocity(datalayer):
+    # Waterside friction velocity as calculated following:
+    # Kudryavtsev, V., Makin, V., & Zappa, C. (2012). On the sea-surface drag and heat/mass transfer at strong winds. KNMI Scientific Report. Available at https://cdn.knmi.nl/knmi/pdf/bibliotheek/knmipubWR/WR2012-02.pdf
+
+    # Kudryavtsev, V., Chapron, B., Makin, V., & Dulov, V. (2015). On the impact of sea spray on the dynamics of the marine atmospheric boundary layer. Journal of Geophysical Research: Oceans, 120(10), 6896–6917. DOI: 10.1002/2015JC010832
+
+    # This includes sea spray reduction at high winds
     import numpy as np
     # Physical constants and parameters
     rho_a = 1.3       # air density [kg/m^3]
@@ -240,6 +246,12 @@ def Kudry_waterside_friction_velocity(datalayer):
     datalayer.fdata[mask] = UST*np.sqrt(rho_w/rho_a) # Converting air-side into waterside friction velocity
 
 def Kudry_airside_friction_velocity(datalayer):
+    # Airside friction velocity as calculated following:
+    # Kudryavtsev, V., Makin, V., & Zappa, C. (2012). On the sea-surface drag and heat/mass transfer at strong winds. KNMI Scientific Report. Available at https://cdn.knmi.nl/knmi/pdf/bibliotheek/knmipubWR/WR2012-02.pdf
+
+    # Kudryavtsev, V., Chapron, B., Makin, V., & Dulov, V. (2015). On the impact of sea spray on the dynamics of the marine atmospheric boundary layer. Journal of Geophysical Research: Oceans, 120(10), 6896–6917. DOI: 10.1002/2015JC010832
+
+    # This includes sea spray reduction at high winds
     import numpy as np
     # Physical constants and parameters
     rho_a = 1.3       # air density [kg/m^3]

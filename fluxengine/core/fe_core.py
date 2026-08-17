@@ -1381,7 +1381,7 @@ class FluxEngine:
             # Apply mask to each data layer
             for dataLayerName in self.data:
                 if dataLayerName != "mask":
-                    self.data[dataLayerName].fdata[toIgnore] = self.data[dataLayerName].missing_value = True;
+                    self.data[dataLayerName].fdata[toIgnore] = self.data[dataLayerName].missing_value;
 
     def _run_fluxengine(self, runParams):
         function = "(ofluxghg_flux_calc, FluxEngine._run_fluxengine_)";
@@ -1948,7 +1948,8 @@ class FluxEngine:
                     (self.data["pco2_sst"].fdata != missing_value) &
                     (self.data["pgas_sw"].fdata != missing_value) &
                     (self.data["sstskin"].fdata != 0.0) &
-                    (self.data["pco2_sss"].fdata != missing_value)
+                    (self.data["pco2_sss"].fdata != missing_value) &
+                    (self.data["salinity"].fdata != missing_value)
             )
 
             if runParams.GAS == 'CO2' and runParams.pco2_data_selection != 3:

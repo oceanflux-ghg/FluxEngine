@@ -60,7 +60,7 @@ class DataLayer:
     @classmethod
     def create_from_file(cls, infile, prod, metadata, timeIndex, transposeData=False, preprocessing=None):
         function = "(DataLayer.create_from_file)"
-        
+
         #helper which extracts the NC variable data to a numpy array.
         #converts unsigned integers to signed equivalents (necessary because missing_value values usually use negative values)
         def nc_variable_to_numpy(ncVar):
@@ -68,8 +68,8 @@ class DataLayer:
             if arr.dtype.kind == "u": #Convert unsigned integers to equivalent signed integer
                 arr = arr.astype("int"+str(arr.dtype.itemsize * 8))
             return arr
-        
-        
+
+
         #Open netCDF file
         try:
             dataset = Dataset(infile);

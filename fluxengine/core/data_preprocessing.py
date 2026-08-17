@@ -194,3 +194,91 @@ def foc_to_epsilon_craig1994(datalayer):
             beta = result.x;
             #Calculate epsilon at 2cm and write to data layer.
             datalayer.fdata[i] = depth_function(0.2, a=beta);
+
+def Kudry_waterside_friction_velocity(datalayer):
+    import numpy as np
+    # Physical constants and parameters
+    rho_a = 1.3       # air density [kg/m^3]
+    rho_w = 1e3       # water density [kg/m^3]
+    cch = 2e-2        # Charnock constant
+    ck = 0.4          # Von Karman constant
+    g = 9.8           # acceleration of gravity [m/s^2]
+
+    # 10 m height wind speed vector [m/s]
+    u10m = datalayer.fdata
+    mask = u10m !=datalayer.missing_value
+    #u10m =np.repeat(u10m[:,np.newaxis],156,axis=1)
+
+    # First guesses (vectorized)
+    ustar = np.sqrt(1.5e-3) * u10m[mask]
+    ustarn = np.sqrt(1.5e-3) * u10m[mask]
+
+    # Pre-allocate z0 arrays (handling u10 = 0 to avoid division by zero warnings)
+    z0 = np.zeros_like(u10m[mask])
+    z0n = np.zeros_like(u10m[mask])
+
+    # Perform iteration over the entire array simultaneously
+    for it in range(10):
+        # Standard Charnock relation
+        z0 = cch * (ustar**2) / g
+
+        # With spray effect reduction factor at high wind speeds
+        z0n = cch * (ustarn**2) / g * np.exp(-(u10m[mask] / 40.0)**3)
+
+        # Avoid log(0) or division by zero at u10m == 0
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ustar = np.where(u10m[mask] > 0, ck * u10m[mask] / np.log(10.0 / z0), 0.0)
+            ustarn = np.where(u10m[mask] > 0, ck * u10m[mask] / np.log(10.0 / z0n), 0.0)
+
+    # Final parameter calculations (vectorized)
+    UST0 = ustar
+    Z00 = z0
+
+    UST = ustarn
+    Z0 = z0n
+
+    datalayer.fdata[mask] = UST*np.sqrt(rho_w/rho_a) # Converting air-side into waterside friction velocity
+
+def Kudry_airside_friction_velocity(datalayer):
+    import numpy as np
+    # Physical constants and parameters
+    rho_a = 1.3       # air density [kg/m^3]
+    rho_w = 1e3       # water density [kg/m^3]
+    cch = 2e-2        # Charnock constant
+    ck = 0.4          # Von Karman constant
+    g = 9.8           # acceleration of gravity [m/s^2]
+
+    # 10 m height wind speed vector [m/s]
+    u10m = datalayer.fdata
+    mask = u10m !=datalayer.missing_value
+    #u10m =np.repeat(u10m[:,np.newaxis],156,axis=1)
+
+    # First guesses (vectorized)
+    ustar = np.sqrt(1.5e-3) * u10m[mask]
+    ustarn = np.sqrt(1.5e-3) * u10m[mask]
+
+    # Pre-allocate z0 arrays (handling u10 = 0 to avoid division by zero warnings)
+    z0 = np.zeros_like(u10m[mask])
+    z0n = np.zeros_like(u10m[mask])
+
+    # Perform iteration over the entire array simultaneously
+    for it in range(10):
+        # Standard Charnock relation
+        z0 = cch * (ustar**2) / g
+
+        # With spray effect reduction factor at high wind speeds
+        z0n = cch * (ustarn**2) / g * np.exp(-(u10m[mask] / 40.0)**3)
+
+        # Avoid log(0) or division by zero at u10m == 0
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ustar = np.where(u10m[mask] > 0, ck * u10m[mask] / np.log(10.0 / z0), 0.0)
+            ustarn = np.where(u10m[mask] > 0, ck * u10m[mask] / np.log(10.0 / z0n), 0.0)
+
+    # Final parameter calculations (vectorized)
+    UST0 = ustar
+    Z00 = z0
+
+    UST = ustarn
+    Z0 = z0n
+
+    datalayer.fdata[mask] = UST

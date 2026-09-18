@@ -2,7 +2,7 @@ FluxEngine
 ==========
 Main contacts: Jamie D. Shutler (j.d.shutler@exeter.ac.uk) and Daniel J. Ford (d.ford@exeter.ac.uk)
 
-The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 23 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency research projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
+The FluxEngine is an open source atmosphere-ocean gas flux data processing toolbox. The toolbox has so far contributed to 28 different journal publications, resulting in 6 press releases, has contributed to 3 completed PhDs, has been used within 7 UK and EU research projects, and 5 European Space Agency research projects, and it has been used in undergraduate and masters level teaching (in the UK and Europe) including ICOS and IOCCP training. This work collectively identifies and quantifies the importance of the oceans in regulating and storing carbon.
 
 Known issues with v4.2.0
 ----
@@ -10,9 +10,13 @@ Known issues with v4.2.0
 
 21 June 2024 - A known issue with the netCDF outputs of FluxEngine when running at daily resolution (identified by Daniel Ford). The issue is due to a netCDF global attribute being output incorrectly such that the append2insitu function is unable to correctly attach the output variables to the insitu text file. Currently the data can be extracted and appended manually and this error will be fixed shortly.
 
+18 Sep 2026 - An issue with the FluxEngine logging has been identified by Dan Wilson, where the logging appears active but no output is written to the output log. We are investigating the cause.
+
 
 Version 4.
 ----
+v4.2.1 released September 2026 - The salinity adjustment update. This release updates the FluxEngine processing so the p/fCO2 can be modified due to salinity differences between the salinity paried with the p/fCO2 and the salinity used in the flux calculation. This implements a 'pco2_sss' which functions the same way as 'pco2_sst', where the p/fCO2 is corrected from 'pco2_sss' to sub skin salinity following Sarmiento and Gruber (2006). Gamma (sensitivity of p/fCO2 to salinity change) can be specified and by default is set to 1. Fixes some bugs identified by Dan Wilson (fixed by Daniel Ford). Adds additional preprocessing functions to aid testing and additional gas transfer parameterisations. All internal verification runs were successful, and a external verification against the UExP-FNN-U (v2026-1) was successful - Salinity modifications were as expected.
+
 v4.2.0 released May 2026 - The SOCAT recalculation uncertainty update and bubble update. This release updates the SOCAT recalculation functions to include uncertainty propagation based on the SOCAT quality flag. The update also includes many improvements to the bubble exchange components of FluxEngine which allow further modifications to the bubble asymmetry terms and allowing bubbles to have a cool skin (or not; default). Finally some general bug fixes around verbose statements, updating netCDF variable names dependent on partial pressure or fugacity, and the ability to specify data layer outputs that should not be saved.
 
 v4.1.0 released July 2025 - The SOCAT recalculation update + vectorisation. This release updates the recalculation of the SOCAT functions to be more flexible on the temperature datasets used, and the spatial and temporal resolution of the datasets (and incorporates changes made within the production of the recalculated SOCAT datasets). The approach also updates the temperature sensitivities that can be used to transform SOCAT fCO2sw to different temperature, and incorporates pyCO2sys. pyCO2sys in now a dependency of FluxEngine. Thanks to nguyen-vu-son (and the CO2COAST project), FluxEngine is now vectorised and uses netCDF4 for the saving. Verification runs were all successful, and the University of Exeter Global Carbon Budget submission (UExP-FNN-U) was recalculated with FE 4.1.0 finding differences in the 4-6 decimal place on individual fluxes, and when integrated differences around 0.001-0.01 Pg C yr-1 on the integrated ocean sink (compared to FE 4.0.9.1).
